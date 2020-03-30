@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+    {% block markethistorybutton %}
+        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "markethistory" %}">Market History</a>
+    {% endblock %}
+
+    {% block navbarinsidetop %}
+        <label for="startdate" class="">Start Date:</label>
+        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="w3-theme-l4 w3-button2">
+        <label for="enddate" class="">End Date:</label>
+        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="w3-theme-l4 w3-button2"/>
+        <input type="submit" onclick="location.href='{% url 'markethistory' %}" value="Fetch Values" class="w3-theme-l4 w3-button3"/>
+    {% endblock navbarinsidetop %}
+
+    {% block maincontentdiv %}
+        <h2 style="text-align:center" id="charttitle">Stock Market Index History</h2>
+        <!-- Chart -->
+        <canvas id="stockchart" width="4" height="1">
+            Stock Chart
+        </canvas>
+        {% render_table table %}
+    {% endblock %}
+
+    {% block chartjs %}
+    {{ graphlabels|json_script:"graphlabels" }}
+    {{ graphdataset|json_script:"graphdataset" }}
+    <script>
+    var ctx = document.getElementById('stockchart').getContext("2d");
+    var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
+    var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: graphlabels,
+            datasets: graphdataset
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Index Value'
+                    }
+                }]
+            }
+        }
+    });
+    </script>
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->

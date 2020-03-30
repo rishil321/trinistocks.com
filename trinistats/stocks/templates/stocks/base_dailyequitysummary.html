@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+    {% block dailysummarybutton %}
+        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "dailyequitysummary" %}">Daily Summary</a>
+    {% endblock %}
+
+    {% block navbarinsidetop %}
+        <label for="date" class="">Date:</label>
+        <input type="date" value="{{ selecteddatestring }}" id="date" name="selecteddate" class="w3-theme-l4 w3-button2">
+        <input type="submit" onclick="location.href='{% url 'dailyequitysummary' %}" value="Fetch Values" class="w3-theme-l4 w3-button3"/>
+    {% endblock navbarinsidetop %}
+
+    {% block maincontentdiv %}
+        <h2 style="text-align:center" id="charttitle">Equities Traded for {{ selecteddate }}</h2>
+        <!-- Chart -->
+        <canvas id="stockchart" width="4" height="1">
+            Stock Chart
+        </canvas>
+        <p style="text-align:center">Top 10 equities by value traded</p>
+        {% render_table table %}
+    {% endblock %}
+
+    {% block chartjs %}
+    {{ graphvaluetraded|json_script:"graphvaluetraded" }}
+    {{ graphsymbols|json_script:"graphsymbols" }}
+    <script>
+    console.log("hello");
+    var ctx = document.getElementById('stockchart').getContext("2d");
+    var jssymbols = JSON.parse(document.getElementById('graphsymbols').textContent);
+    console.log(jssymbols);
+    var valuetraded = JSON.parse(document.getElementById('graphvaluetraded').textContent);
+    console.log(valuetraded);
+    var myChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: jssymbols,
+            datasets: [
+                {
+                    backgroundColor: ["red","blue","green","cyan","purple","yellow",
+                    "lime","brown","olive","silver","black","maroon","darkblue","orange",
+                    "grey"],
+                    data: valuetraded,
+                }
+            ]
+        },
+        options: {
+        }
+    });
+    </script>
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->

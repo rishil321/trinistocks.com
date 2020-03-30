@@ -1,0 +1,153 @@
+{% load render_table from django_tables2 %}
+{% load static %}
+<!doctype html>
+<html lang="en">
+{% block head %}
+<head>
+    <!--Metadata-->
+    <meta charset="utf-8">
+    <meta name="description" content="Data about T&T's Covid-19 cases.">
+    <meta name="author" content="Rishi Latchmepersad">
+    <!-- Twitter Card data -->
+    <meta name="twitter:card" content="Data about T&T's Covid-19 cases.">
+    <meta name="twitter:title" content="Trinistats:COVID-19">
+    <meta name="twitter:description" content="Tabular/graphical data about T&T's COVID-19 cases.">
+    <meta name="twitter:creator" content="Rishi Latchmepersad">
+    <!-- Twitter Summary card images must be at least 120x120px -->
+    <meta name="twitter:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE">
+    <!-- Open Graph data -->
+    <meta property="og:title" content="Trinistats:COVID-19" />
+    <meta property="og:type" content="graph" />
+    <meta property="og:url" content="http://www.trinistats.com/covid19" />
+    <meta property="og:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE" />
+    <meta property="og:description" content="Tabular/graphical data about T&T's COVID-19 cases." />
+    <meta property="og:site_name" content="Trinistats:COVID-19" />
+    <!--End Metadata-->
+    <title>{% block title %}T&T COVID-19 Data{% endblock title %}</title>
+    <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'covid19/styles.css' %}">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+{% endblock head %}
+<body>
+    {% block navbartop %}
+    <!-- Navbar -->
+    <div class="w3-top" id="navbartop">
+        <div class="w3-bar w3-theme-d5 w3-top w3-left-align w3-large">
+            <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme" href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
+            {% block navbartopbutton1 %}
+            <a href="{% url "cases" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white">Main</a>
+            {% endblock %}
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block navbarside %}
+    <!-- Sidebar -->
+    <nav class="w3-sidebar w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-left" id="mySidebar">
+        <a href="javascript:void(0)" onclick="w3_close()" class="w3-right w3-xlarge w3-padding-large w3-hover-black w3-hide-large" title="Close Menu">
+        <i class="fa fa-remove"></i></a>
+        <h6 class="w3-bar-item"><b>T&T COVID-19 Data</b></h6>
+        <hr style="border: 1px solid red;">
+        {% block casesbutton %}
+        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "cases" %}">Cases</a>
+        {% endblock %}
+    </nav>
+    {% endblock %}
+
+    {% block mainblock %}
+    <!-- Overlay effect when opening sidebar on small screens -->
+    <div class="w3-overlay w3-hide-large" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+    <!-- Main content: shift it to the right when the sidebar is visible -->
+    <div class="w3-main" style="margin-left:14em" id="maincontentdiv">
+        <div class="w3-row" style="margin-top:3.03em;">
+            <form method="get">
+            <!-- Top-inside Filter Bar 1-->
+                <div class="w3-left-align second-top-bar" id="navbarinsidetop">
+                {% block navbarinsidetop %}
+                {% endblock navbarinsidetop %}
+                </div>
+             </form>
+            <div class="w3-container" id="maincontentdiv">
+            {% block maincontentdiv %}
+                <h2 style="text-align:center" id="charttitle">{{selectedstockname}}</h2>
+                <!-- Chart -->
+                <canvas id="stockchart" width="4" height="1">
+                    Stock Chart
+                </canvas>
+                {% render_table table %}
+            {% endblock %}
+            </div>
+        </div>
+    </div>
+    <!-- END MAIN -->
+    {% endblock mainblock %}
+    
+    {% block basejs %}
+    <!--Javascript-->
+    <!--Error Messages -->
+    {% if errors != "" %}
+    <script type="text/javascript">
+            alert('{{ errors }}');
+    </script>
+    {% endif %}
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
+    {% block chartjs %}
+    <script>
+    var ctx = document.getElementById('stockchart').getContext("2d");
+    var jsdates = [];
+    var pythondates = {{ graphdates|safe }};
+    for (i=0; i<pythondates.length;i++){
+        jsdates.push(pythondates[i]);
+    }
+    var closingquotes = JSON.parse('{{ graphclosingquotes|safe }}');
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: jsdates,
+            datasets: [
+                {
+                    backgroundColor: 'rgb(255, 0, 0)',
+                    data: closingquotes,
+                    label: 'Closing Quote',
+                }
+            ]
+        },
+        options: {
+        }
+    });
+    </script>
+    {% endblock chartjs %}
+    <script>
+    // Get the Sidebar
+    var mySidebar = document.getElementById("mySidebar");
+    // Get the DIV with overlay effect
+    var overlayBg = document.getElementById("myOverlay");
+    // Toggle between showing and hiding the sidebar, and add overlay effect
+    function w3_open() {
+    if (mySidebar.style.display === 'block') {
+        mySidebar.style.display = 'none';
+        overlayBg.style.display = "none";
+    } else {
+        mySidebar.style.display = 'block';
+        overlayBg.style.display = "block";
+    }
+    }
+    // Close the sidebar with the close button
+    function w3_close() {
+    mySidebar.style.display = "none";
+    overlayBg.style.display = "none";
+    }
+    </script>
+    {% endblock basejs %}
+    <script>
+    {% block morejs%}
+    {% endblock morejs%}
+    </script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif;}
+
+.w3-sidebar {
+    z-index: 3;
+    width: 2em;
+    top: 2.5em;
+    bottom: 0;
+    height: inherit;
+}
+
+.h2{
+    text-align: center;
+}
+
+.djangotables {
+}
+
+table {
+    border: 1px solid black;
+    border-collapse: collapse;
+    width:100%;
+}
+
+th{
+    border: 1px solid black;
+    background-color: black;
+    color:white; 
+}
+
+td{
+    border: 1px solid black;
+}
+
+.pagination{
+    list-style: none;
+    display: inline;
+    display: block;
+    text-align: center;
+    margin:auto;
+}
+
+.previous,.next{
+    font-weight: bold;
+    font-size: 1em;
+}
+
+.pagination ul {
+    list-style: none;
+}
+
+.pagination li{
+    display: inline;
+}
+
+.active{
+    font-weight: bolder;
+    font-size:1.5em;
+}
+
+.w3-button2{
+    border: 1px solid black;
+    border-radius: 0px;
+    width:auto;
+    padding:4px 8px;
+    cursor: pointer;
+}
+
+.w3-button3{
+    border: 1px solid black;
+    border-radius: 0px;
+    padding:4px 8px;
+    width:auto;
+    cursor: pointer;
+    margin-left: 1em;
+}
+
+.w3-select1{
+    border: 1px solid black;
+    border-radius: 0px;
+    width:auto;
+    padding:4px 8px;
+    cursor: pointer;
+    max-width:25%;
+}
+
+.second-top-bar{
+    margin-top:0.25em;
+}
