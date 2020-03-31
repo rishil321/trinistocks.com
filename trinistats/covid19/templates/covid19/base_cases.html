@@ -7,21 +7,31 @@
     {% endblock %}
 
     {% block navbarinsidetop %}
-        <label for="" class="">Data:</label>
-        <select id="selectedcasetype" name="selectedcasetype" class="w3-theme-l4 w3-select1">
+        <label for="startdate" class="flexbox-item w3-label1">Start Date:</label>
+        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="flexbox-item w3-date-selector">
+        <label for="enddate" class="flexbox-item w3-label1">End Date:</label>
+        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="flexbox-item w3-date-selector "/>
+        <label for="selectedcasetypeleft" class="flexbox-item w3-label1">Left Axis:</label>
+        <select id="selectedcasetypeleft" name="selectedcasetypeleft" class="flexbox-item w3-select1">
             {% for casetype in validcasetypes %}
-                    {% if casetype.attname == selectedcasetypestr %}
+                    {% if casetype.attname == selectedcasetypeleftstr %}
                         <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
                     {% else %}
                         <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
                     {% endif %}
                 {% endfor %}
         </select>
-        <label for="startdate" class="">Start Date:</label>
-        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="w3-theme-l4 w3-button2">
-        <label for="enddate" class="">End Date:</label>
-        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="w3-theme-l4 w3-button2"/>
-        <input type="submit" onclick="location.href='{% url 'stockhistory' %}" value="Fetch Values" class="w3-theme-l4 w3-button3"/>
+        <label for="selectedcasetyperight" class="flexbox-item w3-label1">Right Axis:</label>
+        <select id="selectedcasetyperight" name="selectedcasetyperight" class="flexbox-item w3-select1">
+            {% for casetype in validcasetypes %}
+                    {% if casetype.attname == selectedcasetyperightstr %}
+                        <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
+                    {% else %}
+                        <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
+                    {% endif %}
+                {% endfor %}
+        </select>
+        <input type="submit" onclick="location.href='{% url 'cases' %}" value="Query" class="flexbox-item w3-button3"/>
     {% endblock navbarinsidetop %}
 
     {% block maincontentdiv %}
@@ -42,13 +52,14 @@
     {{ graphdataset|json_script:"graphdataset" }}
     <script>
     var ctx = document.getElementById('covid19chart').getContext("2d");
-    //load in our graph data from the python context
+    //load in our graph date labels from the python context
     var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
-    //convert the datetime into moment for Javascript
+    //convert the datetime into moments for Javascript
     var i;
     for (i=0;i<graphlabels.length;i++){
         graphlabels[i] = new Date(graphlabels[i])
     }
+    //load the actual dataset values 
     var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
     var myChart = new Chart(ctx, {
         type: 'line',
@@ -63,13 +74,26 @@
                 distribution: 'linear'
 					}],
                 yAxes: [{
+                    id:'A',
                     scaleLabel: {
                         display: true,
-                        labelString: 'Persons'
-                    }
-                }]            
+                        labelString: '{{ selectedcasetypeleftverbose|escapejs }}'},
+                    type:'linear',
+                    position:'left',
+                },
+                {
+                    id:'B',
+                    scaleLabel: {
+                        display: true,
+                        labelString: '{{ selectedcasetyperightverbose|escapejs }}'},
+                    type:'linear',
+                    position:'right',
+                },
+                ]            
         }
         }
     });
     </script>
     {% endblock chartjs %}
+    {% block morejs%}
+    {% endblock morejs%}

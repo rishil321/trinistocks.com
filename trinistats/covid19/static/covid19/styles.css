@@ -57,32 +57,54 @@ td{
     font-size:1.5em;
 }
 
-.w3-button2{
-    border: 1px solid black;
-    border-radius: 0px;
-    width:auto;
-    padding:4px 8px;
-    cursor: pointer;
+.w3-date-selector{
+	cursor:pointer;
+    font-size:1em;
+    height:1.5em;
+    border-radius: 0.2em;
+    border-width: 0.1em;
+    color:black;
+    text-align: center;
+    width:9em;
+    flex-shrink: 1;
+    background-color: white;
+}
+
+.w3-label1{
+    color:white;
+    flex-shrink: 3;
 }
 
 .w3-button3{
-    border: 1px solid black;
-    border-radius: 0px;
-    padding:4px 8px;
-    width:auto;
-    cursor: pointer;
-    margin-left: 1em;
+	background-color:red;
+	border-radius:0.2em;
+    border:0.1em outset black;
+    cursor:pointer;
+    height:2.0em;
+    color:#ffffff;
+    font-size:1em;
 }
 
 .w3-select1{
-    border: 1px solid black;
-    border-radius: 0px;
-    width:auto;
-    padding:4px 8px;
-    cursor: pointer;
-    max-width:25%;
+	cursor:pointer;
+    font-size:1em;
+    height:1.5em;
+    width: 10em;
+    border-radius: 0.2em;
+    border-width: 0.1em;
+    flex-shrink: 1;
+    background-color: white;
 }
 
 .second-top-bar{
-    margin-top:0.25em;
+    display: flex;
+    flex-direction:row;
+    flex-wrap:nowrap;
+    justify-content: left;
+    background-color: black;
+    align-items: center;
+}
+
+.flexbox-item{
+    margin-left: 0.5em;
 }

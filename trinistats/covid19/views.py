@@ -39,7 +39,7 @@ def cases(request):
         errors = ""
         logger.info("Cases page was called")
         recordedcases = models.Covid19Cases.objects.all()
-        # Check if our request contains our GET variables
+        # Check if our request contains our GET dates
         if request.method == 'GET' and all(x in request.GET for x in ['startdate','enddate']):
             # Validate all input fields
             startdate = parse(request.GET.get('startdate'))
@@ -55,21 +55,26 @@ def cases(request):
             if startdate > enddate:
                 errors += "Your starting date must be before your ending date. Please recheck."
         else:
-            logger.info("All required GET parameters were not found")
-            # Put some default values into our form.
-            # These will be overridden later on if the user has submitted input data
+            # Put some default dates into our form.
             enteredstartdate = (datetime.now()+dateutil.relativedelta.relativedelta(months=-1)).strftime('%Y-%m-%d')
             enteredenddate = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
         if request.GET.get('sort'):
             orderby=request.GET.get('sort')
         else:
+            # default table order
             orderby = '-date'
-        if request.GET.get('selectedcasetype'):
-            selectedcasetype = request.GET.get('selectedcasetype')
+        if request.GET.get('selectedcasetypeleft'):
+            selectedcasetypeleft = request.GET.get('selectedcasetypeleft')
         else:
-            selectedcasetype = 'numpositive'
-        selectedfieldverbosename = models.Covid19Cases._meta.get_field(selectedcasetype).verbose_name
-        # Fetch the records
+            selectedcasetypeleft = 'numtested'
+        if request.GET.get('selectedcasetyperight'):
+            selectedcasetyperight = request.GET.get('selectedcasetyperight')
+        else:
+            selectedcasetyperight = 'numpositive'
+        # Get the full names for the case types selected
+        selectedfieldleftverbosename = models.Covid19Cases._meta.get_field(selectedcasetypeleft).verbose_name
+        selectedfieldrightverbosename = models.Covid19Cases._meta.get_field(selectedcasetyperight).verbose_name
+        # Fetch the records from the db
         selectedrecords = models.Covid19Cases.objects.filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).values('date','numtested','numpositive','numdeaths','numrecovered').order_by('date')
         # Set up our table
         tabledata = Covid19CasesTable(selectedrecords, order_by=orderby)
@@ -77,11 +82,19 @@ def cases(request):
         # Set up our graph
         graphlabels = [obj['date'] for obj in selectedrecords]
         graphdataset = []
-        # Add the composite totals
-        graphdict = dict(data = [obj[selectedcasetype] for obj in selectedrecords],
-                         borderColor = 'rgb(0, 0, 0)',
-                         backgroundColor = 'rgb(255, 0, 0)',
-                         label = selectedfieldverbosename)
+        # Add data for the first dataset
+        graphdict = dict(data = [obj[selectedcasetypeleft] for obj in selectedrecords],
+                         yAxisID = 'A',
+                         borderColor = 'rgb(0, 0, 255)',
+                         backgroundColor = 'rgba(255, 255, 255,0)',
+                         label = selectedfieldleftverbosename)
+        graphdataset.append(graphdict)
+        # Add data for the second dataset
+        graphdict = dict(data = [obj[selectedcasetyperight] for obj in selectedrecords],
+                         yAxisID = 'B',
+                         borderColor = 'rgb(0, 255, 0)',
+                         backgroundColor = 'rgba(255, 255, 255,0)',
+                         label = selectedfieldrightverbosename)
         graphdataset.append(graphdict)
         # Set up the case type options for the dropdown select
         validcasetypes = [models.Covid19Cases._meta.get_field('numtested'),
@@ -96,7 +109,10 @@ def cases(request):
     context = {
         'errors':errors,
         'validcasetypes':validcasetypes,
-        'selectedcasetypestr':selectedcasetype,
+        'selectedcasetypeleftstr':selectedcasetypeleft,
+        'selectedcasetypeleftverbose':selectedfieldleftverbosename,
+        'selectedcasetyperightstr':selectedcasetyperight,
+        'selectedcasetyperightverbose':selectedfieldrightverbosename,
         'table':tabledata,
         'enteredstartdate':enteredstartdate,
         'enteredenddate':enteredenddate,
