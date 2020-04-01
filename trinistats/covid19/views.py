@@ -120,3 +120,17 @@ def cases(request):
         'graphdataset':graphdataset,
     }
     return render(request, "covid19/base_cases.html", context)
+
+def about(request):
+    try:
+        errors = ""
+        logger.info("About page was called")
+    except Exception as ex:
+        errors = alertmessage+str(ex)
+        logging.critical(traceback.format_exc())
+        logger.error(errors)    
+    # Now add our context data and return a response
+    context = {
+        'errors':errors,
+    }
+    return render(request, "covid19/base_about.html", context)

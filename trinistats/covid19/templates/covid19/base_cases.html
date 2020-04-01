@@ -2,7 +2,10 @@
 {% load render_table from django_tables2 %}
 {% load static %}
 
-    {% block casesbutton %}
+    {% block navbartopbutton1 %}
+    <a href="{% url "cases" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white">Main</a>
+    {% endblock %}
+    {% block navbarsidebutton1 %}
         <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "cases" %}">Cases</a>
     {% endblock %}
 
@@ -35,7 +38,7 @@
     {% endblock navbarinsidetop %}
 
     {% block maincontentdiv %}
-        <h2 style="text-align:center" id="charttitle">Trinidad COVID-19 Statistics</h2>
+        <h2 style="text-align:center" id="charttitle">Trinidad and Tobago's COVID-19 Statistics</h2>
         <!-- Chart -->
         <canvas id="covid19chart" width="4" height="1">
             COVID-19 Chart

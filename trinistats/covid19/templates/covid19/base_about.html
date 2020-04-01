@@ -1,0 +1,27 @@
+{% extends "covid19/base.html" %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+    {% block navbartopbutton2 %}
+    <a href="{% url "about" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white">About</a>
+    {% endblock %}
+    {% block navbarsidebutton1 %}
+        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "about" %}">Author Bio</a>
+    {% endblock %}
+
+    {% block maincontentdiv %}
+    
+    <p>
+    This small website is being developed by me (Rishi Latchmepersad) 
+    mainly as a way to develop my Python/Django/Javascript skills. </p>
+    <p>I also believe many people in the country (and the region by extension) can benefit from this data.
+    For any questions/comments/collab ideas, hit me an email at <a href="mailto:latchmepersad@gmail.com">latchmepersad@gmail.com</a>
+    or add me on <a href="https://www.linkedin.com/in/rishi-latchmepersad/">LinkedIn.</a>
+    </p>
+    {% endblock %}
+
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block basejs %}
+    {% endblock basejs%}
