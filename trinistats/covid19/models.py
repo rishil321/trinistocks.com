@@ -12,3 +12,15 @@ class Covid19Cases(models.Model):
     class Meta:
         managed = False
         db_table = 'covid19cases'
+        
+class Covid19DailyData(models.Model):
+    idcovid19dailydata = models.AutoField(primary_key=True)
+    date = models.DateField(unique=True, verbose_name="Date")
+    dailytests = models.PositiveIntegerField(verbose_name="Number of Tests Submitted on Day")
+    dailypositive = models.PositiveIntegerField(verbose_name="Number of Positive Results Received on Day")
+    dailydeaths = models.PositiveIntegerField(verbose_name="Number of Deaths on Day")
+    dailyrecovered = models.PositiveIntegerField(verbose_name="Number Recovered on Day")
+
+    class Meta:
+        managed = False
+        db_table = 'covid19dailydata'
