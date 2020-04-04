@@ -3,10 +3,10 @@
 {% load static %}
 
     {% block navbartopbutton1 %}
-    <a href="{% url "cases" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white">Main</a>
+    <a href="{% url "totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white">Main</a>
     {% endblock %}
     {% block navbarsidebutton1 %}
-        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "cases" %}">Cases</a>
+        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "totals" %}">Cumulative</a>
     {% endblock %}
 
     {% block navbarinsidetop %}
@@ -34,11 +34,11 @@
                     {% endif %}
                 {% endfor %}
         </select>
-        <input type="submit" onclick="location.href='{% url 'cases' %}" value="Query" class="flexbox-item w3-button3"/>
+        <input type="submit" onclick="location.href='{% url 'totals' %}" value="Query" class="flexbox-item w3-button3"/>
     {% endblock navbarinsidetop %}
 
     {% block maincontentdiv %}
-        <h2 style="text-align:center" id="charttitle">Trinidad and Tobago's COVID-19 Statistics</h2>
+        <h2 style="text-align:center" id="charttitle">Trinidad and Tobago COVID-19 Cumulative Data</h2>
         <!-- Chart -->
         <canvas id="covid19chart" width="4" height="1">
             COVID-19 Chart

@@ -15,6 +15,14 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif;}
 .djangotables {
 }
 
+p{
+    font-size:1.25em;
+}
+
+.a:link{
+    color:blue;
+}
+
 table {
     border: 1px solid black;
     border-collapse: collapse;
@@ -80,9 +88,11 @@ td{
 	border-radius:0.2em;
     border:0.1em outset black;
     cursor:pointer;
-    height:2.0em;
+    height:1.8em;
     color:#ffffff;
     font-size:1em;
+    margin-top:0.2em;
+    margin-bottom: 0.2em;
 }
 
 .w3-select1{

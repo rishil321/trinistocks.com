@@ -1,0 +1,79 @@
+{% extends "covid19/base.html" %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+    {% block navbartopbutton1 %}
+    <a href="{% url "totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white">Main</a>
+    {% endblock %}
+    {% block navbarsidebutton2 %}
+        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "daily" %}">Daily</a>
+    {% endblock %}
+
+    {% block navbarinsidetop %}
+        <label for="startdate" class="flexbox-item w3-label1">Start Date:</label>
+        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="flexbox-item w3-date-selector">
+        <label for="enddate" class="flexbox-item w3-label1">End Date:</label>
+        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="flexbox-item w3-date-selector "/>
+        <label for="selectedcasetype" class="flexbox-item w3-label1">Data:</label>
+        <select id="selectedcasetype" name="selectedcasetype" class="flexbox-item w3-select1">
+            {% for casetype in validcasetypes %}
+                    {% if casetype.attname == selectedcasetypestr %}
+                        <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
+                    {% else %}
+                        <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
+                    {% endif %}
+                {% endfor %}
+        </select>
+        <input type="submit" onclick="location.href='{% url 'daily' %}" value="Query" class="flexbox-item w3-button3"/>
+    {% endblock navbarinsidetop %}
+
+    {% block maincontentdiv %}
+        <h2 style="text-align:center" id="charttitle">Trinidad and Tobago Daily COVID-19 Data</h2>
+        <!-- Chart -->
+        <canvas id="covid19chart" width="4" height="1">
+            COVID-19 Chart
+        </canvas>
+        {% render_table table %}
+    {% endblock %}
+
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    
+    {% block chartjs %}
+    {{ graphlabels|json_script:"graphlabels" }}
+    {{ graphdataset|json_script:"graphdataset" }}
+    <script>
+    var ctx = document.getElementById('covid19chart').getContext("2d");
+    //load in our graph date labels from the python context
+    var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
+    //load the actual dataset values 
+    var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: graphlabels,
+            datasets: graphdataset
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                type: 'time',
+                distribution: 'linear'
+					}],
+                yAxes: [{
+                    id:'A',
+                    scaleLabel: {
+                        display: true,
+                        labelString: '{{ selectedcasetypeverbose|escapejs }}'},
+                    type:'linear',
+                    position:'left',
+                },
+                ]            
+        }
+        }
+    });
+    </script>
+    {% endblock chartjs %}
+    {% block morejs%}
+    {% endblock morejs%}

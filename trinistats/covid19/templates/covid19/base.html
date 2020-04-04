@@ -47,7 +47,7 @@
         <div class="w3-bar w3-theme-d5 w3-top w3-left-align w3-large">
             <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme" href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
             {% block navbartopbutton1 %}
-            <a href="{% url "cases" %}" class="w3-bar-item w3-button w3-theme w3-hover-white">Main</a>
+            <a href="{% url "totals" %}" class="w3-bar-item w3-button w3-theme w3-hover-white">Main</a>
             {% endblock %}
             {% block navbartopbutton2 %}
             <a href="{% url "about" %}" class="w3-bar-item w3-button w3-theme w3-hover-white">About</a>
@@ -64,7 +64,10 @@
         <h6 class="w3-bar-item"><b>T&T COVID-19 Data</b></h6>
         <hr style="border: 1px solid red;">
         {% block navbarsidebutton1 %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "cases" %}">Cases</a>
+        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "totals" %}">Cumulative</a>
+        {% endblock %}
+        {% block navbarsidebutton2 %}
+        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "daily" %}">Daily</a>
         {% endblock %}
     </nav>
     {% endblock %}
