@@ -84,7 +84,7 @@ def totals(request):
         selectedrecords = models.Covid19Cases.objects.filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).values('date','numtested','numpositive','numdeaths','numrecovered').order_by('date')
         # Set up our table
         tabledata = Covid19CasesTable(selectedrecords, order_by=orderby)
-        tabledata.paginate(page=request.GET.get("page", 1), per_page=10)
+        tabledata.paginate(page=request.GET.get("page", 1), per_page=25)
         # Set up our graph
         graphlabels = [obj['date'] for obj in selectedrecords]
         graphdataset = []
@@ -166,7 +166,7 @@ def daily(request):
         selectedrecords = models.Covid19DailyData.objects.filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).values('date','dailytests','dailypositive','dailydeaths','dailyrecovered').order_by('date')
         # Set up our table
         tabledata = Covid19DailyTable(selectedrecords, order_by=orderby)
-        tabledata.paginate(page=request.GET.get("page", 1), per_page=10)
+        tabledata.paginate(page=request.GET.get("page", 1), per_page=25)
         # Set up our graph
         graphlabels = [obj['date'] for obj in selectedrecords]
         graphdataset = []

@@ -1,15 +1,21 @@
-html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif;}
+html,body,h1,h2,h3,h4,h5,h6 {
+    font-family: "Roboto", sans-serif;
+}
 
-.w3-sidebar {
-    z-index: 3;
-    width: 2em;
-    top: 2.5em;
-    bottom: 0;
-    height: inherit;
+.w3-sidebar2 {
+    height:100%;
+    background-color:#fff;
+    position:fixed!important;
+    overflow:auto;
+    z-index:3;
+    width:11em;
+    top:2.5em;
+    bottom:0;
+    height:inherit;
 }
 
 .h2{
-    text-align: center;
+    text-align:center;
 }
 
 .djangotables {
@@ -117,4 +123,19 @@ td{
 
 .flexbox-item{
     margin-left: 0.5em;
+}
+
+.maincontentcss{
+    width:100%;
+}
+
+.chartdiv{
+    height:20em;
+}
+
+.menuclosebutton{
+    display:block;
+    border:none;
+    outline:0;
+    float:right;
 }
