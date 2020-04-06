@@ -3,8 +3,8 @@
 {% load static %}
 
     {% block navbarside %}
-        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "totals" %}" onclick="w3_close()">Cumulative</a>
-        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "daily" %}" onclick="w3_close()">Daily</a>
+        <a id="cumulativebutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "totals" %}" onclick="w3_close()">Cumulative</a>
+        <a id="dailybutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "daily" %}" onclick="w3_close()">Daily</a>
     {% endblock %}
 
     {% block navbarinsidetop %}
