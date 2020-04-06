@@ -62,7 +62,7 @@ def calculatedailytests():
 											dailypositive=0,dailydeaths=0,
 											dailyrecovered=0)]
         # for each unique date, we need to get the total number of each type of case 
-        for index in range(1,len(covid19uniquedates)-1):
+        for index in range(1,len(covid19uniquedates)):
 			# to do this, we need to calculate the difference between the current day values and the last
                 # find the highest number of the values for today (at the current index value in the sorted date list)
                 maxtestedtoday = 0

@@ -40,43 +40,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 {% endblock head %}
-<body>
+<body onload="onload_event()">
+     <!-- Top Navbar -->
     {% block navbartop %}
-    <!-- Navbar -->
-    <div class="w3-top" id="navbartop">
-        <div class="w3-bar w3-theme-d5 w3-top w3-left-align w3-large">
-            <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme" href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
+        <div class="w3-top w3-bar w3-theme-d5 w3-top w3-left-align w3-large" id="navbartopdiv">
+            <a id="menubutton" class="w3-bar-item w3-button w3-left w3-hover-white w3-large" href="#" title="Open side menu"  onclick="w3_open()"><i class="fa fa-bars"></i></a>
             {% block navbartopbutton1 %}
-            <a href="{% url "totals" %}" class="w3-bar-item w3-button w3-theme w3-hover-white">Main</a>
+            <a id="maincontentbutton" href="{% url "totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="Main COVID19 stats/data">Main Content</a>
             {% endblock %}
             {% block navbartopbutton2 %}
-            <a href="{% url "about" %}" class="w3-bar-item w3-button w3-theme w3-hover-white">About</a>
+            <a id="aboutbutton" href="{% url "about" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="About this page">About</a>
             {% endblock %}
         </div>
-    </div>
     {% endblock %}
 
-    {% block navbarside %}
     <!-- Sidebar -->
-    <nav class="w3-sidebar w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-left" id="mySidebar">
-        <a href="javascript:void(0)" onclick="w3_close()" class="w3-right w3-xlarge w3-padding-large w3-hover-black w3-hide-large" title="Close Menu">
+    <nav class="w3-sidebar2 w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-left" id="mySidebar">
+        <a href="#" onclick="w3_close()" class="menuclosebutton w3-xlarge w3-padding-large w3-hover-black" title="Close Menu">
         <i class="fa fa-remove"></i></a>
         <h6 class="w3-bar-item"><b>T&T COVID-19 Data</b></h6>
-        <hr style="border: 1px solid red;">
-        {% block navbarsidebutton1 %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "totals" %}">Cumulative</a>
-        {% endblock %}
-        {% block navbarsidebutton2 %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "daily" %}">Daily</a>
+        <hr style="border: 1px solid red;"></hr>
+        {% block navbarside %}
         {% endblock %}
     </nav>
-    {% endblock %}
+    
 
     {% block mainblock %}
     <!-- Overlay effect when opening sidebar on small screens -->
-    <div class="w3-overlay w3-hide-large" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+    <div class="w3-overlay" onclick="w3_close()" style="cursor:pointer" title="Close side menu" id="myOverlay"></div>
     <!-- Main content: shift it to the right when the sidebar is visible -->
-    <div class="w3-main" style="margin-left:13.1em" id="maincontentdiv">
+    <div class="w3-main" style="" id="maindiv">
         <div class="w3-row" style="margin-top:3.03em;">
             <form method="get">
             <!-- Top-inside Filter Bar 1-->
@@ -85,13 +78,17 @@
                 {% endblock navbarinsidetop %}
                 </div>
              </form>
-            <div class="w3-container" id="maincontentdiv">
+            <div class="w3-container maincontentcss" id="maincontentdiv">
             {% block maincontentdiv %}
+                {% block charttitle %}
                 <h2 style="text-align:center" id="charttitle">{{selectedstockname}}</h2>
+                {% endblock %}
                 <!-- Chart -->
-                <canvas id="stockchart" width="4" height="1">
-                    Stock Chart
+                <div id="chartdiv" class="chartdiv">
+                <canvas id="covid19chart">
+                    Covid19 Chart
                 </canvas>
+                </div>
                 {% render_table table %}
             {% endblock %}
             </div>
@@ -109,11 +106,11 @@
     </script>
     {% endif %}
     <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     {% block chartjs %}
     <script>
-    var ctx = document.getElementById('stockchart').getContext("2d");
+    var ctx = document.getElementById('covid19chart').getContext("2d");
     var jsdates = [];
     var pythondates = {{ graphdates|safe }};
     for (i=0; i<pythondates.length;i++){
@@ -135,6 +132,16 @@
         options: {
         }
     });
+    //create a resize observer to resize our chart
+    var ro = new ResizeObserver( entries => {
+    for (let entry of entries) {
+        ctx.canvas.width = chartdiv.clientWidth;
+        myChart.resize();
+        myChart.update();
+    }
+    });
+    // Observe one or multiple elements
+    ro.observe(chartdiv);
     </script>
     {% endblock chartjs %}
     <script>
@@ -142,26 +149,57 @@
     var mySidebar = document.getElementById("mySidebar");
     // Get the DIV with overlay effect
     var overlayBg = document.getElementById("myOverlay");
+    // get the main div
+    var maindiv = document.getElementById("maindiv");
+    //get the div holding the canvas
+    var chartdiv = document.getElementById("chartdiv");
+    //get the div for the top buttons
+    var menubutton = document.getElementById("menubutton");
+    var maincontentbutton = document.getElementById("maincontentbutton");
+    var aboutbutton = document.getElementById("aboutbutton");
     // Toggle between showing and hiding the sidebar, and add overlay effect
     function w3_open() {
-    if (mySidebar.style.display === 'block') {
-        mySidebar.style.display = 'none';
-        overlayBg.style.display = "none";
-    } else {
-        mySidebar.style.display = 'block';
-        overlayBg.style.display = "block";
-    }
+        if (mySidebar.style.display === 'block') {
+            mySidebar.style.display = 'none';
+            overlayBg.style.display = "none";
+            maindiv.style.marginLeft = "0em";
+            menubutton.classList.remove("w3-theme-l2");
+        } else {
+            mySidebar.style.display = 'block';
+            overlayBg.style.display = "block";
+            maindiv.style.marginLeft = "13.1em";
+            menubutton.classList.add("w3-theme-l2");
+        }
     }
     // Close the sidebar with the close button
     function w3_close() {
-    mySidebar.style.display = "none";
-    overlayBg.style.display = "none";
+        maincontentdiv.style.marginLeft = "0em";
+        mySidebar.style.display = "none";
+        overlayBg.style.display = "none";
+        menubutton.classList.remove("w3-theme-l2");
+        maindiv.style.marginLeft = "0em";
     }
+    //call the onload event once for session
+    function w3_manage_side_menu() {
+        if (sessionStorage.getItem("alreadyprompted") === null) {
+            w3_open();
+            sessionStorage.setItem("alreadyprompted","true");
+            console.log(sessionStorage.alreadyprompted)
+        }
+        else{
+            w3_close();
+        }
+    }
+    {% block onload_event %}
+    function onload_event() {
+        w3_manage_side_menu();
+    }
+    {% endblock %}
     </script>
     {% endblock basejs %}
-    <script>
     {% block morejs%}
-    {% endblock morejs%}
+    <script>
     </script>
+    {% endblock morejs%}
 </body>
 </html>

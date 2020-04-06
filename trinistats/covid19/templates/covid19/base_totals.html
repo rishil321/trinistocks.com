@@ -2,11 +2,9 @@
 {% load render_table from django_tables2 %}
 {% load static %}
 
-    {% block navbartopbutton1 %}
-    <a href="{% url "totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white">Main</a>
-    {% endblock %}
-    {% block navbarsidebutton1 %}
-        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "totals" %}">Cumulative</a>
+    {% block navbarside %}
+        <a id="cumulativebutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "totals" %}" onclick="w3_close()">Cumulative</a>
+        <a id="dailybutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "daily" %}" onclick="w3_close()">Daily</a>
     {% endblock %}
 
     {% block navbarinsidetop %}
@@ -37,13 +35,8 @@
         <input type="submit" onclick="location.href='{% url 'totals' %}" value="Query" class="flexbox-item w3-button3"/>
     {% endblock navbarinsidetop %}
 
-    {% block maincontentdiv %}
+    {% block charttitle %}
         <h2 style="text-align:center" id="charttitle">Trinidad and Tobago COVID-19 Cumulative Data</h2>
-        <!-- Chart -->
-        <canvas id="covid19chart" width="4" height="1">
-            COVID-19 Chart
-        </canvas>
-        {% render_table table %}
     {% endblock %}
 
     <!-- END MAIN -->
@@ -71,6 +64,7 @@
             datasets: graphdataset
         },
         options: {
+            maintainAspectRatio: false,
             scales: {
                 xAxes: [{
                 type: 'time',
@@ -98,5 +92,21 @@
     });
     </script>
     {% endblock chartjs %}
-    {% block morejs%}
-    {% endblock morejs%}
+
+    {% block morejs %}
+    <script>
+     //set the selected button colors
+    var navtopbardiv = $("#navbartopdiv");
+    var a_links = navtopbardiv.find("a");
+    for (i = 0; i < a_links.length; i++) {
+        if (a_links[i].id != "maincontentbutton")
+            a_links[i].classList.remove("w3-theme-l2");
+    }
+    var sidebar = $("#mySidebar");
+    var a_links = sidebar.find("a");
+    for (i = 0; i < a_links.length; i++) {
+        if (a_links[i].id != "cumulativebutton")
+            a_links[i].classList.remove("w3-theme-l2");
+    } 
+    </script>
+    {% endblock%}
