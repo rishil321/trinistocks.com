@@ -7,8 +7,7 @@ A collection of Django/Python apps for displaying stats related to T&amp;T
 Python 3.6.9`
   -For Windows machines, enter `python ––version` and ensure that Python 3.x.x is displayed.
 2. Install the virtualenvwrapper package using the command `pip install virtualenvwrapper` on Linux or `pip install virtualenvwrapper-win` on Windows.
-3. 
-  a.Download the repo and extract in on your local machine. I will assume you created a folder called `djangotrinistats` and extracted the entire repo into that.
+3.a.Download the repo and extract in on your local machine. I will assume you created a folder called `djangotrinistats` and extracted the entire repo into that.
   b.Open a terminal/command-prompt and navigate to `djangotrinistats`.
 4. Enter this command in that same terminal `mkvirtualenv -p python3 trinistatsenv -r requirements.txt` to create a virtual Python3 environment to run this app on and install the packages from the requirements.txt file in one swoop.
 5.a.Enter your virtual env using the command 'workon trinistatsenv'
