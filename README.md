@@ -8,17 +8,17 @@ Python 3.6.9`
   -For Windows machines, enter `python ––version` and ensure that Python 3.x.x is displayed.
 2. Install the virtualenvwrapper package using the command `pip install virtualenvwrapper` on Linux or `pip install virtualenvwrapper-win` on Windows.
 3. 
-  -Download the repo and extract in on your local machine. I will assume you created a folder called `djangotrinistats` and extracted the entire repo into that.
-  -Open a terminal/command-prompt and navigate to 'djangotrinistats'.
+  a.Download the repo and extract in on your local machine. I will assume you created a folder called `djangotrinistats` and extracted the entire repo into that.
+  b.Open a terminal/command-prompt and navigate to `djangotrinistats`.
 4. Enter this command in that same terminal `mkvirtualenv -p python3 trinistatsenv -r requirements.txt` to create a virtual Python3 environment to run this app on and install the packages from the requirements.txt file in one swoop.
-5. -Enter your virtual env using the command 'workon trinistatsenv'
-  -Use the command `python -V` to verify that you are running Python3 inside this virtualenv.
-  -Exit from the virtualenv using the command 'deactivate'.
+5.a.Enter your virtual env using the command 'workon trinistatsenv'
+  b.Use the command `python -V` to verify that you are running Python3 inside this virtualenv.
+  c.Exit from the virtualenv using the command 'deactivate'.
 6. Set up an IDE with good Python3/Django support. I will provide instructions for using Visual Studio Code.
 7. Open Visual Studio Code and select 'File>Open Folder' and navigate to 'djangotrinistats'. Once there, click Ok in the bottom right corner.
 8. On the left hand side, click the Extensions button (fifth one). Ensure that Python, Django, django-intellisense and MagicPython are installed.
 9. Now click the Run button (fourth one on the left) and click the settings gear icon above the Variables keyword. The launch.json file should open. Paste this code to overwrite that entire file:
-'
+`
 {
   // Use IntelliSense to learn about possible attributes.
   // Hover to view descriptions of existing attributes.
@@ -42,7 +42,7 @@ Python 3.6.9`
     }
   ]
 }
-'
+`
 10. Close that file. Now you have two dropdowns in the Run command at the top left. One to run your currently open Python script, and one to run our manage.py script for our Django project.
 11. Press 'CTRL+COMMA' to open the settings window. In the search bar at the top, enter venv and enter '~/.virtualenvs' in the Python:Venv Path input bar. Press enter and restart the IDE.
 12. Press the CTRL+SHIFT+P keys and select Python: Select Interpreter. Look for the 'trinistatsenv' environment there. If it does not show up, try other solutions [here](https://stackoverflow.com/questions/54106071/how-to-setup-virtual-environment-for-python-in-vs-code)
