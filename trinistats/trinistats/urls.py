@@ -18,6 +18,7 @@ from django.urls import include,path
 admin.autodiscover()
 
 urlpatterns = [
+    path('', include('central.urls')),
     path('admin/', admin.site.urls),
     path('stocks/', include('stocks.urls')),
     path('covid19/', include('covid19.urls')),

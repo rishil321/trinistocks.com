@@ -1,0 +1,186 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-162313143-1"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-162313143-1');
+    </script>
+    <!--Metadata-->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Statistical data concerning the Island of Trinidad and Tobago.">
+    <meta name="author" content="Rishi Latchmepersad">
+    <!-- Twitter Card data -->
+    <meta name="twitter:card" content="Trinistats: Bringing more data to T&T.">
+    <meta name="twitter:title" content="Trinistats">
+    <meta name="twitter:description" content="Statistical data concerning the Island of Trinidad and Tobago.">
+    <meta name="twitter:creator" content="Rishi Latchmepersad">
+    <!-- Twitter Summary card images must be at least 120x120px -->
+    <meta name="twitter:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE">
+    <!-- Open Graph data -->
+    <meta property="og:title" content="Trinistats" />
+    <meta property="og:type" content="graph" />
+    <meta property="og:url" content="http://www.trinistats.com" />
+    <meta property="og:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE" />
+    <meta property="og:description" content="Statistical data concerning the Island of Trinidad and Tobago." />
+    <meta property="og:site_name" content="trinistats.com" />
+    <!--End Metadata-->
+    {% block title %}<title>Trinistats | Home</title>{% endblock title %}
+    <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'central/styles.css' %}">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body,h1 {font-family: "Montserrat", sans-serif}
+        img {margin-bottom: -7px}
+        .w3-row-padding img {margin-bottom: 12px}
+    </style>
+     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <!-- Side Navigation -->
+    <nav class="w3-sidebar w3-bar-block w3-card w3-animate-left w3-center" style="display:none" id="mySidebar">
+        <h1 class="w3-xxxlarge w3-text-theme">Menu</h1>
+    <button class="w3-bar-item w3-button" onclick="w3_close()">Close <i class="fa fa-remove"></i></button>
+        <a href="#" class="w3-bar-item w3-button">Link 1</a>
+        <a href="#" class="w3-bar-item w3-button">Link 2</a>
+        <a href="#" class="w3-bar-item w3-button">Link 3</a>
+        <a href="#" class="w3-bar-item w3-button">Link 4</a>
+    </nav>
+
+    <!-- Header -->
+    <header class="w3-container w3-theme w3-padding" id="myHeader">
+    <div class="w3-center">
+        <h1 class="w3-animate-top">Trinistats</h1>
+    <h2 class="w3-large">Bringing data to the island of T<redtext>&</redtext>T</h2>
+    </div>
+    </header>
+
+    <div class="w3-row-padding w3-center">
+      <div class="w3-third w3-margin-top w3-margin-bottom">
+        <div class="w3-card w3-card2 w3-container" style="background-color:red;">
+          <h3>COVID-19</h3><br>
+          <i class="fas fa-virus fa-10x" style="color:black;"></i>
+          <p>Data about the disease, as published by the Ministry of Health</p>
+        </div>
+      </div>
+      <div class="w3-third w3-margin-top w3-margin-bottom">
+        <div class="w3-card w3-card2 w3-container" style="background-color:springgreen">
+          <h3>Stock Exchange</h3><br>
+          <i class="fas fa-chart-line fa-10x w3-margin-bottom w3-text-theme"></i>
+          <p>Data for equities listed on the Trinidad and Tobago Stock Exchange (TTSE)</p>
+        </div>
+      </div>
+      <div class="w3-third w3-margin-top w3-margin-bottom">
+        <div class="w3-card w3-card2 w3-container" style="background-color:peru;">
+          <h3>Movies</h3><br>
+          <i class="fas fa-virus fa-10x w3-margin-bottom w3-text-theme"></i>
+          <p>Coming soon</p>
+        </div>
+      </div>
+
+    </div>
+
+    
+    
+    {% block basejs %}
+    <!--Javascript-->
+    <!--Error Messages -->
+    {% if errors != "" %}
+    <script>
+            alert('{{ errors }}');
+    </script>
+    {% endif %}
+<!-- Script for Sidebar, Tabs, Accordions, Progress bars and slideshows -->
+<script>
+// Side navigation
+function w3_open() {
+  var x = document.getElementById("mySidebar");
+  x.style.width = "100%";
+  x.style.fontSize = "40px";
+  x.style.paddingTop = "10%";
+  x.style.display = "block";
+}
+function w3_close() {
+  document.getElementById("mySidebar").style.display = "none";
+}
+
+// Tabs
+function openCity(evt, cityName) {
+  var i;
+  var x = document.getElementsByClassName("city");
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";
+  }
+  var activebtn = document.getElementsByClassName("testbtn");
+  for (i = 0; i < x.length; i++) {
+    activebtn[i].className = activebtn[i].className.replace(" w3-dark-grey", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " w3-dark-grey";
+}
+
+var mybtn = document.getElementsByClassName("testbtn")[0];
+mybtn.click();
+
+// Accordions
+function myAccFunc(id) {
+  var x = document.getElementById(id);
+  if (x.className.indexOf("w3-show") == -1) {
+    x.className += " w3-show";
+  } else { 
+    x.className = x.className.replace(" w3-show", "");
+  }
+}
+
+// Slideshows
+var slideIndex = 1;
+
+function plusDivs(n) {
+  slideIndex = slideIndex + n;
+  showDivs(slideIndex);
+}
+
+function showDivs(n) {
+  var x = document.getElementsByClassName("mySlides");
+  if (n > x.length) {slideIndex = 1}    
+  if (n < 1) {slideIndex = x.length} ;
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";  
+  }
+  x[slideIndex-1].style.display = "block";  
+}
+
+showDivs(1);
+
+// Progress Bars
+function move() {
+  var elem = document.getElementById("myBar");   
+  var width = 5;
+  var id = setInterval(frame, 10);
+  function frame() {
+    if (width == 100) {
+      clearInterval(id);
+    } else {
+      width++; 
+      elem.style.width = width + '%'; 
+      elem.innerHTML = width * 1  + '%';
+    }
+  }
+}
+</script>
+    {% endblock basejs%}
+    {% block morejs %}
+    <script>
+    </script>
+    {% endblock morejs%}
+</body>
+</html>
