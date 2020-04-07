@@ -3,16 +3,17 @@ A collection of Django/Python apps for displaying stats related to T&amp;T
 
 ## Installation instructions
 1. Ensure that you have Python3 set up and available in your environment. 
--For Linux machines, open a terminal and type 'python3 -V'. You should see an output similar to: 'rishi@rishi-HP-Notebook:~$ python3 -V
-Python 3.6.9'
--For Windows machines, enter 'python ––version' and ensure that Python 3.x.x is displayed.
-2. Install the virtualenvwrapper package using the command 'pip install virtualenvwrapper' on Linux or 'pip install virtualenvwrapper-win' on Windows.
-3. -Download the repo and extract in on your local machine. I will assume you created a folder called 'djangotrinistats' and extracted the entire repo into that.
--Open a terminal/command-prompt and navigate to 'djangotrinistats'.
-4. Enter this command in that same terminal 'mkvirtualenv -p python3 trinistatsenv -r requirements.txt' to create a virtual Python3 environment to run this app on and install the packages from the requirements.txt file in one swoop.
+  -For Linux machines, open a terminal and type 'python3 -V'. You should see an output similar to: `rishi@rishi-HP-Notebook:~$ python3 -V
+Python 3.6.9`
+  -For Windows machines, enter `python ––version` and ensure that Python 3.x.x is displayed.
+2. Install the virtualenvwrapper package using the command `pip install virtualenvwrapper` on Linux or `pip install virtualenvwrapper-win` on Windows.
+3. 
+  -Download the repo and extract in on your local machine. I will assume you created a folder called `djangotrinistats` and extracted the entire repo into that.
+  -Open a terminal/command-prompt and navigate to 'djangotrinistats'.
+4. Enter this command in that same terminal `mkvirtualenv -p python3 trinistatsenv -r requirements.txt` to create a virtual Python3 environment to run this app on and install the packages from the requirements.txt file in one swoop.
 5. -Enter your virtual env using the command 'workon trinistatsenv'
--Use the command 'python -V' to verify that you are running Python3 inside this virtualenv.
--Exit from the virtualenv using the command 'deactivate'.
+  -Use the command `python -V` to verify that you are running Python3 inside this virtualenv.
+  -Exit from the virtualenv using the command 'deactivate'.
 6. Set up an IDE with good Python3/Django support. I will provide instructions for using Visual Studio Code.
 7. Open Visual Studio Code and select 'File>Open Folder' and navigate to 'djangotrinistats'. Once there, click Ok in the bottom right corner.
 8. On the left hand side, click the Extensions button (fifth one). Ensure that Python, Django, django-intellisense and MagicPython are installed.
