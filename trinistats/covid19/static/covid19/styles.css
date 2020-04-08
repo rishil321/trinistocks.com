@@ -19,7 +19,22 @@ html,body,h1,h2,h3,h4,h5,h6 {
     text-align:center;
 }
 
+canvas#covid19chart {
+    margin: 2em auto;
+}
+
 .djangotables {
+    width: 75%;
+    margin: 1em auto;
+}
+
+.djangotables td, th {
+    padding: 0.2em;
+    text-align: center;
+}
+
+.djangotables tr:hover {
+    background-color: #d5d5d2;
 }
 
 p{
@@ -132,6 +147,8 @@ td{
 
 .chartdiv{
     height:20em;
+    width: 75%;
+    margin: 1em auto;
 }
 
 .menuclosebutton{
