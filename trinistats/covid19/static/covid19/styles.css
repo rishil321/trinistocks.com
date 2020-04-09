@@ -2,19 +2,6 @@ html,body,h1,h2,h3,h4,h5,h6 {
     font-family: "Roboto", sans-serif;
 }
 
-.w3-sidebar2 {
-    height:100%;
-    background-color:#fff;
-    position:fixed!important;
-    overflow:auto;
-    z-index:3;
-    width:11em;
-    top:2.5em;
-    bottom:0;
-    height:inherit;
-    display:none;
-}
-
 .h2{
     text-align:center;
 }
@@ -80,7 +67,7 @@ td{
     border-width: 0.1em;
     color:black;
     text-align: center;
-    width:9em;
+    width:100%;
     flex-shrink: 1;
     background-color: white;
 }
@@ -138,5 +125,45 @@ td{
     display:block;
     border:none;
     outline:0;
-    float:right;
+}
+
+.w3-left-sidebar {
+    flex-direction:column;
+    flex-wrap:nowrap;
+    height:100%;
+    background-color:#fff;
+    position:fixed!important;
+    overflow:auto;
+    z-index:3;
+    width:11em;
+    top:2.5em;
+    bottom:0;
+    display:none;
+}
+
+.w3-right-sidebar{
+    right:0;
+    flex-direction:column;
+    flex-wrap:nowrap;
+    height:100%;
+    position:fixed!important;
+    overflow:auto;
+    z-index:3;
+    width:11em;
+    top:2.5em;
+    bottom:0;
+    display:none;
+}
+
+.flexbox{
+    display:flex;
+    flex-direction:column;
+    flex-wrap:nowrap;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.navbar-header{
+    padding-left:0.2em;
+    align-self:center;
 }

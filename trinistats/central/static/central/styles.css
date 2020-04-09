@@ -9,4 +9,9 @@ redtext{
 
 .w3-card2{
     height:22em;
+    border-radius: 0.5em;
+    border-style: ridge;
+    border-width: 0.2em;
+    cursor: pointer;
+    border-color: black;
 }

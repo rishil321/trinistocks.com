@@ -12,6 +12,12 @@
     gtag('js', new Date());
     gtag('config', 'UA-162313143-1');
     </script>
+    <!--Error Messages -->
+    {% if errors != "" %}
+    <script type="text/javascript">
+            alert('{{ errors }}');
+    </script>
+    {% endif %}
     <!--Metadata-->
     <meta charset="utf-8">
     <meta name="description" content="Data about T&T's Covid-19 cases.">
@@ -38,46 +44,60 @@
     <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
 </head>
 {% endblock head %}
-<body onload="onload_event()">
+<body id="mainbody">
      <!-- Top Navbar -->
     {% block navbartop %}
         <div class="w3-top w3-bar w3-theme-d5 w3-top w3-left-align w3-large" id="navbartopdiv">
-            <a id="menubutton" class="w3-bar-item w3-button w3-left w3-hover-white w3-large" href="#" title="Open side menu"  onclick="w3_open()"><i class="fa fa-bars"></i></a>
+            <a id="backbutton" class="w3-bar-item w3-button w3-left w3-hover-white w3-large" href="{% url "central:landingpage" %}" title="Back">
+            <i class="far fa-arrow-alt-circle-left fa-1x"></i></a>
+            <a id="leftmenubutton" class="w3-bar-item w3-button w3-hover-white w3-large" href="#" title="Navigation Menu"  onclick="w3_open_or_close_left()">
+            <i class="fas fa-bars fa-1x"></i></a>
+            <a id="rightmenubutton" class="w3-bar-item w3-button w3-hover-white w3-large w3-right" href="#" title="Configuration Menu"  onclick="w3_open_or_close_right()">
+            <i class="fas fa-sliders-h fa-1x"></i></a>
             {% block navbartopbutton1 %}
-            <a id="maincontentbutton" href="{% url "totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="Main COVID19 stats/data">Main Content</a>
+            <a id="maincontentbutton" href="{% url "covid19:totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="Main COVID19 stats/data">Main</a>
             {% endblock %}
             {% block navbartopbutton2 %}
-            <a id="aboutbutton" href="{% url "about" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="About this page">About</a>
+            <a id="aboutbutton" href="{% url "covid19:about" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="About this page">About</a>
             {% endblock %}
         </div>
     {% endblock %}
 
-    <!-- Sidebar -->
-    <nav class="w3-sidebar2 w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-left" id="mySidebar">
-        <a href="#" onclick="w3_close()" class="menuclosebutton w3-xlarge w3-padding-large w3-hover-black" title="Close Menu">
-        <i class="fa fa-remove"></i></a>
-        <h6 class="w3-bar-item"><b>T&T COVID-19 Data</b></h6>
+    <!-- Overlay effect when opening sidebar -->
+    <div class="w3-overlay" onclick="w3_close_left();w3_close_right();" style="cursor:pointer" title="Close side menu" id="myOverlay"></div>
+
+    <!-- Left Sidebar -->
+    <nav style="" class="w3-left-sidebar w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-left" id="leftsidebar">
+        <a href="#" onclick="w3_open_or_close_left()" class="menuclosebutton w3-hover-black" title="Close Menu">
+        <i style="float:right;"class="fas fa-angle-left w3-padding-large"></i></a>
+        <h4 class="">Covid-19 Stats</h4>
         <hr style="border: 1px solid red;"></hr>
-        {% block navbarside %}
-        {% endblock %}
+        <a id="cumulativebutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:totals" %}" onclick="w3_close()">Cumulative</a>
+        <a id="dailybutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:daily" %}" onclick="w3_close()">Daily</a>
+    </nav>
+
+    <!-- Right Sidebar -->
+    <nav style="" class="w3-right-sidebar w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-right" id="rightsidebar">
+        <a href="#" onclick="w3_open_or_close_right()" class="menuclosebutton w3-hover-black" title="Close Menu">
+        <i style="float:left;"class="fas fa-angle-right w3-padding-large"></i></a>
+        <h4 class="navbar-header">Configuration</h4>
+        <hr style="border: 1px solid red;"></hr>
+        {% block rightsidebarform %}
+        <form method="get">
+        <div class="flexbox">
+        </div>
+        </form>
+        {% endblock rightsidebarform %}
     </nav>
     
 
     {% block mainblock %}
-    <!-- Overlay effect when opening sidebar on small screens -->
-    <div class="w3-overlay" onclick="w3_close()" style="cursor:pointer" title="Close side menu" id="myOverlay"></div>
     <!-- Main content: shift it to the right when the sidebar is visible -->
     <div class="w3-main" style="" id="maindiv">
         <div class="w3-row" style="margin-top:3.03em;">
-            <form method="get">
-            <!-- Top-inside Filter Bar 1-->
-                <div class="w3-left-align second-top-bar" id="navbarinsidetop">
-                {% block navbarinsidetop %}
-                {% endblock navbarinsidetop %}
-                </div>
-             </form>
             <div class="w3-container maincontentcss" id="maincontentdiv">
             {% block maincontentdiv %}
                 {% block charttitle %}
@@ -97,18 +117,11 @@
     <!-- END MAIN -->
     {% endblock mainblock %}
     
-    {% block basejs %}
     <!--Javascript-->
-    <!--Error Messages -->
-    {% if errors != "" %}
-    <script type="text/javascript">
-            alert('{{ errors }}');
-    </script>
-    {% endif %}
     <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.touchswipe/1.6.19/jquery.touchSwipe.min.js"></script>
     {% block chartjs %}
     <script>
     var ctx = document.getElementById('covid19chart').getContext("2d");
@@ -133,8 +146,13 @@
         options: {
         }
     });
+    </script>
+    {% endblock chartjs %}
+    <script>
+    //get the div holding the canvas
+    const chartdiv = document.getElementById("chartdiv");
     //create a resize observer to resize our chart
-    var ro = new ResizeObserver( entries => {
+    const ro = new ResizeObserver( entries => {
     for (let entry of entries) {
         ctx.canvas.width = chartdiv.clientWidth;
         myChart.resize();
@@ -143,64 +161,74 @@
     });
     // Observe one or multiple elements
     ro.observe(chartdiv);
-    </script>
-    {% endblock chartjs %}
-    <script>
-    // Get the Sidebar
-    var mySidebar = document.getElementById("mySidebar");
     // Get the DIV with overlay effect
     var overlayBg = document.getElementById("myOverlay");
     // get the main div
     var maindiv = document.getElementById("maindiv");
-    //get the div holding the canvas
-    var chartdiv = document.getElementById("chartdiv");
     //get the div for the top buttons
-    var menubutton = document.getElementById("menubutton");
+    var leftmenubutton = document.getElementById("leftmenubutton");
     var maincontentbutton = document.getElementById("maincontentbutton");
     var aboutbutton = document.getElementById("aboutbutton");
-    // Toggle between showing and hiding the sidebar, and add overlay effect
-    function w3_open() {
-        if (mySidebar.style.display === 'block') {
-            mySidebar.style.display = 'none';
-            overlayBg.style.display = "none";
+    // Toggle between showing and hiding the left sidebar, and add overlay effect
+    function w3_open_or_close_left() {
+        if (leftsidebar.style.display === 'flex') {
+            leftsidebar.style.display = 'none';
             maindiv.style.marginLeft = "0em";
-            menubutton.classList.remove("w3-theme-l2");
-        } else {
-            mySidebar.style.display = 'block';
-            overlayBg.style.display = "block";
+            leftmenubutton.classList.remove("w3-theme-l2");
+            overlayBg.style.display = "none";
+        }
+        else {
+            leftsidebar.style.display = 'flex';
             maindiv.style.marginLeft = "13.1em";
-            menubutton.classList.add("w3-theme-l2");
+            leftmenubutton.classList.add("w3-theme-l2");
+            overlayBg.style.display = "flex";
         }
     }
-    // Close the sidebar with the close button
-    function w3_close() {
-        maincontentdiv.style.marginLeft = "0em";
-        mySidebar.style.display = "none";
-        overlayBg.style.display = "none";
-        menubutton.classList.remove("w3-theme-l2");
+    function w3_close_left() {
+        leftsidebar.style.display = 'none';
         maindiv.style.marginLeft = "0em";
+        leftmenubutton.classList.remove("w3-theme-l2");
+        overlayBg.style.display = "none";
     }
-    //call the onload event once for session
-    function w3_manage_side_menu() {
-        if (sessionStorage.getItem("alreadyprompted") === null) {
-            w3_open();
-            sessionStorage.setItem("alreadyprompted","true");
-            console.log(sessionStorage.alreadyprompted)
+    // Toggle between showing and hiding the right sidebar, and add overlay effect
+    function w3_open_or_close_right() {
+        if (rightsidebar.style.display === 'flex') {
+            rightsidebar.style.display = 'none';
+            overlayBg.style.display = "none";
+            maindiv.style.marginRight = "0em";
+            rightmenubutton.classList.remove("w3-theme-l2");
         }
-        else{
-            w3_close();
+        else {
+            rightsidebar.style.display = 'flex';
+            overlayBg.style.display = "flex";
+            maindiv.style.marginRight = "13.1em";
+            rightmenubutton.classList.add("w3-theme-l2");
         }
     }
-    {% block onload_event %}
-    function onload_event() {
-        w3_manage_side_menu();
+    function w3_close_right() {
+        rightsidebar.style.display = 'none';
+        overlayBg.style.display = "none";
+        maindiv.style.marginRight = "0em";
+        rightmenubutton.classList.remove("w3-theme-l2");
     }
-    {% endblock %}
+    $(function() {      
+      //Keep track of how many swipes
+      var count=0;
+      //Enable swiping...
+      $("#mainbody").swipe( {
+        //Single swipe handler for left swipes
+        swipeLeft:function(event, direction, distance, duration, fingerCount) {
+          w3_open_or_close_right();  
+        },
+        swipeRight:function(event, direction, distance, duration, fingerCount) {
+          w3_open_or_close_left();  
+        },
+        //Default is 75px, set to 0 for demo so any distance triggers swipe
+        threshold:25
+      });
+    });
     </script>
-    {% endblock basejs %}
     {% block morejs%}
-    <script>
-    </script>
     {% endblock morejs%}
 </body>
 </html>
