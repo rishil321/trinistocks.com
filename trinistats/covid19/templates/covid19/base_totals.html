@@ -2,17 +2,14 @@
 {% load render_table from django_tables2 %}
 {% load static %}
 
-    {% block navbarside %}
-        <a id="cumulativebutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "totals" %}" onclick="w3_close()">Cumulative</a>
-        <a id="dailybutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "daily" %}" onclick="w3_close()">Daily</a>
-    {% endblock %}
-
-    {% block navbarinsidetop %}
-        <label for="startdate" class="flexbox-item w3-label1">Start Date:</label>
+    {% block rightsidebarform %}
+       <form action="{% url 'covid19:totals' %}" method="get">
+        <div class="flexbox">
+        <label for="startdate" class="flexbox-item w3-label1">Start Date</label>
         <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="flexbox-item w3-date-selector">
-        <label for="enddate" class="flexbox-item w3-label1">End Date:</label>
+        <label for="enddate" class="flexbox-item w3-label1">End Date</label>
         <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="flexbox-item w3-date-selector "/>
-        <label for="selectedcasetypeleft" class="flexbox-item w3-label1">Left Axis:</label>
+        <label for="selectedcasetypeleft" class="flexbox-item w3-label1">Left Axis</label>
         <select id="selectedcasetypeleft" name="selectedcasetypeleft" class="flexbox-item w3-select1">
             {% for casetype in validcasetypes %}
                     {% if casetype.attname == selectedcasetypeleftstr %}
@@ -22,7 +19,7 @@
                     {% endif %}
                 {% endfor %}
         </select>
-        <label for="selectedcasetyperight" class="flexbox-item w3-label1">Right Axis:</label>
+        <label for="selectedcasetyperight" class="flexbox-item w3-label1">Right Axis</label>
         <select id="selectedcasetyperight" name="selectedcasetyperight" class="flexbox-item w3-select1">
             {% for casetype in validcasetypes %}
                     {% if casetype.attname == selectedcasetyperightstr %}
@@ -32,11 +29,16 @@
                     {% endif %}
                 {% endfor %}
         </select>
-        <input type="submit" onclick="location.href='{% url 'totals' %}" value="Query" class="flexbox-item w3-button3"/>
-    {% endblock navbarinsidetop %}
+        <hr style="border: 1px solid red;width:100%;"></hr>
+    <button style="" class="flexbox-item w3-button3" type="submit">
+    Fetch <i class="fa fa-database"></i>
+    </button>
+    </div>
+    </form>
+    {% endblock rightsidebarform %}
 
     {% block charttitle %}
-        <h2 style="text-align:center" id="charttitle">Trinidad and Tobago COVID-19 Cumulative Data</h2>
+        <h3 style="text-align:center" id="charttitle">T&T Covid-19 Cumulative Data</h3>
     {% endblock %}
 
     <!-- END MAIN -->
@@ -102,8 +104,8 @@
         if (a_links[i].id != "maincontentbutton")
             a_links[i].classList.remove("w3-theme-l2");
     }
-    var sidebar = $("#mySidebar");
-    var a_links = sidebar.find("a");
+    var leftsidebarstyling = $( "#leftsidebar" );
+    var a_links = leftsidebarstyling.find("a");
     for (i = 0; i < a_links.length; i++) {
         if (a_links[i].id != "cumulativebutton")
             a_links[i].classList.remove("w3-theme-l2");

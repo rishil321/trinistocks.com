@@ -44,26 +44,37 @@ def totals(request):
     try:
         errors = ""
         logger.info("Totals page was called")
+        # check whether this is the first page load
         recordedcases = models.Covid19Cases.objects.all()
-        # Check if our request contains our GET dates
-        if request.method == 'GET' and all(x in request.GET for x in ['startdate','enddate']):
-            # Validate all input fields
+        # Validate all input fields
+        try:
+            # check whether each GET variable was submitted with the request
+            if request.GET.get('startdate'):
+                startdateentered = True
+            else:
+                startdateentered = False
             startdate = parse(request.GET.get('startdate'))
-            if not startdate:
+        except:
+            if startdateentered:
                 errors += "Please enter a valid value for your start date."
+            startdate =datetime.now()+dateutil.relativedelta.relativedelta(months=-1)
+        try:
+            # check whether each GET variable was submitted with the request
+            if request.GET.get('enddate'):
+                enddateentered = True
+            else:
+                enddateentered = False
             enddate = parse(request.GET.get('enddate'))
-            if not enddate:
+        except:
+            if enddateentered:
                 errors += "Please enter a valid value for your end date."
-            # Store values for all fields to repopulate the form
-            enteredstartdate = startdate.strftime('%Y-%m-%d')
-            enteredenddate = enddate.strftime('%Y-%m-%d')
-            # Raise an error if the start date is after the end date
-            if startdate > enddate:
-                errors += "Your starting date must be before your ending date. Please recheck."
-        else:
-            # Put some default dates into our form.
-            enteredstartdate = (datetime.now()+dateutil.relativedelta.relativedelta(months=-1)).strftime('%Y-%m-%d')
-            enteredenddate = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+            enddate = datetime.now() + timedelta(days=1)
+        # Store values to repopulate the form
+        enteredstartdate = startdate.strftime('%Y-%m-%d')
+        enteredenddate = enddate.strftime('%Y-%m-%d')
+        # Raise an error if the start date is after the end date
+        if startdate > enddate:
+            errors += "Your starting date must be before your ending date. Please recheck."
         if request.GET.get('sort'):
             orderby=request.GET.get('sort')
         else:

@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/home/rishi/.virtualenvs/trinistatsenv/bin/python"
+    "python.pythonPath": "/home/rishi/.virtualenvs/trinistatsenv/bin/python",
+    "python.venvPath": "~/.virtualenvs"
 }
