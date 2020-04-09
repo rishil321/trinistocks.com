@@ -43,6 +43,12 @@
         body,h1 {font-family: "Montserrat", sans-serif}
         img {margin-bottom: -7px}
         .w3-row-padding img {margin-bottom: 12px}
+        a.nav-tile div:hover {
+          background-color: #7b9e89 !important;
+        }
+        a.nav-tile div {
+          background-color: #e7ede9;
+        }
     </style>
     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
 </head>
@@ -52,33 +58,37 @@
     <header class="w3-container w3-theme w3-padding" id="myHeader">
     <div class="w3-center">
         <h1 class="w3-animate-top">Trinistats</h1>
-    <h2 class="w3-large">Bringing data to the island of T<redtext>&</redtext>T</h2>
+    <h2 class="w3-large">Bringing data to the island of T&amp;T</h2>
     </div>
     </header>
-
-  <!--Main buttons-->
-  <div class="w3-row-padding w3-center">
-    <div class="w3-third w3-margin-top w3-margin-bottom">
-    <a href="{% url "covid19:totals" %}">
-      <div class="w3-card w3-card2 w3-container w3-hover-border-yellow" style="background-color:#ff4d4d;">
-        <h3>COVID-19</h3><br>
-        <i class="fas fa-virus fa-10x" style="color:black;"></i>
-        <p>Data about the disease, as published by the Ministry of Health</p>
+  
+    <div class="w3-row-padding w3-center">
+      <div class="w3-third w3-margin-top w3-margin-bottom">
+        <a href="/covid19" class='nav-tile'>
+        <div class="w3-card w3-card2 w3-container">
+          <h3>COVID-19</h3><br>
+          <i class="fas fa-virus fa-10x" style="color:black;"></i>
+          <p>Data about the disease, as published by the Ministry of Health</p>
+        </div>
+      </a>
       </div>
-    </a>
-    </div>
-    <div class="w3-third w3-margin-top w3-margin-bottom">
-      <div class="w3-card w3-card2 w3-container w3-hover-border-yellow" style="background-color:#70db70">
-        <h3>Stock Exchange</h3><br>
-        <i class="fas fa-chart-line fa-10x w3-margin-bottom w3-text-theme"></i>
-        <p>Data for equities listed on the Trinidad and Tobago Stock Exchange (TTSE)</p>
+      <div class="w3-third w3-margin-top w3-margin-bottom">
+        <a href="/stocks" class="nav-tile">
+        <div class="w3-card w3-card2 w3-container">
+          <h3>Stock Exchange</h3><br>
+          <i class="fas fa-chart-line fa-10x w3-margin-bottom w3-text-theme"></i>
+          <p>Data for equities listed on the Trinidad and Tobago Stock Exchange (TTSE)</p>
+        </div>
+      </a>
       </div>
-    </div>
-    <div class="w3-third w3-margin-top w3-margin-bottom w3-hover-border-yellow">
-      <div class="w3-card w3-card2 w3-container w3-hover-border-yellow" style="background-color:#ff8c1a;">
-        <h3>Movie Theatres</h3><br>
-        <i class="fas fa-film fa-10x w3-margin-bottom w3-text-theme"></i>
-        <p>Coming soon</p>
+      <div class="w3-third w3-margin-top w3-margin-bottom">
+        <a href="#" class="nav-tile">
+        <div class="w3-card w3-card2 w3-container">
+          <h3>Movies</h3><br>
+          <i class="fas fa-virus fa-10x w3-margin-bottom w3-text-theme"></i>
+          <p>Coming soon</p>
+        </div>
+      </a>
       </div>
     </div>
 
