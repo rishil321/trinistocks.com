@@ -146,7 +146,7 @@ td{
 	border-radius:0.2em;
     border:0.1em outset black;
     cursor:pointer;
-    height:1.8em;
+    height:auto;
     color:#ffffff;
     font-size:1em;
     margin-top:0.2em;
@@ -164,36 +164,22 @@ td{
     background-color: white;
 }
 
-.second-top-bar{
-    display: flex;
-    flex-direction:row;
-    flex-wrap:nowrap;
-    justify-content: left;
-    background-color: black;
-    align-items: center;
-}
-
-.flexbox-item{
-    margin-left: 0.5em;
-}
-
 .maincontentcss{
     width:100%;
 }
 
 .chartdiv{
-    height:20em;
-    width: 75%;
-    margin: 1em auto;
-}
-
-.menuclosebutton{
-    display:block;
-    border:none;
-    outline:0;
+    padding-left:1em;
+    padding-right:1em;
+    margin: auto;
+    height: 40em;
 }
 
 .w3-left-sidebar {
+    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+    display: -ms-flexbox;      /* TWEENER - IE 10 */
+    display: -webkit-flex;     /* NEW - Chrome */
     flex-direction:column;
     flex-wrap:nowrap;
     height:100%;
@@ -202,12 +188,38 @@ td{
     overflow:auto;
     z-index:3;
     width:11em;
-    top:2.5em;
+    top:3.5em;
     bottom:0;
     display:none;
+    padding-bottom: 5em;
+    align-items: flex-start;
+    justify-content: flex-start;
+    font-size:1.5em;
+}
+
+.w3-left-sidebar * {
+    flex:1;
+    width:100%;
+    max-height: 4em;
+    text-align: center;
+    text-decoration: none;
+}
+
+.w3-left-sidebar a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+    display: -ms-flexbox;      /* TWEENER - IE 10 */
+    display: -webkit-flex;     /* NEW - Chrome */
 }
 
 .w3-right-sidebar{
+    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+    display: -ms-flexbox;      /* TWEENER - IE 10 */
+    display: -webkit-flex;     /* NEW - Chrome */
     right:0;
     flex-direction:column;
     flex-wrap:nowrap;
@@ -216,20 +228,60 @@ td{
     overflow:auto;
     z-index:3;
     width:11em;
-    top:2.5em;
+    top:3.5em;
     bottom:0;
     display:none;
-}
-
-.flexbox{
-    display:flex;
-    flex-direction:column;
-    flex-wrap:nowrap;
+    padding-bottom: 5em;
     align-items: center;
     justify-content: flex-start;
+    font-size:1.5em;
+}
+
+.w3-right-sidebar * {
+    flex:1;
+    width:95%;
+    text-align: center;
+    text-decoration: none;
+}
+
+.w3-right-sidebar label {
+    font-size: 1.2em;
+}
+.w3-right-sidebar form div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+    display: -ms-flexbox;      /* TWEENER - IE 10 */
+    display: -webkit-flex;     /* NEW - Chrome */
 }
 
 .navbar-header{
-    padding-left:0.2em;
     align-self:center;
+    max-height: 2em;
+    font-size: 1.5em;
+}
+
+.menuclosebutton{
+    max-height: 4em;
+}
+
+.topbar{
+    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+    display: -ms-flexbox;      /* TWEENER - IE 10 */
+    display: -webkit-flex;     /* NEW - Chrome */
+    display: flex;             /* NEW, Spec - Opera 12.1, Firefox 20+ */
+    flex-direction:row;
+    flex-wrap:nowrap;
+    justify-content: start;
+    align-items: center;
+    font-size:2em;
+    align-content: flex-start;
+}
+
+.topbar * {
+    flex:1;
 }
