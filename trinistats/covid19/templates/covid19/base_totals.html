@@ -85,6 +85,8 @@
     }
     //load the actual dataset values 
     var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+    //set the font size
+    Chart.defaults.global.defaultFontSize = 18;
     var myChart = new Chart(ctx, {
         type: 'line',
         data: {

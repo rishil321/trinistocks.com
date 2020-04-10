@@ -51,7 +51,7 @@ def totals(request):
         except:
             if startdateentered:
                 errors += "Please enter a valid value for your start date."
-            startdate =datetime.now()+dateutil.relativedelta.relativedelta(months=-1)
+            startdate =datetime.now()+dateutil.relativedelta.relativedelta(weeks=-4)
         try:
             # check whether each GET variable was submitted with the request
             if request.GET.get('enddate'):
