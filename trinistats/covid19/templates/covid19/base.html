@@ -37,7 +37,7 @@
     <meta property="og:description" content="Tabular/graphical data about T&T's COVID-19 cases." />
     <meta property="og:site_name" content="Trinistats:COVID-19" />
     <!--End Metadata-->
-    <title>{% block title %}T&T COVID-19 Data{% endblock title %}</title>
+    <title>{% block title %}Trinistats | Covid-19{% endblock title %}</title>
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
@@ -49,42 +49,37 @@
 {% endblock head %}
 <body id="mainbody">
      <!-- Top Navbar -->
-    {% block navbartop %}
-        <div class="w3-top w3-bar w3-theme-d5 w3-top w3-left-align w3-large" id="navbartopdiv">
-            <a id="backbutton" class="w3-bar-item w3-button w3-left w3-hover-white w3-large" href="{% url "central:landingpage" %}" title="Back">
-            <i class="far fa-arrow-alt-circle-left fa-1x"></i></a>
-            <a id="leftmenubutton" class="w3-bar-item w3-button w3-hover-white w3-large" href="#" title="Navigation Menu"  onclick="w3_open_or_close_left()">
+        <div class="w3-top w3-bar w3-theme-d5 topbar" id="navbartopdiv">
+            <a id="backbutton" style="" class="w3-bar-item w3-button w3-left w3-hover-white" href="{% url "central:landingpage" %}" title="Back">
+            <i class="far fa-arrow-alt-circle-left fa-x"></i></a>
+            <a id="leftmenubutton" class="w3-bar-item w3-button w3-hover-white" href="#" title="Navigation Menu"  onclick="w3_open_or_close_left()">
             <i class="fas fa-bars fa-1x"></i></a>
-            <a id="rightmenubutton" class="w3-bar-item w3-button w3-hover-white w3-large w3-right" href="#" title="Configuration Menu"  onclick="w3_open_or_close_right()">
-            <i class="fas fa-sliders-h fa-1x"></i></a>
             {% block navbartopbutton1 %}
-            <a id="maincontentbutton" href="{% url "covid19:totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="Main COVID19 stats/data">Main</a>
+            <a id="maincontentbutton" style="flex-grow:3;" href="{% url "covid19:totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="Main COVID19 stats/data">Main</a>
             {% endblock %}
             {% block navbartopbutton2 %}
-            <a id="aboutbutton" href="{% url "covid19:about" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="About this page">About</a>
+            <a id="aboutbutton" style="flex-grow:3;" href="{% url "covid19:about" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="About this page">About</a>
             {% endblock %}
+            <a id="rightmenubutton" class="w3-bar-item w3-button w3-hover-white" style="" href="#" title="Configuration Menu"  onclick="w3_open_or_close_right()">
+            <i class="fas fa-sliders-h fa-1x"></i></a>
         </div>
-    {% endblock %}
 
     <!-- Overlay effect when opening sidebar -->
     <div class="w3-overlay" onclick="w3_close_left();w3_close_right();" style="cursor:pointer" title="Close side menu" id="myOverlay"></div>
 
     <!-- Left Sidebar -->
-    <nav style="" class="w3-left-sidebar w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-left" id="leftsidebar">
-        <a href="#" onclick="w3_open_or_close_left()" class="menuclosebutton w3-hover-black" title="Close Menu">
-        <i style="float:right;"class="fas fa-angle-left w3-padding-large"></i></a>
-        <h4 class="">Covid-19 Stats</h4>
-        <hr style="border: 1px solid red;"></hr>
-        <a id="cumulativebutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:totals" %}" onclick="w3_close()">Cumulative</a>
-        <a id="dailybutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:daily" %}" onclick="w3_close()">Daily</a>
+    <nav style="" class="w3-left-sidebar w3-collapse w3-theme-d5 w3-animate-left" id="leftsidebar">
+        <a href="#" onclick="w3_open_or_close_left()" class="w3-hover-white" title="Close Menu">
+        <i style="" class="fas fa-angle-left fa-2x"></i></a>
+        <a id="cumulativebutton" class=" w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:totals" %}" onclick="w3_close()">Cumulative</a>
+        <a id="dailybutton" class=" w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:daily" %}" onclick="w3_close()">Daily</a>
     </nav>
 
     <!-- Right Sidebar -->
     <nav style="" class="w3-right-sidebar w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-right" id="rightsidebar">
-        <a href="#" onclick="w3_open_or_close_right()" class="menuclosebutton w3-hover-black" title="Close Menu">
+        <a href="#" onclick="w3_open_or_close_right()" class="menuclosebutton w3-hover-white" title="Close Menu">
         <i style="float:left;"class="fas fa-angle-right w3-padding-large"></i></a>
         <h4 class="navbar-header">Configuration</h4>
-        <hr style="border: 1px solid red;"></hr>
         {% block rightsidebarform %}
         <form method="get">
         <div class="flexbox">
@@ -100,7 +95,7 @@
         <div class="w3-row" style="margin-top:3.03em;">
             <div class="w3-container maincontentcss" id="maincontentdiv">
             {% block maincontentdiv %}
-                {% block charttitle %}
+                {% block pagetitle %}
                 <h2 style="text-align:center" id="charttitle">{{selectedstockname}}</h2>
                 {% endblock %}
                 <!-- Chart -->

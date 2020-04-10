@@ -1,16 +1,16 @@
 {% extends "covid19/base.html" %}
-{% load render_table from django_tables2 %}
 {% load static %}
 
     {% block rightsidebarform %}
        <form action="{% url 'covid19:totals' %}" method="get">
-        <div class="flexbox">
-        <label for="startdate" class="flexbox-item w3-label1">Start Date</label>
-        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="flexbox-item w3-date-selector">
-        <label for="enddate" class="flexbox-item w3-label1">End Date</label>
-        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="flexbox-item w3-date-selector "/>
-        <label for="selectedcasetypeleft" class="flexbox-item w3-label1">Left Axis</label>
-        <select id="selectedcasetypeleft" name="selectedcasetypeleft" class="flexbox-item w3-select1">
+        <div>
+        <hr style="border: 1px solid red;width:100%;"></hr>
+        <label for="startdate" class=" w3-label1">Start Date</label>
+        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class=" w3-date-selector">
+        <label for="enddate" class=" w3-label1">End Date</label>
+        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class=" w3-date-selector "/>
+        <label for="selectedcasetypeleft" class=" w3-label1">Left Axis</label>
+        <select id="selectedcasetypeleft" name="selectedcasetypeleft" class=" w3-select1">
             {% for casetype in validcasetypes %}
                     {% if casetype.attname == selectedcasetypeleftstr %}
                         <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
@@ -19,8 +19,8 @@
                     {% endif %}
                 {% endfor %}
         </select>
-        <label for="selectedcasetyperight" class="flexbox-item w3-label1">Right Axis</label>
-        <select id="selectedcasetyperight" name="selectedcasetyperight" class="flexbox-item w3-select1">
+        <label for="selectedcasetyperight" class=" w3-label1">Right Axis</label>
+        <select id="selectedcasetyperight" name="selectedcasetyperight" class=" w3-select1">
             {% for casetype in validcasetypes %}
                     {% if casetype.attname == selectedcasetyperightstr %}
                         <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
@@ -30,16 +30,42 @@
                 {% endfor %}
         </select>
         <hr style="border: 1px solid red;width:100%;"></hr>
-    <button style="" class="flexbox-item w3-button3" type="submit">
-    Fetch <i class="fa fa-database"></i>
-    </button>
+    <button style="" class="w3-button3" type="submit">
+    Run Query <i class="fa fa-database"></i></button>
     </div>
     </form>
     {% endblock rightsidebarform %}
 
-    {% block charttitle %}
-        <h3 style="text-align:center" id="charttitle">T&T Covid-19 Cumulative Data</h3>
-    {% endblock %}
+    {% block maincontentdiv %}
+    <br>
+    <div class="w3-cell-row">
+    <div class="w3-container w3-blue w3-cell w3-mobile w3-center">
+        <p>{{ latestrecord.numtested }} samples submitted for testing &ensp;
+        <i class="fas fa-microscope fa-2x"></i></p>
+    </div>
+    <div class="w3-container w3-orange w3-cell w3-mobile w3-center">
+        <p>{{ latestrecord.numpositive }} persons tested positive &ensp; 
+        <i class="fas fa-procedures fa-2x"></i></p>
+    </div>
+    <div class="w3-container w3-green w3-cell w3-mobile w3-center">
+        <p>{{ latestrecord.numrecovered }} person(s) discharged &ensp; 
+    <i class="fas fa-virus-slash fa-2x"></i></p>
+    </div>
+    <div class="w3-container w3-red w3-cell w3-mobile w3-center">
+        <p>{{ latestrecord.numdeaths }} person(s) died &ensp; 
+    <i class=" far fa-heart fa-2x"></i></p>
+    </div>
+    </div>
+     {% block pagetitle %}
+    <h3 style="margin-top:1em;text-align:center" id="pagetitle">T&T Covid-19 Cumulative Data</h3>
+    {% endblock pagetitle %}
+    <!-- Chart -->
+    <div id="chartdiv" class="chartdiv">
+    <canvas id="covid19chart">
+        Covid19 Chart
+    </canvas>
+    </div>
+    {% endblock maincontentdiv %}
 
     <!-- END MAIN -->
     
@@ -66,9 +92,13 @@
             datasets: graphdataset
         },
         options: {
+            responsive: false,
             maintainAspectRatio: false,
             scales: {
                 xAxes: [{
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Date'},
                 type: 'time',
                 distribution: 'linear'
 					}],

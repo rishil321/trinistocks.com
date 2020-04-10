@@ -19,12 +19,6 @@ import traceback
 from _datetime import timedelta
 import pytz
 
-class Covid19CasesTable(tables.Table):
-    class Meta:
-        model = models.Covid19Cases
-        attrs = {"class":"djangotables"}
-        fields = ('date','numtested','numpositive','numdeaths','numrecovered')
-
 class Covid19DailyTable(tables.Table):
     class Meta:
         model = models.Covid19DailyData
@@ -91,11 +85,10 @@ def totals(request):
         # Get the full names for the case types selected
         selectedfieldleftverbosename = models.Covid19Cases._meta.get_field(selectedcasetypeleft).verbose_name
         selectedfieldrightverbosename = models.Covid19Cases._meta.get_field(selectedcasetyperight).verbose_name
-        # Fetch the records from the db
+        # Fetch the selected records from the db
         selectedrecords = models.Covid19Cases.objects.filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).values('date','numtested','numpositive','numdeaths','numrecovered').order_by('date')
-        # Set up our table
-        tabledata = Covid19CasesTable(selectedrecords, order_by=orderby)
-        tabledata.paginate(page=request.GET.get("page", 1), per_page=25)
+        # Set up our summary data
+        latestrecord = models.Covid19Cases.objects.latest('date')
         # Set up our graph
         graphlabels = [obj['date'] for obj in selectedrecords]
         graphdataset = []
@@ -130,11 +123,11 @@ def totals(request):
         'selectedcasetypeleftverbose':selectedfieldleftverbosename,
         'selectedcasetyperightstr':selectedcasetyperight,
         'selectedcasetyperightverbose':selectedfieldrightverbosename,
-        'table':tabledata,
         'enteredstartdate':enteredstartdate,
         'enteredenddate':enteredenddate,
         'graphlabels':graphlabels,
         'graphdataset':graphdataset,
+        'latestrecord':latestrecord,
     }
     return render(request, "covid19/base_totals.html", context)
 
