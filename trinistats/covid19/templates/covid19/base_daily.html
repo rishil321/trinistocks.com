@@ -1,34 +1,85 @@
 {% extends "covid19/base.html" %}
-{% load render_table from django_tables2 %}
 {% load static %}
 
-    {% block navbarside %}
-        <a id="cumulativebutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:totals" %}" onclick="w3_close()">Cumulative</a>
-        <a id="dailybutton" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:daily" %}" onclick="w3_close()">Daily</a>
-    {% endblock %}
+    {% block rightsidebarform %}
+    <form action="{% url 'covid19:daily' %}" method="get">
+    <div >
+        <div class="field">
+            <label for="startdate" class="is-size-5">Start Date</label>
+            <div class="control">
+                <input class="input" type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate">
+            </div>
+        </div>
+        <div class="field">
+            <label for="enddate" class="is-size-5">End Date</label>
+            <div class="control">
+                <input class="input leftrightspace" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate">
+            </div>
+        </div>
+        <div class="field">
+            <label for="selectedcasetype" class="is-size-5">Data</label>
+            <div class="control">
+                <div class="select">
+                    <select id="selectedcasetype" name="selectedcasetype">
+                    {% for casetype in validcasetypes %}
+                        {% if casetype.attname == selectedcasetypestr %}
+                            <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
+                        {% else %}
+                            <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="control has-text-centered">
+            <button style="" class="button is-danger" type="submit">Run Query &nbsp<i class="fa fa-database"></i></button>
+        </div>
+        <br>
+    </form>
+    {% endblock rightsidebarform %}
 
-    {% block navbarinsidetop %}
-        <label for="startdate" class="flexbox-item w3-label1">Start Date:</label>
-        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="flexbox-item w3-date-selector">
-        <label for="enddate" class="flexbox-item w3-label1">End Date:</label>
-        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="flexbox-item w3-date-selector "/>
-        <label for="selectedcasetype" class="flexbox-item w3-label1">Data:</label>
-        <select id="selectedcasetype" name="selectedcasetype" class="flexbox-item w3-select1">
-            {% for casetype in validcasetypes %}
-                    {% if casetype.attname == selectedcasetypestr %}
-                        <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
-                    {% else %}
-                        <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
-                    {% endif %}
-                {% endfor %}
-        </select>
-        <input type="submit" onclick="location.href='{% url 'covid19:daily' %}" value="Query" class="flexbox-item w3-button3"/>
-    {% endblock navbarinsidetop %}
-
-    {% block charttitle %}
-        <h2 style="text-align:center" id="charttitle">Trinidad and Tobago COVID-19 Daily Data</h2>
-    {% endblock %}
-
+    <!--Start main content-->
+    {% block mainblock%}
+    {% if errors != '' %}
+        <p>We encountered an error while displaying this page: {{errors}}
+    {% else %}
+        <br>
+        <h2 style="" id="dailyheader" class="is-size-2 has-text-centered">T&T Covid-19 events yesterday ({{yesterdaydata.date}})</h2>
+        {% block maindiv %}
+        <section style="" class="section" id="mainsection">
+            <div class="container has-text-centered" style="" id="maindiv">
+                <div class="columns is-centered has-text-centered">
+                    <div style="background-color:blue;color:white;" class="column">
+                        <p class="">{{ yesterdaydata.dailytests }} testing samples submitted &ensp;
+                        <i class="fas fa-microscope fa-2x"></i></p>
+                    </div>
+                    <div style="background-color:orange;color:white;" class="column">
+                        <p>{{ yesterdaydata.dailypositive }} persons tested positive &ensp; 
+                        <i class="fas fa-procedures fa-2x"></i></p>
+                    </div>
+                    <div style="background-color:green;color:white;" class="column">
+                        <p>{{ yesterdaydata.dailyrecovered }} person(s) discharged &ensp; 
+                        <i class="fas fa-virus-slash fa-2x"></i></p>
+                    </div>
+                    <div style="background-color:red;color:white;" class="column">
+                        <p>{{ yesterdaydata.dailydeaths }} person(s) died &ensp; 
+                        <i class=" far fa-heart fa-2x"></i></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% block pagetitle %}
+        {% endblock pagetitle %}
+        <!-- Chart -->
+        <div id="chartdiv" style="height:40rem;width:auto;" class="chartdiv">
+        <canvas id="covid19chart">
+            Covid19 Chart
+        </canvas>
+        </div>
+    {% endblock maindiv %}
+    {% endif %}
+    {% endblock mainblock %}
     <!-- END MAIN -->
     
     <!--Javascript-->
@@ -52,6 +103,9 @@
             maintainAspectRatio: false,
             scales: {
                 xAxes: [{
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Date'},
                 type: 'time',
                 distribution: 'linear'
 					}],
@@ -67,23 +121,27 @@
         }
         }
     });
+    //get the div holding the canvas
+    const chartdiv = document.getElementById("chartdiv");
+    //create a resize observer to resize our chart
+    const ro = new ResizeObserver( entries => {
+    for (let entry of entries) {
+        ctx.canvas.width = chartdiv.clientWidth;
+        myChart.resize();
+        myChart.update();
+    }
+    });
+    // Observe one or multiple elements
+    ro.observe(chartdiv);
     </script>
     {% endblock chartjs %}
 
+    {% block highlightpage%}
+    $("#cumulativelink").removeClass("border-red");
+    $("#dailylink").addClass("border-red");
+    {% endblock highlightpage %}
+
     {% block morejs%}
     <script>
-     //set the selected button colors
-    var navtopbardiv = $("#navbartopdiv");
-    var a_links = navtopbardiv.find("a");
-    for (i = 0; i < a_links.length; i++) {
-        if (a_links[i].id != "maincontentbutton")
-            a_links[i].classList.remove("w3-theme-l2");
-    }
-    var sidebar = $("#mySidebar");
-    var a_links = sidebar.find("a");
-    for (i = 0; i < a_links.length; i++) {
-        if (a_links[i].id != "dailybutton")
-            a_links[i].classList.remove("w3-theme-l2");
-    } 
     </script>
     {% endblock morejs%}

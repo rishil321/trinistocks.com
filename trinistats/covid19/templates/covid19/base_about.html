@@ -1,11 +1,7 @@
 {% extends "covid19/base.html" %}
-{% load render_table from django_tables2 %}
 {% load static %}
 
-    {% block navbarside %}
-        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:about" %}" onclick="w3_close()">Page Info</a>
-    {% endblock %}
-    {% block maincontentdiv %}
+    {% block maindiv %}
     <p>
     This small website is being developed by Rishi Latchmepersad
     as a way to build Python, Django and Javascript experience. 
@@ -14,6 +10,9 @@
     <p>Check out my repos at my <a class="a" href="https://github.com/rishil321">Github</a> profile
     or add me on <a class="a" href="https://www.linkedin.com/in/rishi-latchmepersad/">LinkedIn</a>.
     </p>
+    <select>
+    <option>test</option>
+    </select>
 
     <p>Special thanks to the following collaborators:</p>
     <ul>
@@ -28,14 +27,12 @@
     {% endblock %}
     {% block morejs %}
     <script>
-    //close the sidebar
-    w3_close();
-    //set the selected button colors
-    var navtopbardiv = $("#navbartopdiv");
-    var a_links = navtopbardiv.find("a");
-    for (i = 0; i < a_links.length; i++) {
-        if (a_links[i].id != "aboutbutton")
-            a_links[i].classList.remove("w3-theme-l2");
-    } 
+    //disable the sidebar buttons as we don't need them
+    {% block menubuttonsenable %}
+    config-menu-button.disabled = true;
+    {% endblock %}
+    {% block topbarhighlights %}
+    var selectedbuttonid = 'aboutbutton'
+    {% endblock %}
     </script>
     {% endblock%}

@@ -1,27 +1,9 @@
-{% load render_table from django_tables2 %}
 {% load static %}
 <!doctype html>
 <html lang="en">
-{% block head %}
 <head>
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-162313143-1"></script>
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'UA-162313143-1');
-    </script>
-     <!-- Google Ads -->
-    <script data-ad-client="ca-pub-6367544544740471" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-    <!--Error Messages -->
-    {% if errors != "" %}
-    <script type="text/javascript">
-            alert('{{ errors }}');
-    </script>
-    {% endif %}
     <!--Metadata-->
-    <meta charset="utf-8">
+    <meta charset="utf-8"/>
     <meta name="description" content="Data about T&T's Covid-19 cases.">
     <meta name="author" content="Rishi Latchmepersad">
     <!-- Twitter Card data -->
@@ -40,80 +22,88 @@
     <meta property="og:site_name" content="Trinistats:COVID-19" />
     <!--End Metadata-->
     <title>{% block title %}Trinistats | Covid-19{% endblock title %}</title>
-    <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+     <!-- 3rd party CSS files-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="{% static 'covid19/styles.css' %}">
     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+    <!-- Local CSS files-->
+    <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'covid19/styles.css' %}">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-162313143-1"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-162313143-1');
+    </script>
+     <!-- Google Ads -->
+    <script data-ad-client="ca-pub-6367544544740471" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <!--Error Messages -->
+    {% if errors != "" %}
+    <script type="text/javascript">
+            alert('{{ errors }}');
+    </script>
+    {% endif %}
 </head>
-{% endblock head %}
 <body id="mainbody">
-     <!-- Top Navbar -->
-        <div class="w3-top w3-bar w3-theme-d5 topbar" id="navbartopdiv">
-            <a id="backbutton" style="" class="w3-bar-item w3-button w3-left w3-hover-white" href="{% url "central:landingpage" %}" title="Back">
-            <i class="far fa-arrow-alt-circle-left fa-x"></i></a>
-            <a id="leftmenubutton" class="w3-bar-item w3-button w3-hover-white" href="#" title="Navigation Menu"  onclick="w3_open_or_close_left()">
-            <i class="fas fa-bars fa-1x"></i></a>
-            {% block navbartopbutton1 %}
-            <a id="maincontentbutton" style="flex-grow:3;" href="{% url "covid19:totals" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="Main COVID19 stats/data">Main</a>
-            {% endblock %}
-            {% block navbartopbutton2 %}
-            <a id="aboutbutton" style="flex-grow:3;" href="{% url "covid19:about" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" title="About this page">About</a>
-            {% endblock %}
-            <a id="rightmenubutton" class="w3-bar-item w3-button w3-hover-white" style="" href="#" title="Configuration Menu"  onclick="w3_open_or_close_right()">
-            <i class="fas fa-sliders-h fa-1x"></i></a>
+    <!-- Top Navbar -->
+    <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <div class="navbar-item">
+            <img src="{%  static 'central/tntflag.png' %}" class="iconimg">
+            </div>
+            <a role="button" class="navbar-burger burger has-text-white" aria-label="navbar-menu" aria-expanded="false" data-target="viewsnavbar">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            </a>
         </div>
-
-    <!-- Overlay effect when opening sidebar -->
-    <div class="w3-overlay" onclick="w3_close_left();w3_close_right();" style="cursor:pointer" title="Close side menu" id="myOverlay"></div>
-
-    <!-- Left Sidebar -->
-    <nav style="" class="w3-left-sidebar w3-collapse w3-theme-d5 w3-animate-left" id="leftsidebar">
-        <a href="#" onclick="w3_open_or_close_left()" class="w3-hover-white" title="Close Menu">
-        <i style="" class="fas fa-angle-left fa-2x"></i></a>
-        <a id="cumulativebutton" class=" w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:totals" %}" onclick="w3_close()">Cumulative</a>
-        <a id="dailybutton" class=" w3-button w3-theme-l2 w3-hover-white" href="{% url "covid19:daily" %}" onclick="w3_close()">Daily</a>
-    </nav>
-
-    <!-- Right Sidebar -->
-    <nav style="" class="w3-right-sidebar w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-right" id="rightsidebar">
-        <a href="#" onclick="w3_open_or_close_right()" class="menuclosebutton w3-hover-white" title="Close Menu">
-        <i style="float:left;"class="fas fa-angle-right w3-padding-large"></i></a>
-        <h4 class="navbar-header">Configuration</h4>
-        {% block rightsidebarform %}
-        <form method="get">
-        <div class="flexbox">
-        </div>
-        </form>
-        {% endblock rightsidebarform %}
-    </nav>
-    
-
-    {% block mainblock %}
-    <!-- Main content: shift it to the right when the sidebar is visible -->
-    <div class="w3-main" style="" id="maindiv">
-        <div class="w3-row" style="margin-top:3.03em;">
-            <div class="w3-container maincontentcss" id="maincontentdiv">
-            {% block maincontentdiv %}
-                {% block pagetitle %}
-                <h2 style="text-align:center" id="charttitle">{{selectedstockname}}</h2>
-                {% endblock %}
-                <!-- Chart -->
-                <div id="chartdiv" class="chartdiv">
-                <canvas id="covid19chart">
-                    Covid19 Chart
-                </canvas>
-                </div>
-                {% render_table table %}
-            {% endblock %}
+        <div id="viewsnavbar" class="navbar-menu is-centered left-side-menu">
+            <div class="navbar-start">
+                <a id="homelink" class="navbar-item" href="{% url "central:landingpage" %}">
+                    Home
+                </a>
+                <a id="cumulativelink" class="navbar-item border-red" href="{% url "covid19:totals" %}">
+                    Cumulative
+                </a>
+                <a id="dailylink" class="navbar-item" href="{% url "covid19:daily" %}">
+                    Daily
+                </a>
+                <a id="aboutlink" class="navbar-item" href="{% url "covid19:about" %}">
+                    About
+                </a>
+            </div>
+            <div class="navbar-end ">
+            <a role="button" class="navbar-item" id="config-menu-button">
+            <i class="fas fa-cog fa-2x"></i>&nbsp Configure
+            </a>
             </div>
         </div>
-    </div>
-    <!-- END MAIN -->
-    {% endblock mainblock %}
+    </nav>
+    <!--Right side menu-->
+    <aside class="has-text-centered menu is-hidden right-side-menu" id="config-menu">
+    <p class="is-size-4">Configuration Options</p>
+        {% block rightsidebarform %}
+        {% endblock rightsidebarform %}
+    </aside>
     
+    <!-- Main content-->
+    {% block mainblock %}
+    <section style="" class="section" id="mainsection">
+        <div class="container has-text-centered" style="" id="maindiv">
+        {% block maindiv %}
+        {% block pagetitle %}
+        <h2 class="is-size-3" style="" id="charttitle">
+        T&T Covid-19 Data
+        </h2>
+        {% endblock pagetitle %}
+        {% endblock maindiv %}
+        </div>
+    </section>
+    {% endblock mainblock %}
+    <!-- END MAIN -->
+
     <!--Javascript-->
     <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
@@ -143,10 +133,7 @@
         options: {
         }
     });
-    </script>
-    {% endblock chartjs %}
-    <script>
-    //get the div holding the canvas
+     //get the div holding the canvas
     const chartdiv = document.getElementById("chartdiv");
     //create a resize observer to resize our chart
     const ro = new ResizeObserver( entries => {
@@ -158,71 +145,25 @@
     });
     // Observe one or multiple elements
     ro.observe(chartdiv);
-    // Get the DIV with overlay effect
-    var overlayBg = document.getElementById("myOverlay");
-    // get the main div
-    var maindiv = document.getElementById("maindiv");
-    //get the div for the top buttons
-    var leftmenubutton = document.getElementById("leftmenubutton");
-    var maincontentbutton = document.getElementById("maincontentbutton");
-    var aboutbutton = document.getElementById("aboutbutton");
-    // Toggle between showing and hiding the left sidebar, and add overlay effect
-    function w3_open_or_close_left() {
-        if (leftsidebar.style.display === 'flex') {
-            leftsidebar.style.display = 'none';
-            maindiv.style.marginLeft = "0em";
-            leftmenubutton.classList.remove("w3-theme-l2");
-            overlayBg.style.display = "none";
-        }
-        else {
-            leftsidebar.style.display = 'flex';
-            maindiv.style.marginLeft = "13.1em";
-            leftmenubutton.classList.add("w3-theme-l2");
-            overlayBg.style.display = "flex";
-        }
-    }
-    function w3_close_left() {
-        leftsidebar.style.display = 'none';
-        maindiv.style.marginLeft = "0em";
-        leftmenubutton.classList.remove("w3-theme-l2");
-        overlayBg.style.display = "none";
-    }
-    // Toggle between showing and hiding the right sidebar, and add overlay effect
-    function w3_open_or_close_right() {
-        if (rightsidebar.style.display === 'flex') {
-            rightsidebar.style.display = 'none';
-            overlayBg.style.display = "none";
-            maindiv.style.marginRight = "0em";
-            rightmenubutton.classList.remove("w3-theme-l2");
-        }
-        else {
-            rightsidebar.style.display = 'flex';
-            overlayBg.style.display = "flex";
-            maindiv.style.marginRight = "13.1em";
-            rightmenubutton.classList.add("w3-theme-l2");
-        }
-    }
-    function w3_close_right() {
-        rightsidebar.style.display = 'none';
-        overlayBg.style.display = "none";
-        maindiv.style.marginRight = "0em";
-        rightmenubutton.classList.remove("w3-theme-l2");
-    }
-    $(function() {      
-      //Keep track of how many swipes
-      var count=0;
-      //Enable swiping...
-      $("#mainbody").swipe( {
-        //Single swipe handler for left swipes
-        swipeLeft:function(event, direction, distance, duration, fingerCount) {
-          w3_open_or_close_right();  
-        },
-        swipeRight:function(event, direction, distance, duration, fingerCount) {
-          w3_open_or_close_left();  
-        },
-        //Default is 75px, set to 0 for demo so any distance triggers swipe
-        threshold:25
-      });
+    </script>
+    {% endblock chartjs %}
+    <script>
+    $(document).ready(function() {
+    //highlight the current page
+    {% block highlightpage%}
+    {% endblock highlightpage %}
+    // Check for click events on the navbar burger icon
+    $(".navbar-burger").click(function() {
+        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+        $(".navbar-burger").toggleClass("is-active is-pulled-left");
+        $(".navbar-menu").toggleClass("is-active is-pulled-left");
+    });
+    // Check for click events on the navbar config menu icon
+    $("#config-menu-button").click(function() {
+        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+        $("#config-menu").toggleClass("is-hidden");
+        $("#config-menu-button").toggleClass("is-active");
+    });
     });
     </script>
     {% block morejs%}
