@@ -30,12 +30,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import os
+from pathlib import Path
+import csv
+import collections
 
 # Put your constants here. These should be named in CAPS.
 PAHO_RAW_REPORTS_DIR_NAME = "paho_raw_reports"
+PAHO_CSV_REPORTS_DIR_NAME = "paho_csv_reports"
 
 # Put your global variables here.
 paho_raw_reports_dir = None
+paho_csv_reports_dir = None
 
 # Put your class definitions here. These should use the CapWords convention.
 
@@ -43,9 +48,15 @@ paho_raw_reports_dir = None
 def parsepdfs():
     """ Go through each pdf in the /pahoreports folder next to this script and check which ones have 
     dates that are not in our database. For each new pdf, get the pandas dataframe and 
-    create a list of dictionaries containing the useful data about each PAHO country"""
+    create a list of dictionaries containing the useful data about each PAHO country"
+    
+    :returns: A list of sublists, with each sublist containing all record from a single parsed pdf
+    :raises : raises an exception
+    """
     # get all of the pdf files in the dir
     pahopdffiles = [f for f in listdir(paho_raw_reports_dir) if isfile(join(paho_raw_reports_dir, f))]
+    # set up a list to hold the data for all pdf files
+    all_pdf_data = []
     # read in each pdf file
     for pahopdffile in pahopdffiles:
         logging.info("Now attempting to read in: "+pahopdffile)
@@ -69,8 +80,13 @@ def parsepdfs():
         # get the row index for the last country
         lastcountryrowindex = pdfdataframe[1][pdfdataframe[1] == 'Total'].index[0]-1
         for rowindex,rowdata in pdfdataframe.iterrows():
-            # set up the dict to store each row of data
-            reportdict = {}
+            # set up variables to hold the data for the dict
+            country_or_territory_name = None
+            confirmed_cases = None
+            probable_cases = None
+            probable_deaths = None
+            recovered = None
+            percentage_increase_confirmed = None
             if numcolumns == 6:
                 # this is the old format that they started with
                 if rowindex == 0:
@@ -89,47 +105,43 @@ def parsepdfs():
                         subregion = rowdata[0]
                     if rowdata[1] == "Subtotal":
                         # on the subtotal rows, store the name for the entire subregion
-                        reportdict['country_or_territory_name'] = subregion
+                        country_or_territory_name = subregion
                     elif rowdata[1] == "Total":
                         # on the last row, store the name All Americas to represent the total
-                        reportdict['country_or_territory_name'] = "All Americas"
+                        country_or_territory_name = "All Americas"
                     else:
                         # else store the name for the specific country
                         countryname = rowdata[1]
-                        reportdict['country_or_territory_name'] = countryname
+                        country_or_territory_name = countryname
                     # for each of the other columns, check if empty, else store the data present in the cell
                     if rowdata[2] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
-                        confirmedcases = None
+                        confirmed_cases = None
                     else:
                         # remove the comma and parse to an int
-                        confirmedcases = int(rowdata[2].replace(",",""))
-                    reportdict['confirmed_cases'] = confirmedcases
+                        confirmed_cases = int(rowdata[2].replace(",",""))
                     if rowdata[3] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         probable_cases = None
                     else:
                         # remove the comma and parse to an int
                         probable_cases = int(rowdata[3].replace(",",""))
-                    reportdict['probable_cases'] = probable_cases
                     if rowdata[4] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         confirmed_deaths = None
                     else:
                         # remove the comma and parse to an int
                         confirmed_deaths = int(rowdata[4].replace(",",""))
-                    reportdict['confirmed_deaths'] = confirmed_deaths
                     if rowdata[5] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         transmission_type = None
                     else:
                         # store this string
                         transmission_type = rowdata[5]
-                    reportdict['transmission_type'] = transmission_type
                     # store null data for all other fields that were not present in the old reports
-                    reportdict['probable_deaths'] = None
-                    reportdict['recovered'] = None
-                    reportdict['percentage_increase_confirmed'] = None
+                    probable_deaths = None
+                    recovered = None
+                    percentage_increase_confirmed = None
             elif numcolumns == 9:
                 # this is the new format for the report
                 if rowindex == 0:
@@ -148,14 +160,14 @@ def parsepdfs():
                         subregion = rowdata[0]
                     if rowdata[1] == "Subtotal":
                         # on the subtotal rows, store the name for the entire subregion
-                        reportdict['country_or_territory_name'] = subregion
+                        country_or_territory_name = subregion
                     elif rowdata[1] == "Total":
                         # on the last row, store the name All Americas to represent the total
-                        reportdict['country_or_territory_name'] = "All Americas"
+                        country_or_territory_name = "All Americas"
                     else:
                         # else store the name for the specific country
                         country_name = rowdata[1]
-                        reportdict['country_or_territory_name'] = country_name
+                        country_or_territory_name = country_name
                     # for each of the other columns, check if empty, else store the data present in the cell
                     if rowdata[2] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
@@ -164,75 +176,84 @@ def parsepdfs():
                         # there is a report where this column was merged for some reason
                         if "\n" in rowdata[2]:
                             split_numbers = rowdata[2].split("\n")
-                            reportdict['confirmed_cases'] = int(split_numbers[0].replace(",",""))
-                            reportdict['probable_cases'] = int(split_numbers[1].replace(",",""))
-                            reportdict['probable_deaths'] = int(split_numbers[2].replace(",",""))
-                            reportdict['probable_deaths'] = int(split_numbers[3].replace(",",""))
-                            reportdict['recovered'] = None
-                            reportdict['percentage_increase_confirmed'] = float(rowdata[7].replace("%",""))
-                            reportdict['transmission_type'] = rowdata[8]
+                            confirmed_cases = int(split_numbers[0].replace(",",""))
+                            probable_cases = int(split_numbers[1].replace(",",""))
+                            confirmed_deaths = int(split_numbers[2].replace(",",""))
+                            probable_deaths = int(split_numbers[3].replace(",",""))
+                            recovered = None
+                            percentage_increase_confirmed = float(rowdata[7].replace("%",""))
+                            transmission_type = rowdata[8]
+                            # continue with the next row for this broken report
                             continue
                         else:
                             # remove the comma and parse to an int
                             confirmed_cases = int(rowdata[2].replace(",",""))
-                    reportdict['confirmed_cases'] = confirmed_cases
                     if rowdata[3] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         probable_cases = None
                     else:
                         # remove the comma and parse to an int
                         probable_cases = int(rowdata[3].replace(",",""))
-                    reportdict['probable_cases'] = probable_cases
                     if rowdata[4] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         confirmed_deaths = None
                     else:
                         # remove the comma and parse to an int
                         confirmed_deaths = int(rowdata[4].replace(",",""))
-                    reportdict['confirmed_deaths'] = confirmed_deaths
                     if rowdata[5] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         probable_deaths = None
                     else:
                         # store this string
                         probable_deaths = rowdata[5]
-                    reportdict['probable_deaths'] = probable_deaths
                     if rowdata[6] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         recovered = None
                     else:
                         # store this string
                         recovered = int(rowdata[6].replace(",",""))
-                    reportdict['recovered'] = recovered
                     if rowdata[7] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         percentage_increase_confirmed = None
                     else:
                         # store this string
                         percentage_increase_confirmed = float(rowdata[7].replace("%",""))
-                    reportdict['percentage_increase_confirmed'] = percentage_increase_confirmed
                     if rowdata[8] == "":
                         # none is used to replace NULL in the db. This represents an unknown quantity
                         transmission_type = None
                     else:
                         # store this string
                         transmission_type = rowdata[8]
-                    reportdict['transmission_type'] = transmission_type
             else:
                 logging.error("Unrecognised number of columns in the pdf file. Skipping.")
-            # add the dict that we built to the list if it is not empty
-            if reportdict:
-                # append the date to every entry
+            # if we were at least able to scrape the country or territory name, create a dict and add it to the list
+            if country_or_territory_name:
+                # set up the dict to store each row of data
+                reportdict = collections.OrderedDict()
+                # add the values to the dict in the order that we want for the report
                 reportdict['date'] = date
+                reportdict['country_or_territory_name'] = country_or_territory_name
+                reportdict['confirmed_cases'] = confirmed_cases
+                reportdict['probable_cases'] = probable_cases
+                reportdict['confirmed_deaths'] = confirmed_deaths
+                reportdict['probable_deaths'] = probable_deaths
+                reportdict['recovered'] = recovered
+                reportdict['percentage_increase_confirmed'] = percentage_increase_confirmed
+                reportdict['transmission_type'] = transmission_type
+                # now add this dict to our list for this report/pdf
                 reportdata.append(reportdict)
+        # once we are done adding all data for this pdf, all this pdf report to the list of all reports
+        all_pdf_data.append(reportdata)
     logging.info("Completed parsing all pdfs in folder.")
-    return reportdata
+    return all_pdf_data
             
 def downloadpdfs():
     """Use selenium and the firefox browser to download all COVID19 reports from the 
     PAHO website"""
-    # remove all current pdfs in the download folder
     try:
+        # create the download folder if it does not exist already
+        Path(paho_raw_reports_dir).mkdir(parents=True, exist_ok=True)
+        # remove all current pdfs in the download folder
         filelist = [ f for f in os.listdir(paho_raw_reports_dir) if f.endswith(".pdf") ]
         for f in filelist:
             os.remove(os.path.join(paho_raw_reports_dir, f))
@@ -303,8 +324,39 @@ def downloadpdfs():
                 logging.info("Completed downloading of all COVID19 pdfs from PAHO website.")
                 return 0
                 
-def createcsvs(report_data):
-    pass
+def createcsvs(pdf_reports_data):
+    """Take in a list of sublists and create csvs for each sublist
+    
+    :param pdf_reports_data: A list of sublists, with each sublist representing a pdf from PAHO
+    :returns: 0 if successful. Also creates csv files at the paho_csv_reports_dir
+    :raises : raises an exception
+    """
+    try:
+        # create the csv output dir if it does not exist
+        Path(paho_csv_reports_dir).mkdir(parents=True, exist_ok=True)
+        for parsed_pdf_sublist in pdf_reports_data:
+            # for each sublist, check if a csv file has been created for this date already
+            csv_filename = "paho_covid19_report_"+parsed_pdf_sublist[0]['date'].strftime("%d-%m-%Y")+".csv"
+            csv_full_path = os.path.join(paho_csv_reports_dir, csv_filename)
+            # check if this csv file already exists
+            try:
+                with open (csv_full_path, 'x') as csv_file:
+                    # if we don't throw an error, the file does not exist
+                    # so write the pdf data to this new file
+                    # create a pandas dataframe from the sublist
+                    pd_dataframe = pd.DataFrame(parsed_pdf_sublist)
+                    # write the data in the dataframe to the csv
+                    pd_dataframe.to_csv(csv_file,index=False,header=True)
+            except OSError:
+                # error thrown if file exists
+                # if this file already exists, we don't need to recreate as the reports are immutable
+                pass
+    except:
+        logging.error("Unable to create csvs.")
+        raise
+    else:
+        logging.info("Successfully created csvs from PAHO pdfs.")
+        return 0
 
 def main():
     """Download all pdf reports from PAHO on COVID19, parse them to get the useful data
@@ -315,14 +367,18 @@ def main():
                                 logginglevel='logging.INFO', stdoutenabled=True)
         if logsetup == 0:
             logging.info("Logging set up successfully.")
-        # construct the full path to the folder containing the pdf files
+        # construct the full path to the folders containing the pdf files and the output csv files
         global paho_raw_reports_dir
+        global paho_csv_reports_dir
         currentdir = os.path.dirname(os.path.realpath(__file__))
         paho_raw_reports_dir = os.path.join(currentdir,PAHO_RAW_REPORTS_DIR_NAME)
+        paho_csv_reports_dir = os.path.join(currentdir,PAHO_CSV_REPORTS_DIR_NAME)
         # download all pdfs from the PAHO website
         # downloadpdfs()
-        # parse all the pdfs in the /pahoreports dir
-        parsepdfs()
+        # parse all the pdfs in the paho_raw_reports_dir 
+        pdf_reports_data = parsepdfs()
+        # create csvs in the output folder using the parsed content
+        createcsvs(pdf_reports_data)
     except:
         traceback.print_exc()
         sys.exit(1)

@@ -1,0 +1,60 @@
+date,country_or_territory_name,confirmed_cases,probable_cases,confirmed_deaths,probable_deaths,recovered,percentage_increase_confirmed,transmission_type
+2020-03-23,Canada,1430.0,,20.0,,,,Local transmission
+2020-03-23,Mexico,316.0,793.0,2.0,,,,Local transmission
+2020-03-23,United States of America (the),33337.0,,415.0,,,,Community transmission
+2020-03-23,North America,35083.0,793.0,437.0,,,,
+2020-03-23,Belize,,,,,,,
+2020-03-23,Costa Rica,134.0,34.0,2.0,,,,Local transmission
+2020-03-23,El Salvador,1.0,,,,,,Imported cases only
+2020-03-23,Guatemala,19.0,45.0,1.0,,,,Local transmission
+2020-03-23,Honduras,27.0,,,,,,Local transmission
+2020-03-23,Nicaragua,2.0,,,,,,Imported cases only
+2020-03-23,Panama,313.0,,3.0,,,,Local transmission
+2020-03-23,Central America,496.0,79.0,6.0,,,,
+2020-03-23,Cuba,40.0,523.0,1.0,,,,Local transmission
+2020-03-23,Dominican Republic (the),245.0,,3.0,,,,Local transmission
+2020-03-23,Puerto Rico,31.0,71.0,2.0,,,,Imported cases only
+2020-03-23,Latin Caribbean,316.0,594.0,6.0,,,,
+2020-03-23,Bolivia,27.0,30.0,0.0,,,,Local transmission
+2020-03-23,Colombia,277.0,184.0,3.0,,,,Local transmission
+2020-03-23,Ecuador,790.0,783.0,15.0,,,,Local transmission
+2020-03-23,Peru,363.0,,2.0,,,,Local transmission
+2020-03-23,Venezuela (Bolivarian Republic of),70.0,,0.0,,,,Imported cases only
+2020-03-23,Andean,1527.0,997.0,20.0,,,,
+2020-03-23,Argentina,266.0,2.0,4.0,,,,Local transmission
+2020-03-23,Brazil,1546.0,11278.0,25.0,,,,Community transmission
+2020-03-23,Chile,746.0,,1.0,,,,Local transmission
+2020-03-23,Paraguay,22.0,,1.0,,,,Local transmission
+2020-03-23,Uruguay,158.0,392.0,,,,,Local transmission
+2020-03-23,South Cone,2738.0,11672.0,31.0,,,,
+2020-03-23,Anguilla,,,,,,,
+2020-03-23,Antigua and Barbuda,1.0,0.0,0.0,,,,Imported cases only
+2020-03-23,Aruba,9.0,,,,,,Local Transmission
+2020-03-23,Bahamas (the),4.0,,,,,,Local Transmission
+2020-03-23,Barbados,17.0,,,,,,Local Transmission
+2020-03-23,Bermuda,6.0,,,,,,Local Transmission
+2020-03-23,"Bonaire, Saint Eustatius and Saba",,,,,,,
+2020-03-23,Cayman Islands,3.0,,1.0,,,,Imported cases only
+2020-03-23,Curacao,4.0,,1.0,,,,Imported cases only
+2020-03-23,Dominica,1.0,,,,,,
+2020-03-23,French Guiana,19.0,,,,,,?
+2020-03-23,Grenada,1.0,,,,,,Imported cases only
+2020-03-23,Guadeloupe,58.0,,,,,,Local transmission
+2020-03-23,Guyana,5.0,,1.0,,,,Local transmission
+2020-03-23,Haiti,5.0,,,,,,?
+2020-03-23,Jamaica,19.0,1.0,1.0,,,,Local transmission
+2020-03-23,Martinique,44.0,,,,,,Local transmission
+2020-03-23,Montserrat,1.0,8.0,,,,,Imported cases only
+2020-03-23,Saint Barthelemy,3.0,,,,,,Local transmission
+2020-03-23,Saint Kitts and Nevis,,,,,,,
+2020-03-23,Saint Lucia,2.0,,,,,,Imported cases only
+2020-03-23,Saint Martin,6.0,,,,,,Local transmission
+2020-03-23,Saint Vincent and the Grenadines,1.0,,,,,,Imported cases only
+2020-03-23,Sint Maarten,2.0,1.0,,,,,Imported cases only
+2020-03-23,Suriname,2.0,,,,,,Imported cases only
+2020-03-23,Trinidad and Tobago,50.0,,,,,,Imported cases only
+2020-03-23,Turks and Caicos,1.0,8.0,0.0,,,,?
+2020-03-23,Virgin Islands (UK),,,,,,,
+2020-03-23,Virgin Islands (US),17.0,,,,,,Local transmission
+2020-03-23,Non-Latin Caribbean,281.0,18.0,4.0,,,,
+2020-03-23,All Americas,40441.0,14153.0,504.0,,,,

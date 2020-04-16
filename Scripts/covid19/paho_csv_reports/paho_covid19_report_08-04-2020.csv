@@ -1,0 +1,61 @@
+date,country_or_territory_name,confirmed_cases,probable_cases,confirmed_deaths,probable_deaths,recovered,percentage_increase_confirmed,transmission_type
+2020-04-08,Canada,18433,14.0,401.0,,3794.0,8.0,Community transmission
+2020-04-08,Mexico,2785,,141.0,,,14.0,Community transmission
+2020-04-08,United States of America (the),395030,,12740.0,,17988.0,9.0,Community transmission
+2020-04-08,North America,416248,14.0,13282.0,0,21782.0,9.0,
+2020-04-08,Belize,8,,1.0,,,14.0,Sporadic cases
+2020-04-08,Costa Rica,483,,2.0,,24.0,3.0,Clusters of cases
+2020-04-08,El Salvador,93,,5.0,,9.0,19.0,Clusters of cases
+2020-04-08,Guatemala,87,,3.0,,17.0,13.0,Clusters of cases
+2020-04-08,Honduras,312,,22.0,,6.0,2.0,Clusters of cases
+2020-04-08,Nicaragua,6,,1.0,,2.0,0.0,Undetermined
+2020-04-08,Panama,2249,,59.0,,16.0,7.0,Community transmission
+2020-04-08,Central America,3238,0.0,93.0,0,74.0,7.0,
+2020-04-08,Argentina,1715,,60.0,,338.0,5.0,Community transmission
+2020-04-08,Bolivia,210,,15.0,,2.0,8.0,Clusters of cases
+2020-04-08,Brazil,13717,,667.0,,,14.0,Community transmission
+2020-04-08,Chile,5546,,48.0,,1155.0,8.0,Community transmission
+2020-04-08,Colombia,1780,,50.0,,100.0,13.0,Community transmission
+2020-04-08,Ecuador**,4450,,242.0,240,140.0,11.0,Community transmission
+2020-04-08,Paraguay,119,,5.0,,15.0,3.0,Clusters of cases
+2020-04-08,Peru,2954,,107.0,,989.0,15.0,Community transmission
+2020-04-08,Uruguay,424,,7.0,,150.0,2.0,Clusters of cases
+2020-04-08,Venezuela (Bolivarian Republic of),166,,7.0,,65.0,1.0,Clusters of cases
+2020-04-08,South America,31081,0.0,1208.0,240,2954.0,12.0,
+2020-04-08,Anguilla,3,,,,,0.0,Sporadic cases
+2020-04-08,Antigua and Barbuda,19,,2.0,,,27.0,Clusters of cases
+2020-04-08,Aruba,74,,,,14.0,4.0,Clusters of cases
+2020-04-08,Bahamas (the),36,,6.0,,5.0,9.0,Clusters of cases
+2020-04-08,Barbados,63,,3.0,,6.0,5.0,Clusters of cases
+2020-04-08,Bermuda,39,,2.0,,21.0,0.0,Clusters of cases
+2020-04-08,"Bonaire, Sint Eustatius, and Saba",2,,,,,0.0,Sporadic cases
+2020-04-08,Cayman Islands,45,,2.0,,6.0,15.0,Clusters of cases
+2020-04-08,Cuba,457,,12.0,,27.0,15.0,Clusters of cases
+2020-04-08,Curacao,14,,1.0,,7.0,8.0,Sporadic cases
+2020-04-08,Dominica,15,,,,1.0,0.0,Clusters of cases
+2020-04-08,Dominican Republic (the),1956,,98.0,,36.0,0.0,Community transmission
+2020-04-08,Falkland Islands (the) [Malvinas],5,,,,1.0,150.0,Sporadic cases
+2020-04-08,French Guiana,77,,,,34.0,7.0,Clusters of cases
+2020-04-08,Grenada,12,,,,,0.0,Clusters of cases
+2020-04-08,Guadeloupe,139,,8.0,,41.0,0.0,Clusters of cases
+2020-04-08,Guyana,33,,5.0,,8.0,6.0,Clusters of cases
+2020-04-08,Haiti,27,,1.0,,,8.0,Clusters of cases
+2020-04-08,Jamaica,63,,3.0,,10.0,7.0,Clusters of cases
+2020-04-08,Martinique,152,,4.0,,50.0,1.0,Clusters of cases
+2020-04-08,Montserrat,8,,,,,33.0,Sporadic cases
+2020-04-08,Puerto Rico,620,,24.0,,,8.0,Clusters of cases
+2020-04-08,Saint Barthelemy,6,,,,4.0,0.0,Sporadic cases
+2020-04-08,Saint Kitts and Nevis,11,,,,,10.0,Sporadic cases
+2020-04-08,Saint Lucia,14,,,,,0.0,Sporadic cases
+2020-04-08,Saint Martin,31,,2.0,,11.0,0.0,Sporadic cases
+2020-04-08,Saint Pierre and Miquelon,1,,,,,0.0,Sporadic cases
+2020-04-08,Saint Vincent and the Grenadines,8,,,,1.0,14.0,Sporadic cases
+2020-04-08,Sint Maarten,40,,8.0,,1.0,0.0,Sporadic cases
+2020-04-08,Suriname,10,,1.0,,3.0,0.0,Sporadic cases
+2020-04-08,Trinidad and Tobago,107,,8.0,,1.0,1.0,Clusters of cases
+2020-04-08,Turks and Caicos,8,,1.0,,,0.0,Sporadic cases
+2020-04-08,Virgin Islands (UK),3,,,,,0.0,Sporadic cases
+2020-04-08,Virgin Islands (US),45,,1.0,,39.0,5.0,Clusters of cases
+2020-04-08,"Caribbean and Atlantic Ocean 
+Islands",4143,0.0,192.0,0,327.0,4.0,
+2020-04-08,All Americas,454710,14.0,14775.0,240,25137.0,9.0,

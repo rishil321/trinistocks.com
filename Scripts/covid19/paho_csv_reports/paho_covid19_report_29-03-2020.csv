@@ -1,0 +1,59 @@
+date,country_or_territory_name,confirmed_cases,probable_cases,confirmed_deaths,probable_deaths,recovered,percentage_increase_confirmed,transmission_type
+2020-03-29,Canada,5655.0,,61.0,,,,Community transmission
+2020-03-29,Mexico,848.0,2623.0,16.0,,,,Community transmission
+2020-03-29,United States of America (the),122653.0,,2112.0,,,,Community transmission
+2020-03-29,North America,129156.0,2623.0,2189.0,,,,
+2020-03-29,Belize,2.0,,,,,,Sporadic cases
+2020-03-29,Costa Rica,295.0,34.0,2.0,,,,Clusters of cases
+2020-03-29,El Salvador,24.0,,,,,,Sporadic cases
+2020-03-29,Guatemala,34.0,45.0,1.0,,,,Clusters of cases
+2020-03-29,Honduras,110.0,,2.0,,,,Clusters of cases
+2020-03-29,Nicaragua,4.0,,1.0,,,,Sporadic cases
+2020-03-29,Panama,901.0,,17.0,,,,Community transmission
+2020-03-29,Central America,1370.0,79.0,23.0,,,,
+2020-03-29,Argentina,745.0,2.0,19.0,,,,Clusters of cases
+2020-03-29,Bolivia,74.0,16.0,,,,,Clusters of cases
+2020-03-29,Brazil,3904.0,11278.0,114.0,,,,Community transmission
+2020-03-29,Chile,1909.0,,6.0,,,,Community transmission
+2020-03-29,Colombia,608.0,184.0,6.0,,,,Clusters of cases
+2020-03-29,Ecuador,1835.0,2680.0,48.0,,,,Community transmission
+2020-03-29,Paraguay,59.0,,3.0,,,,Clusters of cases
+2020-03-29,Peru,671.0,,11.0,,,,Community transmission
+2020-03-29,Uruguay,303.0,,,,,,Clusters of cases
+2020-03-29,Venezuela (Bolivarian Republic of),113.0,,2.0,,,,Clusters of cases
+2020-03-29,South America,10221.0,14160.0,209.0,,,,
+2020-03-29,Anguilla,2.0,,,,,,Sporadic cases
+2020-03-29,Antigua and Barbuda,7.0,,,,,,Sporadic cases
+2020-03-29,Aruba,46.0,,,,,,
+2020-03-29,Bahamas (the),10.0,,,,,,Sporadic cases
+2020-03-29,Barbados,26.0,,,,,,Clusters of cases
+2020-03-29,Bermuda,22.0,5.0,,,,,Sporadic cases
+2020-03-29,"Bonaire, Sint Eustatius and Saba",,,,,,,No cases
+2020-03-29,Cayman Islands,8.0,,1.0,,,,Sporadic cases
+2020-03-29,Cuba,119.0,523.0,3.0,,,,Clusters of cases
+2020-03-29,Curacao,7.0,,1.0,,,,Sporadic cases
+2020-03-29,Dominica,11.0,,,,,,Clusters of cases
+2020-03-29,Dominican Republic (the),581.0,,20.0,,,,Clusters of cases
+2020-03-29,French Guiana,31.0,,,,,,
+2020-03-29,Grenada,7.0,,,,,,Cluster of cases
+2020-03-29,Guadeloupe,96.0,,2.0,,,,Clusters of cases
+2020-03-29,Guyana,5.0,,1.0,,,,Sporadic cases
+2020-03-29,Haiti,15.0,,,,,,Sporadic cases
+2020-03-29,Jamaica,32.0,,1.0,,,,Clusters of cases
+2020-03-29,Martinique,105.0,,2.0,,,,Clusters of cases
+2020-03-29,Montserrat,5.0,8.0,,,,,Sporadic cases
+2020-03-29,Puerto Rico,64.0,71.0,2.0,,,,Clusters of cases
+2020-03-29,Saint Barthelemy,5.0,,,,,,Sporadic cases
+2020-03-29,Saint Kitts and Nevis,2.0,,,,,,Sporadic cases
+2020-03-29,Saint Lucia,4.0,,,,,,Sporadic cases
+2020-03-29,Saint Martin,6.0,,,,,,Sporadic cases
+2020-03-29,Saint Vincent and the Grenadines,1.0,1.0,,,,,Sporadic cases
+2020-03-29,Sint Maarten,3.0,8.0,,,,,Sporadic cases
+2020-03-29,Suriname,8.0,,,,,,Sporadic cases
+2020-03-29,Trinidad and Tobago,76.0,,3.0,,,,Clusters of cases
+2020-03-29,Turks and Caicos*,4.0,9.0,0.0,,,,Sporadic cases
+2020-03-29,Virgin Islands (UK),2.0,9.0,,,,,Sporadic cases
+2020-03-29,Virgin Islands (US),22.0,,,,,,Clusters of cases
+2020-03-29,"Caribbean and Atlantic Ocean 
+Islands",1332.0,634.0,36.0,,,,
+2020-03-29,All Americas,142079.0,17496.0,2457.0,,,,
