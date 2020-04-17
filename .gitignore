@@ -134,3 +134,4 @@ dmypy.json
 
 # vscode files
 *.vscode
+Scripts/covid19/covid19_data_sources/
