@@ -35,12 +35,13 @@ import csv
 import collections
 import git
 import glob
+import trinistatsconfig
 
 # Put your constants here. These should be named in CAPS.
 PAHO_RAW_REPORTS_DIR_NAME = "paho_raw_reports"
 PAHO_CSV_REPORTS_DIR_NAME = "paho_csv_reports"
 REPO_USERNAME = "rishil321"
-REPO_PERSONAL_ACCESS_TOKEN = "70bc234f1c7a75003200dfb6ec5c49e48582beae"
+REPO_PERSONAL_ACCESS_TOKEN = trinistatsconfig.githubtoken
 REPO_NAME = "covid19_data_sources"
 
 # Put your global variables here.
@@ -338,7 +339,7 @@ def create_csvs(pdf_reports_data):
     """
     try:
         # create the csv output dir if it does not exist
-        Path(paho_csv_reports_dir).mkdir(parents=True, exist_ok=True)
+        Path(paho_csv_reports_dir).mkdir(parents=False, exist_ok=True)
         for parsed_pdf_sublist in pdf_reports_data:
             # for each sublist, check if a csv file has been created for this date already
             csv_filename = "paho_covid19_report_"+parsed_pdf_sublist[0]['date'].strftime("%d-%m-%Y")+".csv"
@@ -366,26 +367,25 @@ def create_csvs(pdf_reports_data):
 def sync_git_repo():
     """Push new local csv files to the covid19_data_sources repo """
     # get the current dir of this script
-    current_dir = os.path.dirname(os.path.realpath(__file__))
+    current_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     repo_path = os.path.join(current_dir,REPO_NAME)
+    logging.info("Repository path is: "+repo_path)
     # check to see if a repo has been init already
     try: 
         repo = git.Repo(repo_path)
         logging.info("Git repo has already been created.")
     except (git.exc.InvalidGitRepositoryError,git.exc.NoSuchPathError):
         logging.info("No git repo has been initialized for this module. Cloning from github.com now.")
-        repo_url = "https://"+REPO_PERSONAL_ACCESS_TOKEN+"@github.com/"+REPO_USERNAME+"/"+REPO_NAME+".git"
+        repo_url = "https://"+REPO_USERNAME+":"+REPO_PERSONAL_ACCESS_TOKEN+"@github.com/"+REPO_USERNAME+"/"+REPO_NAME+".git"
         git.Repo.clone_from(repo_url,repo_path)
-        logging.info("Repo "+repo_url+" cloned successfully.")
+        logging.info("Repo cloned successfully.")
         repo = git.Repo(repo_path)
     # now we have a valid repo created 
     # pull the latest data from the repo
     origin = repo.remotes.origin
     origin.pull()
     # create the csv output dir if it does not exist
-    Path(paho_csv_reports_dir).mkdir(parents=True, exist_ok=True)
-    # change the working dir to the csv dir 
-    os.chdir(paho_csv_reports_dir)
+    Path(paho_csv_reports_dir).mkdir(parents=False, exist_ok=True)
     # get all csv files in this dir
     all_paho_csv_files = glob.glob(paho_csv_reports_dir+os.path.sep+"*.csv")
     # add all files in this dir to the repo index
