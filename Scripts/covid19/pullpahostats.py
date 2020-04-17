@@ -33,10 +33,15 @@ import os
 from pathlib import Path
 import csv
 import collections
+import git
+import glob
 
 # Put your constants here. These should be named in CAPS.
 PAHO_RAW_REPORTS_DIR_NAME = "paho_raw_reports"
 PAHO_CSV_REPORTS_DIR_NAME = "paho_csv_reports"
+REPO_USERNAME = "rishil321"
+REPO_PERSONAL_ACCESS_TOKEN = "70bc234f1c7a75003200dfb6ec5c49e48582beae"
+REPO_NAME = "covid19_data_sources"
 
 # Put your global variables here.
 paho_raw_reports_dir = None
@@ -45,7 +50,7 @@ paho_csv_reports_dir = None
 # Put your class definitions here. These should use the CapWords convention.
 
 # Put your function definitions here. These should be lowercase, separated by underscores.
-def parsepdfs():
+def parse_pdfs():
     """ Go through each pdf in the /pahoreports folder next to this script and check which ones have 
     dates that are not in our database. For each new pdf, get the pandas dataframe and 
     create a list of dictionaries containing the useful data about each PAHO country"
@@ -247,7 +252,7 @@ def parsepdfs():
     logging.info("Completed parsing all pdfs in folder.")
     return all_pdf_data
             
-def downloadpdfs():
+def download_pdfs():
     """Use selenium and the firefox browser to download all COVID19 reports from the 
     PAHO website"""
     try:
@@ -324,7 +329,7 @@ def downloadpdfs():
                 logging.info("Completed downloading of all COVID19 pdfs from PAHO website.")
                 return 0
                 
-def createcsvs(pdf_reports_data):
+def create_csvs(pdf_reports_data):
     """Take in a list of sublists and create csvs for each sublist
     
     :param pdf_reports_data: A list of sublists, with each sublist representing a pdf from PAHO
@@ -358,6 +363,40 @@ def createcsvs(pdf_reports_data):
         logging.info("Successfully created csvs from PAHO pdfs.")
         return 0
 
+def sync_git_repo():
+    """Push new local csv files to the covid19_data_sources repo """
+    # get the current dir of this script
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    repo_path = os.path.join(current_dir,REPO_NAME)
+    # check to see if a repo has been init already
+    try: 
+        repo = git.Repo(repo_path)
+        logging.info("Git repo has already been created.")
+    except (git.exc.InvalidGitRepositoryError,git.exc.NoSuchPathError):
+        logging.info("No git repo has been initialized for this module. Cloning from github.com now.")
+        repo_url = "https://"+REPO_PERSONAL_ACCESS_TOKEN+"@github.com/"+REPO_USERNAME+"/"+REPO_NAME+".git"
+        git.Repo.clone_from(repo_url,repo_path)
+        logging.info("Repo "+repo_url+" cloned successfully.")
+        repo = git.Repo(repo_path)
+    # now we have a valid repo created 
+    # pull the latest data from the repo
+    origin = repo.remotes.origin
+    origin.pull()
+    # create the csv output dir if it does not exist
+    Path(paho_csv_reports_dir).mkdir(parents=True, exist_ok=True)
+    # change the working dir to the csv dir 
+    os.chdir(paho_csv_reports_dir)
+    # get all csv files in this dir
+    all_paho_csv_files = glob.glob(paho_csv_reports_dir+os.path.sep+"*.csv")
+    # add all files in this dir to the repo index
+    repo.index.add(all_paho_csv_files)
+    logging.info("Added all .csv files from "+paho_csv_reports_dir+" to repo index.")
+    # set the commit message
+    repo.index.commit("Automatic commit by "+os.path.basename(__file__))
+    # git push 
+    origin.push()
+    logging.info("All csv files pushed to github repo successfully.")
+    
 def main():
     """Download all pdf reports from PAHO on COVID19, parse them to get the useful data
     and create csvs from the data."""
@@ -372,15 +411,21 @@ def main():
         global paho_csv_reports_dir
         currentdir = os.path.dirname(os.path.realpath(__file__))
         paho_raw_reports_dir = os.path.join(currentdir,PAHO_RAW_REPORTS_DIR_NAME)
-        paho_csv_reports_dir = os.path.join(currentdir,PAHO_CSV_REPORTS_DIR_NAME)
+        paho_csv_reports_dir = os.path.join(currentdir,REPO_NAME,PAHO_CSV_REPORTS_DIR_NAME)
+        # set up the local repo if it is not already created
+        sync_git_repo()
         # download all pdfs from the PAHO website
-        # downloadpdfs()
+        download_pdfs()
         # parse all the pdfs in the paho_raw_reports_dir 
-        pdf_reports_data = parsepdfs()
+        pdf_reports_data = parse_pdfs()
         # create csvs in the output folder using the parsed content
-        createcsvs(pdf_reports_data)
-    except:
+        create_csvs(pdf_reports_data)
+        # now resync the local repo to the remote repo to upload the files
+        sync_git_repo() 
+    except Exception as exc:
         traceback.print_exc()
+        logging.critical("Error encountered while running script "+os.path.basename(__file__))
+        logging.critical(exc)
         sys.exit(1)
     else:
         # Use 0 for normal exits, 1 for general errors and 2 for syntax errors (eg. bad input parameters)
