@@ -134,3 +134,10 @@ dmypy.json
 
 # vscode files
 *.vscode
+
+# the data sources repo
+Scripts/covid19/covid19_data_sources/
+
+# the config module that holds the secrets
+Scripts/covid19/trinistatsconfig.py
+Scripts/stocks/ttsescraperconfig.py

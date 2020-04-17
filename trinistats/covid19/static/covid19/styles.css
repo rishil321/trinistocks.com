@@ -1,287 +1,33 @@
-html,body,h1,h2,h3,h4,h5,h6 {
-    font-family: "Roboto", sans-serif;
-}
-
-.h2{
-    text-align:center;
-}
-
-canvas#covid19chart {
-    margin: 2em auto;
-}
-
-.djangotables {
-    width: 75%;
-    margin: 1em auto;
-}
-
-.djangotables td, th {
-    padding: 0.2em;
-    text-align: center;
-}
-
-.djangotables tr:hover {
-    background-color: #d5d5d2;
-}
-
-@media 
-only screen and (max-width: 760px),
-(min-device-width: 768px) and (max-device-width: 1024px)  {
-    /* Force table to not be like tables anymore */
-    table, thead, tbody, th, td, tr { 
-        display: block; 
-    }
-
-    /* Hide table headers (but not display: none;, for accessibility) */
-    thead tr { 
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-    }
-
-    tr { border: 1px solid #ccc; }
-
-    .djangotables td { 
-        /* Behave  like a "row" */
-        border: none;
-        border-bottom: 1px solid #eee; 
-        position: relative;
-        padding-left: 50%; 
-        text-align: left;
-    }
-
-    .djangotables td:before { 
-        /* Now like a table header */
-        position: absolute;
-        /* Top/left values mimic padding */
-        top: 6px;
-        left: 6px;
-        width: 45%; 
-        padding-right: 10px; 
-        white-space: nowrap;
-        text-align: left !important; 
-    }
-
-    /*
-    Label the data
-    */
-    td:nth-of-type(1):before { content: "Update Time"; }
-    td:nth-of-type(2):before { content: "Total Tested"; }
-    td:nth-of-type(3):before { content: "Tested Positive"; }
-    td:nth-of-type(4):before { content: "Total Deaths"; }
-    td:nth-of-type(5):before { content: "Total Recovered"; }
-}
-
-
-p{
-    font-size:1.25em;
-}
-
-.a:link{
-    color:blue;
-}
-
-table {
-    border: 1px solid black;
-    border-collapse: collapse;
-    width:100%;
-}
-
-th{
-    border: 1px solid black;
-    background-color: black;
-    color:white; 
-}
-
-td{
-    border: 1px solid black;
-}
-
-.pagination{
-    list-style: none;
-    display: inline;
-    display: block;
-    text-align: center;
-    margin:auto;
-}
-
-.previous,.next{
-    font-weight: bold;
-    font-size: 1em;
-}
-
-.pagination ul {
-    list-style: none;
-}
-
-.pagination li{
-    display: inline;
-}
-
-.active{
-    font-weight: bolder;
-    font-size:1.5em;
-}
-
-.w3-date-selector{
-	cursor:pointer;
-    font-size:1em;
-    height:1.5em;
-    border-radius: 0.2em;
-    border-width: 0.1em;
-    color:black;
-    text-align: center;
-    width:100%;
-    flex-shrink: 1;
-    background-color: white;
-}
-
-.w3-label1{
-    color:white;
-    flex-shrink: 3;
-}
-
-.w3-button3{
-	background-color:red;
-	border-radius:0.2em;
-    border:0.1em outset black;
-    cursor:pointer;
+.iconimg{
+    max-width:100%;
     height:auto;
-    color:#ffffff;
-    font-size:1em;
-    margin-top:0.2em;
-    margin-bottom: 0.2em;
 }
 
-.w3-select1{
-	cursor:pointer;
-    font-size:1em;
-    height:1.5em;
-    width: 10em;
-    border-radius: 0.2em;
-    border-width: 0.1em;
-    flex-shrink: 1;
-    background-color: white;
-}
-
-.maincontentcss{
-    width:100%;
-}
-
-.chartdiv{
-    padding-left:1em;
-    padding-right:1em;
-    margin: auto;
-    height: 40em;
-}
-
-.w3-left-sidebar {
-    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
-    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
-    display: -ms-flexbox;      /* TWEENER - IE 10 */
-    display: -webkit-flex;     /* NEW - Chrome */
-    flex-direction:column;
-    flex-wrap:nowrap;
-    height:100%;
-    background-color:#fff;
-    position:fixed!important;
-    overflow:auto;
-    z-index:3;
-    width:11em;
-    top:3.5em;
-    bottom:0;
-    display:none;
-    padding-bottom: 5em;
-    align-items: flex-start;
-    justify-content: flex-start;
-    font-size:1.5em;
-}
-
-.w3-left-sidebar * {
-    flex:1;
-    width:100%;
-    max-height: 4em;
-    text-align: center;
-    text-decoration: none;
-}
-
-.w3-left-sidebar a {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
-    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
-    display: -ms-flexbox;      /* TWEENER - IE 10 */
-    display: -webkit-flex;     /* NEW - Chrome */
-}
-
-.w3-right-sidebar{
-    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
-    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
-    display: -ms-flexbox;      /* TWEENER - IE 10 */
-    display: -webkit-flex;     /* NEW - Chrome */
+.right-side-menu{
+    max-width:12rem;
+    z-index:10;
+    position:absolute;
+    background-color:#363636;
+    color:white;
     right:0;
-    flex-direction:column;
-    flex-wrap:nowrap;
-    height:100%;
-    position:fixed!important;
-    overflow:auto;
-    z-index:3;
-    width:11em;
-    top:3.5em;
-    bottom:0;
-    display:none;
-    padding-bottom: 5em;
-    align-items: center;
-    justify-content: flex-start;
-    font-size:1.5em;
 }
 
-.w3-right-sidebar * {
-    flex:1;
-    width:95%;
-    text-align: center;
-    text-decoration: none;
+.left-side-menu{
+    color:white;
+    background-color: #363636;
+    width:10rem;
+    z-index:10;
+    position:absolute;
+    background-color:#363636;
+    color:white;
+    left:0;
 }
 
-.w3-right-sidebar label {
-    font-size: 1.2em;
-}
-.w3-right-sidebar form div {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
-    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
-    display: -ms-flexbox;      /* TWEENER - IE 10 */
-    display: -webkit-flex;     /* NEW - Chrome */
+.left-side-menu div a{
+    color:white;
+    background-color: #363636;
 }
 
-.navbar-header{
-    align-self:center;
-    max-height: 2em;
-    font-size: 1.5em;
-}
-
-.menuclosebutton{
-    max-height: 4em;
-}
-
-.topbar{
-    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
-    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
-    display: -ms-flexbox;      /* TWEENER - IE 10 */
-    display: -webkit-flex;     /* NEW - Chrome */
-    display: flex;             /* NEW, Spec - Opera 12.1, Firefox 20+ */
-    flex-direction:row;
-    flex-wrap:nowrap;
-    justify-content: start;
-    align-items: center;
-    font-size:2em;
-    align-content: flex-start;
-}
-
-.topbar * {
-    flex:1;
+.border-red {
+    border: 1px solid red;
 }

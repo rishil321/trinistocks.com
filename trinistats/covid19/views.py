@@ -51,7 +51,7 @@ def totals(request):
         except:
             if startdateentered:
                 errors += "Please enter a valid value for your start date."
-            startdate =datetime.now()+dateutil.relativedelta.relativedelta(months=-1)
+            startdate =datetime.now()+dateutil.relativedelta.relativedelta(weeks=-4)
         try:
             # check whether each GET variable was submitted with the request
             if request.GET.get('enddate'):
@@ -165,12 +165,17 @@ def daily(request):
         else:
             selectedcasetype = 'dailypositive'
         # Get the full names for the case types selected
+        selectedfieldverbosename = 'N/A'
         selectedfieldverbosename = models.Covid19DailyData._meta.get_field(selectedcasetype).verbose_name
         # Fetch the records from the db
         selectedrecords = models.Covid19DailyData.objects.filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).values('date','dailytests','dailypositive','dailydeaths','dailyrecovered').order_by('date')
-        # Set up our table
-        tabledata = Covid19DailyTable(selectedrecords, order_by=orderby)
-        tabledata.paginate(page=request.GET.get("page", 1), per_page=25)
+        # Get the date for yesterday
+        yesterdaydate = (datetime.now() + timedelta(days=-1)).strftime('%Y-%m-%d')
+        # Get the record from the daily table for yesterday data
+        yesterdaydata = models.Covid19DailyData.objects.filter(date = yesterdaydate)
+        if not yesterdaydata:
+            errors += "No daily data found for yesterday ("+yesterdaydate+")"
+            yesterdaydata = ['N/A']
         # Set up our graph
         graphlabels = [obj['date'] for obj in selectedrecords]
         graphdataset = []
@@ -195,7 +200,7 @@ def daily(request):
         'validcasetypes':validcasetypes,
         'selectedcasetypestr':selectedcasetype,
         'selectedcasetypeverbose':selectedfieldverbosename,
-        'table':tabledata,
+        'yesterdaydata':yesterdaydata[0],
         'enteredstartdate':enteredstartdate,
         'enteredenddate':enteredenddate,
         'graphlabels':graphlabels,
