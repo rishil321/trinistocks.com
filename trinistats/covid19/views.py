@@ -18,12 +18,25 @@ import dateutil
 import traceback
 from _datetime import timedelta
 import pytz
+from rest_framework import viewsets
+from .models import Covid19_Paho_Reports
+from .serializers import Covid19_Paho_Reports_Serializer
 
+# Django Tables
 class Covid19DailyTable(tables.Table):
     class Meta:
         model = models.Covid19DailyData
         attrs = {"class":"djangotables"}
         fields = ('date','dailytests','dailypositive','dailydeaths','dailyrecovered')
+        
+# Django REST Framework
+class Covid19_Paho_Reports_List(viewsets.ReadOnlyModelViewSet):
+    queryset = Covid19_Paho_Reports.objects.all()
+    serializer_class = Covid19_Paho_Reports_Serializer
+
+class Covid19_Paho_Reports_Detail(viewsets.ReadOnlyModelViewSet):
+    queryset = Covid19_Paho_Reports.objects.all()
+    serializer_class = Covid19_Paho_Reports_Serializer
     
 #CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
