@@ -20,7 +20,7 @@ from _datetime import timedelta
 import pytz
 from rest_framework import viewsets
 from .models import Covid19_Paho_Reports
-from .serializers import Covid19_Paho_Reports_Serializer
+from .serializers import *
 
 # Django Tables
 class Covid19DailyTable(tables.Table):
@@ -29,15 +29,12 @@ class Covid19DailyTable(tables.Table):
         attrs = {"class":"djangotables"}
         fields = ('date','dailytests','dailypositive','dailydeaths','dailyrecovered')
         
-# Django REST Framework
+# Django REST Framework Views
 class Covid19_Paho_Reports_List(viewsets.ReadOnlyModelViewSet):
-    queryset = Covid19_Paho_Reports.objects.all()
     serializer_class = Covid19_Paho_Reports_Serializer
-
-class Covid19_Paho_Reports_Detail(viewsets.ReadOnlyModelViewSet):
     queryset = Covid19_Paho_Reports.objects.all()
-    serializer_class = Covid19_Paho_Reports_Serializer
-    
+    filterset_fields = ['country_or_territory_name','date','transmission_type']
+  
 #CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
 
@@ -46,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 # Create functions used by the views here
 
-# Create your views here.
+# Django Regular HTTP(s) Views
 def totals(request):
     try:
         errors = ""
