@@ -128,7 +128,7 @@ def parse_pdfs():
                              # else store the name for the specific country
                             country_name = rowdata[1]
                             # note that country names may also have special characters
-                            country_name = re.sub('[^A-Za-z0-9,()[] ]+', '', country_name)
+                            country_name = re.sub('[^A-Za-z0-9,()\[\] ]+', '', country_name)
                             country_or_territory_name = country_name
                         # for each of the other columns, check if empty, else store the data present in the cell
                         if rowdata[2] == "":
@@ -189,7 +189,7 @@ def parse_pdfs():
                              # else store the name for the specific country
                             country_name = rowdata[1]
                             # note that country names may also have special characters
-                            country_name = re.sub('[^A-Za-z0-9,()[] ]+', '', country_name)
+                            country_name = re.sub('[^A-Za-z0-9,()\[\] ]+', '', country_name)
                             country_or_territory_name = country_name
                         # for each of the other columns, check if empty, else store the data present in the cell
                         if rowdata[2] == "":
