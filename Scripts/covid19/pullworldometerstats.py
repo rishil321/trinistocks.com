@@ -197,7 +197,7 @@ def main():
                                             repo_subdir_name=COVID19_DATA_SOURCES_REPO_SUBDIR_NAME,
                                             repo_subdir_files_extension=".csv")
         logging.info(__file__+" completed successfully.")
-        sys.exit(0) # Use 0 for normal exits, 1 for general errors and 2 for syntax errors (eg. bad input parameters)
+        sys.exit(2) # Use 0 for normal exits, 1 for general errors and 2 for syntax errors (eg. bad input parameters)
     except Exception as exc:
         logging.exception("Encountered an error while running the script "+__file__)
  
