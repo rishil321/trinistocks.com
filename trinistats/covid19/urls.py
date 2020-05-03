@@ -28,6 +28,7 @@ urlpatterns = [
     path('about', views.about, name='about'),
     path('daily', views.daily, name='daily'),
     path('api/paho', views.Covid19_Paho_Reports_List.as_view({'get': 'list'}), name='api_paho'),
+    path('api/worldometers', views.Covid19_Worldometers_Reports_List.as_view({'get': 'list'}), name='api_worldometers'),
     path('api/docs', schema_view.with_ui('swagger', cache_timeout=0), name='swagger_ui'),
 ]
 

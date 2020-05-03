@@ -34,6 +34,11 @@ class Covid19_Paho_Reports_List(viewsets.ReadOnlyModelViewSet):
     serializer_class = Covid19_Paho_Reports_Serializer
     queryset = Covid19_Paho_Reports.objects.all()
     filterset_fields = ['country_or_territory_name','date','transmission_type']
+    
+class Covid19_Worldometers_Reports_List(viewsets.ReadOnlyModelViewSet):
+    serializer_class = Covid19_Worldometers_Reports_Serializer
+    queryset = Covid19_Worldometers_Reports.objects.all()
+    filterset_fields = ['country_or_territory_name','date']
   
 #CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
