@@ -45,7 +45,7 @@ def repo_pull_commit_push(repo_remote_url,repo_local_dir,repo_subdir_name,repo_s
     subdir_path = os.path.join(repo_local_dir,repo_subdir_name)
     Path(subdir_path).mkdir(parents=False, exist_ok=True)
     # get all files with the correct extension in this subdir
-    all_subdir_files = glob.glob(subdir_path+os.path.sep+repo_subdir_files_extension)
+    all_subdir_files = glob.glob(subdir_path+os.path.sep+"*"+repo_subdir_files_extension)
     # add all files in this subdir to the repo index
     repo.index.add(all_subdir_files)
     logging.info("Added all "+repo_subdir_files_extension+"files from "+repo_subdir_name+" to repo index.")
