@@ -1218,8 +1218,8 @@ def update_equity_summary_data():
         fetchdate = datetime(2010, 1, 1)
         # Get all dates until yesterday
         while fetchdate < datetime.now():
-            # if we do not have info on this data already
-            if fetchdate not in datesalreadyrecorded:
+            # if we do not have info on this date already and this is a weekday (stock markets close on weekends)
+            if (fetchdate not in datesalreadyrecorded) and (fetchdate.weekday() < 5):
                 # add this date to be fetched
                 datestofetch.append(fetchdate.strftime("%m/%d/%Y"))
                 # increment the date by one day
