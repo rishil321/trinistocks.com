@@ -1179,6 +1179,7 @@ def update_equity_summary_data():
     https://stockex.co.tt/controller.php?action=view_quote&TradingDate=03/13/2020
     and scrape the useful output into a list of dictionaries for the DB
     """
+    logging.info("Now updating market summary data.")
     # Create a variable for our database engine
     dbengine = None
     try:
@@ -1199,6 +1200,7 @@ def update_equity_summary_data():
             listedequitiestable = Table(
                 'listedequities', MetaData(), autoload=True, autoload_with=dbengine)
             # Now select the dates that we already have recorded
+            logging.info("Creating list of dates to fetch.")
             datesalreadyrecorded = []
             selectstmt = select([historicalmarketsummarytable.c.date])
             result = dbcon.execute(selectstmt)
@@ -1216,16 +1218,22 @@ def update_equity_summary_data():
         # of all dates that we need to gather still
         datestofetch = []
         fetchdate = datetime(2010, 1, 1)
+        logging.info(
+            "Get all dates from 2010 that are not already fetched and are not weekends.")
+        # TODO: Extend holidays library for Trinidad and Tobago
         # Get all dates until yesterday
         while fetchdate < datetime.now():
             # if we do not have info on this date already and this is a weekday (stock markets close on weekends)
             if (fetchdate not in datesalreadyrecorded) and (fetchdate.weekday() < 5):
                 # add this date to be fetched
                 datestofetch.append(fetchdate.strftime("%m/%d/%Y"))
-                # increment the date by one day
-                fetchdate += timedelta(days=1)
+            # increment the date by one day
+            fetchdate += timedelta(days=1)
         # now split our datestofetch list into sublists to multithread
+        logging.info(
+            "List of dates to fetch built. Now splitting list by core.")
         numcores = multiprocessing.cpu_count()
+        logging.info("This machine has "+str(numcores)+" logical CPU cores.")
         listlength = len(datestofetch)
         datessublists = [datestofetch[i*listlength // numcores: (i+1)*listlength // numcores]
                          for i in range(numcores)]
@@ -1279,23 +1287,23 @@ def main():
         with PidFile(piddir=tempfile.gettempdir()):
             logging.info("Updating listed equities and looking for new data")
             # Scrape basic data for all listed equities
-            alllistedequitydata = scrapelistedequitydata()
+            # alllistedequitydata = scrapelistedequitydata()
             # Then write this data to the db
-            writelistedequitydatatodb(alllistedequitydata)
+            # writelistedequitydatatodb(alllistedequitydata)
             # # Call the function to scrape the dividend data for all securities
             logging.info("Now trying to scrape dividend data")
-            alldividenddata = scrapedividenddata()
+            # alldividenddata = scrapedividenddata()
             # # alldividenddata = [{'symbol': 'test', 'equityid': 170, 'recorddate': '2020-02-22','dividendamount':0.50,'currency':'USD'} ]
             # Then call the function to write this data into the database
-            writedividenddatatodb(alldividenddata)
+            # writedividenddatatodb(alldividenddata)
             # # Then call the function to scrape the historical data for all securities
             logging.info("Now trying to fetch historical data")
-            allhistoricalstockdata = scrapehistoricaldata()
+            # allhistoricalstockdata = scrapehistoricaldata()
             # Then call the function to write this data into the database
             # allhistoricalstockdata = [{'date': '2010-01-01','equityid':'223',
             # #                            'closingquote':'100.00','changedollars':'1.00',
             # #                            'volumetraded':'100','currency':'TTD', 'symbol':'TEST'}]
-            writehistoricaldatatodb(allhistoricalstockdata)
+            # writehistoricaldatatodb(allhistoricalstockdata)
             # Call the function to scrape market summary data and update DB immediately
             update_equity_summary_data()
             # Then call the function to calculate the dividend yield for all stocks and write to
