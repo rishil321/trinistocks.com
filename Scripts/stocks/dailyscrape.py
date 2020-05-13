@@ -1261,7 +1261,7 @@ def main():
     """Main function for coordinating scraping"""
     try:
         # Set message to describe script usage
-        cliprompt = "Usage: python3 weeklyscrape.py -l (logging.DEBUG, logging.INFO etc.)<logging level> -c <True/False>(Whether to enable logging to console)"
+        cliprompt = "Usage: python3 dailyscrape.py -l (logging.DEBUG, logging.INFO etc.)<logging level> -c <True/False>(Whether to enable logging to console)"
         # Check if the script has been called with a logging level set
         parser = argparse.ArgumentParser(
             description="Scrape daily data from the Trinidad stock exchange website")
@@ -1271,7 +1271,7 @@ def main():
                             default='logging.INFO', help='Logging level eg.logging.DEBUG (default: logging.INFO)')
         args = parser.parse_args()
         # Set up logging for this module
-        logsetup = setuplogging(logfilestandardname='weeklyscrape',
+        logsetup = setuplogging(logfilestandardname='dailyscrape',
                                 logginglevel=args.logginglevel, stdoutenabled=args.logtoconsole)
         if logsetup == 0:
             logging.info("Logging set up successfully.")
@@ -1314,5 +1314,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.info("Now starting script "+__name__)
     main()
