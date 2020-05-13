@@ -1224,7 +1224,7 @@ def update_equity_summary_data():
         # Get all dates until yesterday
         while fetchdate < datetime.now():
             # if we do not have info on this date already and this is a weekday (stock markets close on weekends)
-            if (fetchdate not in datesalreadyrecorded) and (fetchdate.weekday() < 5):
+            if (fetchdate.date() not in datesalreadyrecorded) and (fetchdate.weekday() < 5):
                 # add this date to be fetched
                 datestofetch.append(fetchdate.strftime("%m/%d/%Y"))
             # increment the date by one day
@@ -1287,18 +1287,18 @@ def main():
         with PidFile(piddir=tempfile.gettempdir()):
             logging.info("Updating listed equities and looking for new data")
             # Scrape basic data for all listed equities
-            # alllistedequitydata = scrapelistedequitydata()
+            #alllistedequitydata = scrapelistedequitydata()
             # Then write this data to the db
             # writelistedequitydatatodb(alllistedequitydata)
             # # Call the function to scrape the dividend data for all securities
             logging.info("Now trying to scrape dividend data")
-            # alldividenddata = scrapedividenddata()
+            #alldividenddata = scrapedividenddata()
             # # alldividenddata = [{'symbol': 'test', 'equityid': 170, 'recorddate': '2020-02-22','dividendamount':0.50,'currency':'USD'} ]
             # Then call the function to write this data into the database
             # writedividenddatatodb(alldividenddata)
             # # Then call the function to scrape the historical data for all securities
             logging.info("Now trying to fetch historical data")
-            # allhistoricalstockdata = scrapehistoricaldata()
+            #allhistoricalstockdata = scrapehistoricaldata()
             # Then call the function to write this data into the database
             # allhistoricalstockdata = [{'date': '2010-01-01','equityid':'223',
             # #                            'closingquote':'100.00','changedollars':'1.00',
