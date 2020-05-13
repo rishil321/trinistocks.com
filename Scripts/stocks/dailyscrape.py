@@ -1074,7 +1074,7 @@ def scrapeequitysummarydata(datestofetch, alllistedsymbols):
                     logging.error("Waited "+str(timewaitsecs)+" seconds. Now retrying " +
                                   fetchdate+pidstring+" attempt ("+str(webretries)+"/"+str(failmaxtimes)+")")
                     webretries += 1
-        # Now write the data to the db
+        # Now write the data to the db if there is data to write
         logging.info("Now writing scraped data to DB"+pidstring)
         # Create a variable for our database engine
         dbengine = None
@@ -1094,74 +1094,76 @@ def scrapeequitysummarydata(datestofetch, alllistedsymbols):
                 'dailyequitysummary', MetaData(), autoload=True, autoload_with=dbengine)
             listedequitiestable = Table(
                 'listedequities', MetaData(), autoload=True, autoload_with=dbengine)
-            # insert data into historicalmarketsummary table
-            insert_stmt = insert(historicalmarketsummarytable).values(
-                allmarketsummarydata)
-            on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
-                compositetotalsindexvalue=insert_stmt.inserted.compositetotalsindexvalue,
-                compositetotalsindexchange=insert_stmt.inserted.compositetotalsindexchange,
-                compositetotalschange=insert_stmt.inserted.compositetotalschange,
-                compositetotalsvolumetraded=insert_stmt.inserted.compositetotalsvolumetraded,
-                compositetotalsvaluetraded=insert_stmt.inserted.compositetotalsvaluetraded,
-                compositetotalsnumtrades=insert_stmt.inserted.compositetotalsnumtrades,
-                alltnttotalsindexvalue=insert_stmt.inserted.alltnttotalsindexvalue,
-                alltnttotalsindexchange=insert_stmt.inserted.alltnttotalsindexchange,
-                alltnttotalschange=insert_stmt.inserted.alltnttotalschange,
-                alltnttotalsvolumetraded=insert_stmt.inserted.alltnttotalsvolumetraded,
-                alltnttotalsvaluetraded=insert_stmt.inserted.alltnttotalsvaluetraded,
-                alltnttotalsnumtrades=insert_stmt.inserted.alltnttotalsnumtrades,
-                crosslistedtotalsindexvalue=insert_stmt.inserted.crosslistedtotalsindexvalue,
-                crosslistedtotalsindexchange=insert_stmt.inserted.crosslistedtotalsindexchange,
-                crosslistedtotalschange=insert_stmt.inserted.crosslistedtotalschange,
-                crosslistedtotalsvolumetraded=insert_stmt.inserted.crosslistedtotalsvolumetraded,
-                crosslistedtotalsvaluetraded=insert_stmt.inserted.crosslistedtotalsvaluetraded,
-                crosslistedtotalsnumtrades=insert_stmt.inserted.crosslistedtotalsnumtrades,
-                smetotalsindexvalue=insert_stmt.inserted.smetotalsindexvalue,
-                smetotalsindexchange=insert_stmt.inserted.smetotalsindexchange,
-                smetotalschange=insert_stmt.inserted.smetotalschange,
-                smetotalsvolumetraded=insert_stmt.inserted.smetotalsvolumetraded,
-                smetotalsvaluetraded=insert_stmt.inserted.smetotalsvaluetraded,
-                smetotalsnumtrades=insert_stmt.inserted.smetotalsnumtrades,
-                mutualfundstotalsvolumetraded=insert_stmt.inserted.mutualfundstotalsvolumetraded,
-                mutualfundstotalsvaluetraded=insert_stmt.inserted.mutualfundstotalsvaluetraded,
-                mutualfundstotalsnumtrades=insert_stmt.inserted.mutualfundstotalsnumtrades,
-                secondtiertotalsnumtrades=insert_stmt.inserted.secondtiertotalsnumtrades
-            )
-            result = dbcon.execute(on_duplicate_key_stmt)
-            logging.info(
-                "Number of rows affected in the historicalmarketsummary table was "+str(result.rowcount)+pidstring)
-            # convert symbols into equityids for the dailyequitysummary table
-            selectstmt = select(
-                [listedequitiestable.c.symbol, listedequitiestable.c.equityid])
-            result = dbcon.execute(selectstmt)
-            for row in result:
-                # The first element in our row tuple is the symbol, and the second is our equityid
+            if allmarketsummarydata:
+                # insert data into historicalmarketsummary table
+                insert_stmt = insert(historicalmarketsummarytable).values(
+                    allmarketsummarydata)
+                on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
+                    compositetotalsindexvalue=insert_stmt.inserted.compositetotalsindexvalue,
+                    compositetotalsindexchange=insert_stmt.inserted.compositetotalsindexchange,
+                    compositetotalschange=insert_stmt.inserted.compositetotalschange,
+                    compositetotalsvolumetraded=insert_stmt.inserted.compositetotalsvolumetraded,
+                    compositetotalsvaluetraded=insert_stmt.inserted.compositetotalsvaluetraded,
+                    compositetotalsnumtrades=insert_stmt.inserted.compositetotalsnumtrades,
+                    alltnttotalsindexvalue=insert_stmt.inserted.alltnttotalsindexvalue,
+                    alltnttotalsindexchange=insert_stmt.inserted.alltnttotalsindexchange,
+                    alltnttotalschange=insert_stmt.inserted.alltnttotalschange,
+                    alltnttotalsvolumetraded=insert_stmt.inserted.alltnttotalsvolumetraded,
+                    alltnttotalsvaluetraded=insert_stmt.inserted.alltnttotalsvaluetraded,
+                    alltnttotalsnumtrades=insert_stmt.inserted.alltnttotalsnumtrades,
+                    crosslistedtotalsindexvalue=insert_stmt.inserted.crosslistedtotalsindexvalue,
+                    crosslistedtotalsindexchange=insert_stmt.inserted.crosslistedtotalsindexchange,
+                    crosslistedtotalschange=insert_stmt.inserted.crosslistedtotalschange,
+                    crosslistedtotalsvolumetraded=insert_stmt.inserted.crosslistedtotalsvolumetraded,
+                    crosslistedtotalsvaluetraded=insert_stmt.inserted.crosslistedtotalsvaluetraded,
+                    crosslistedtotalsnumtrades=insert_stmt.inserted.crosslistedtotalsnumtrades,
+                    smetotalsindexvalue=insert_stmt.inserted.smetotalsindexvalue,
+                    smetotalsindexchange=insert_stmt.inserted.smetotalsindexchange,
+                    smetotalschange=insert_stmt.inserted.smetotalschange,
+                    smetotalsvolumetraded=insert_stmt.inserted.smetotalsvolumetraded,
+                    smetotalsvaluetraded=insert_stmt.inserted.smetotalsvaluetraded,
+                    smetotalsnumtrades=insert_stmt.inserted.smetotalsnumtrades,
+                    mutualfundstotalsvolumetraded=insert_stmt.inserted.mutualfundstotalsvolumetraded,
+                    mutualfundstotalsvaluetraded=insert_stmt.inserted.mutualfundstotalsvaluetraded,
+                    mutualfundstotalsnumtrades=insert_stmt.inserted.mutualfundstotalsnumtrades,
+                    secondtiertotalsnumtrades=insert_stmt.inserted.secondtiertotalsnumtrades
+                )
+                result = dbcon.execute(on_duplicate_key_stmt)
+                logging.info(
+                    "Number of rows affected in the historicalmarketsummary table was "+str(result.rowcount)+pidstring)
+            if allequitytradingdata:
+                # convert symbols into equityids for the dailyequitysummary table
+                selectstmt = select(
+                    [listedequitiestable.c.symbol, listedequitiestable.c.equityid])
+                result = dbcon.execute(selectstmt)
+                for row in result:
+                    # The first element in our row tuple is the symbol, and the second is our equityid
+                    for equitytradingdata in allequitytradingdata:
+                        # Map the symbol for each equity to an equityid in our table
+                        if equitytradingdata['symbol'] == row[0]:
+                            equitytradingdata['equityid'] = row[1]
+                # Now remove our unneeded columns
                 for equitytradingdata in allequitytradingdata:
-                    # Map the symbol for each equity to an equityid in our table
-                    if equitytradingdata['symbol'] == row[0]:
-                        equitytradingdata['equityid'] = row[1]
-            # Now remove our unneeded columns
-            for equitytradingdata in allequitytradingdata:
-                equitytradingdata.pop('symbol', None)
-            # insert data into dailyequitysummary table
-            insert_stmt = insert(dailyequitysummarytable).values(
-                allequitytradingdata)
-            on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
-                openprice=insert_stmt.inserted.openprice,
-                high=insert_stmt.inserted.high,
-                low=insert_stmt.inserted.low,
-                osbid=insert_stmt.inserted.osbid,
-                osbidvol=insert_stmt.inserted.osbidvol,
-                osoffer=insert_stmt.inserted.osoffer,
-                osoffervol=insert_stmt.inserted.osoffervol,
-                saleprice=insert_stmt.inserted.saleprice,
-                volumetraded=insert_stmt.inserted.volumetraded,
-                closeprice=insert_stmt.inserted.closeprice,
-                changedollars=insert_stmt.inserted.changedollars
-            )
-            result = dbcon.execute(on_duplicate_key_stmt)
-            logging.info(
-                "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount)+pidstring)
+                    equitytradingdata.pop('symbol', None)
+                # insert data into dailyequitysummary table
+                insert_stmt = insert(dailyequitysummarytable).values(
+                    allequitytradingdata)
+                on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
+                    openprice=insert_stmt.inserted.openprice,
+                    high=insert_stmt.inserted.high,
+                    low=insert_stmt.inserted.low,
+                    osbid=insert_stmt.inserted.osbid,
+                    osbidvol=insert_stmt.inserted.osbidvol,
+                    osoffer=insert_stmt.inserted.osoffer,
+                    osoffervol=insert_stmt.inserted.osoffervol,
+                    saleprice=insert_stmt.inserted.saleprice,
+                    volumetraded=insert_stmt.inserted.volumetraded,
+                    closeprice=insert_stmt.inserted.closeprice,
+                    changedollars=insert_stmt.inserted.changedollars
+                )
+                result = dbcon.execute(on_duplicate_key_stmt)
+                logging.info(
+                    "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount)+pidstring)
     except Exception as ex:
         raise
     else:
@@ -1287,23 +1289,23 @@ def main():
         with PidFile(piddir=tempfile.gettempdir()):
             logging.info("Updating listed equities and looking for new data")
             # Scrape basic data for all listed equities
-            #alllistedequitydata = scrapelistedequitydata()
+            alllistedequitydata = scrapelistedequitydata()
             # Then write this data to the db
-            # writelistedequitydatatodb(alllistedequitydata)
+            writelistedequitydatatodb(alllistedequitydata)
             # # Call the function to scrape the dividend data for all securities
             logging.info("Now trying to scrape dividend data")
-            #alldividenddata = scrapedividenddata()
+            alldividenddata = scrapedividenddata()
             # # alldividenddata = [{'symbol': 'test', 'equityid': 170, 'recorddate': '2020-02-22','dividendamount':0.50,'currency':'USD'} ]
             # Then call the function to write this data into the database
-            # writedividenddatatodb(alldividenddata)
+            writedividenddatatodb(alldividenddata)
             # # Then call the function to scrape the historical data for all securities
             logging.info("Now trying to fetch historical data")
-            #allhistoricalstockdata = scrapehistoricaldata()
+            allhistoricalstockdata = scrapehistoricaldata()
             # Then call the function to write this data into the database
             # allhistoricalstockdata = [{'date': '2010-01-01','equityid':'223',
             # #                            'closingquote':'100.00','changedollars':'1.00',
             # #                            'volumetraded':'100','currency':'TTD', 'symbol':'TEST'}]
-            # writehistoricaldatatodb(allhistoricalstockdata)
+            writehistoricaldatatodb(allhistoricalstockdata)
             # Call the function to scrape market summary data and update DB immediately
             update_equity_summary_data()
             # Then call the function to calculate the dividend yield for all stocks and write to
