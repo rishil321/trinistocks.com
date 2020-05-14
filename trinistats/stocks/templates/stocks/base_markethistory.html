@@ -7,11 +7,11 @@
     {% endblock %}
 
     {% block navbarinsidetop %}
-        <label for="startdate" class="">Start Date:</label>
-        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="w3-theme-l4 w3-button2">
-        <label for="enddate" class="">End Date:</label>
-        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="w3-theme-l4 w3-button2"/>
-        <input type="submit" onclick="location.href='{% url 'markethistory' %}" value="Fetch Values" class="w3-theme-l4 w3-button3"/>
+        <label for="startdate" class="w3-label1 flexbox-item">Start Date:</label>
+        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="w3-date-selector flexbox-item">
+        <label for="enddate" class="w3-label1 flexbox-item">End Date:</label>
+        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="w3-date-selector flexbox-item"/>
+        <input type="submit" onclick="location.href='{% url 'markethistory' %}" value="Query" class="w3-button3 flexbox-item"/>
     {% endblock navbarinsidetop %}
 
     {% block maincontentdiv %}

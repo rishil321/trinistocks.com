@@ -34,8 +34,8 @@ from selenium.common.exceptions import WebDriverException
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options, FirefoxProfile
 # Imports from the local machine
-from setuplogging import setuplogging
 import ttsescraperconfig
+from customlogging import customlogging
 
 # Put your constants here. These should be named in CAPS.
 
@@ -48,7 +48,7 @@ usdequitysymbols = ['MPCCEL']
 # Put your function definitions here. These should be lower-case, separated by underscores.
 
 
-def scrapelistedequitydata():
+def scrape_listed_equity_data():
     """Use the selenium module to open the Firefox browser and browse through
     all listed equity securities at the URL 
     https://www.stockex.co.tt/controller.php?action=listed_companies
@@ -147,7 +147,7 @@ def scrapelistedequitydata():
             logging.info("Successfully closed web browser.")
 
 
-def writelistedequitydatatodb(listedequitydata):
+def write_listed_equity_data_to_db(listedequitydata):
     """This function takes the list of dicts containing data that was scraped
     from the website and writes it to our MySQL database
     """
@@ -191,6 +191,7 @@ def writelistedequitydatatodb(listedequitydata):
             )
             result = dbcon.execute(on_duplicate_key_stmt)
             logging.info("Number of rows affected was "+str(result.rowcount))
+            return 0
         else:
             raise Exception("Failed to connect to database.")
     except:
@@ -202,7 +203,7 @@ def writelistedequitydatatodb(listedequitydata):
             logging.info("Successfully disconnected from database.")
 
 
-def scrapedividenddata():
+def scrape_dividend_data():
     """Use the Selenium module to open the Firefox browser and browse through
     all listed equity securities at the URL 
     https://www.stockex.co.tt/controller.php?action=listed_companies
@@ -375,7 +376,7 @@ def scrapedividenddata():
             logging.info("Successfully closed web browser.")
 
 
-def writedividenddatatodb(alldividenddatatoinsert):
+def write_dividend_data_to_db(alldividenddatatoinsert):
     """This function takes the list of dicts containing dividend data that was scraped
     from the website and writes it to our MySQL database
     """
@@ -424,6 +425,7 @@ def writedividenddatatodb(alldividenddatatoinsert):
             logging.info("Number of rows affected was "+str(result.rowcount))
             logging.info(
                 "Successfully wrote data for the historicaldividenddata table into database.")
+            return 0
         else:
             raise ConnectionError("Failed to connect to database.")
     except:
@@ -435,7 +437,7 @@ def writedividenddatatodb(alldividenddatatoinsert):
             logging.info("Successfully disconnected from database.")
 
 
-def scrapehistoricaldata():
+def scrape_historical_data():
     """Use the Selenium module to open the Firefox browser and browse through
     all listed equity securities at the URL 
     https://www.stockex.co.tt/controller.php?action=listed_companies
@@ -595,7 +597,7 @@ def scrapehistoricaldata():
             logging.info("Successfully closed web browser.")
 
 
-def writehistoricaldatatodb(allhistoricaldatatoinsert):
+def write_historical_data_to_db(allhistoricaldatatoinsert):
     """This function takes the list of dicts containing historical data that was scraped
     from the website and writes it to our MySQL database
     """
@@ -651,6 +653,7 @@ def writehistoricaldatatodb(allhistoricaldatatoinsert):
             logging.info("Number of rows affected was "+str(result.rowcount))
             logging.info(
                 "Successfully wrote data for the historicalstockinfo table into database.")
+            return 0
         else:
             raise ConnectionError("Failed to connect to database.")
     except Exception as ex:
@@ -695,52 +698,54 @@ def update_dividend_yield():
                                  historicaldividendinfo.c.equityid, historicaldividendinfo.c.currency])
             result = dbcon.execute(selectstmt)
             # And store them in lists
-            dividenddata = []
+            all_dividend_data = []
             # Also create an extra list to find a set from
-            dividendequityids = []
+            dividend_equity_ids = []
             for row in result:
-                dividenddata.append(
+                all_dividend_data.append(
                     dict(amount=row[0], date=row[1], equityid=row[2], currency=row[3]))
-                dividendequityids.append(row[2])
+                dividend_equity_ids.append(row[2])
             # Get a unique list of the equityids that have dividends above
-            uniqueequityids = list(set(dividendequityids))
+            unique_equity_ids = list(set(dividend_equity_ids))
             # Then for each equity, get their share prices on the last day of the year
             logging.info(
                 "Now fetching required historical stock info listed in DB.")
             stockyearlydata = []
-            for equityid in uniqueequityids:
+            for equity_id in unique_equity_ids:
                 selectstmt = text(
                     "SELECT closingquote,date FROM historicalstockinfo WHERE MONTH(date) = 12 AND DAY(date) = 31 AND equityid = :eq")
-                result = dbcon.execute(selectstmt, eq=equityid)
+                result = dbcon.execute(selectstmt, eq=equity_id)
                 for row in result:
                     stockyearlydata.append(
-                        dict(equity=equityid, closingquote=row[0], date=row[1]))
+                        dict(equity=equity_id, closingquote=row[0], date=row[1]))
             # Now we need to compute the total dividend amount per year
             # Create a list of dictionaries to store the dividend per year per equityid
-            dividendyearlydata = []
-            for equityid in uniqueequityids:
+            dividend_yearly_data = []
+            for equity_id in unique_equity_ids:
                 # Create a dictionary to store data for this equityid
-                yearlydata = {'equityid': equityid}
+                yearlydata = {'equityid': equity_id}
                 # Also store the currency for one of the dividends
                 currencystored = False
                 # Now fetch the dividend data for this equityid
-                for didata in dividenddata:
-                    if didata['equityid'] == equityid:
+                for dividend_data in all_dividend_data:
+                    if dividend_data['equityid'] == equity_id:
                         # Get the year of this dividend entry for this equity
-                        year = didata['date'].year
+                        year = dividend_data['date'].year
                         if str(year) in yearlydata:
                             # If a key has already been created in the dict for this year,
                             # then we simply add our amount to this
-                            yearlydata[str(year)] += Decimal(didata['amount'])
+                            yearlydata[str(
+                                year)] += Decimal(dividend_data['amount'])
                         else:
                             # Else create a new key in the dictionary for this year pair
-                            yearlydata[str(year)] = Decimal(didata['amount'])
+                            yearlydata[str(year)] = Decimal(
+                                dividend_data['amount'])
                         # Get the currency if we haven't already
                         if not currencystored:
-                            yearlydata['currency'] = didata['currency']
+                            yearlydata['currency'] = dividend_data['currency']
                             currencystored = True
                 # Then store the dict in our large list
-                dividendyearlydata.append(yearlydata)
+                dividend_yearly_data.append(yearlydata)
             # Set up a list to store our dividendyielddata
             dividendyielddata = []
             # Now get our conversion rates to convert everything to TTD
@@ -754,19 +759,19 @@ def update_dividend_yield():
                 usdtottd = Decimal(json.loads(
                     apiresponse.content.decode('utf-8'))['USD_TTD'])
                 # Calculate our dividend yields using our values
-                for didata in dividendyearlydata:
+                for dividend_data in dividend_yearly_data:
                     for stdata in stockyearlydata:
-                        if (stdata['equity'] == didata['equityid']) and (str(stdata['date'].year) in didata):
+                        if (stdata['equity'] == dividend_data['equityid']) and (str(stdata['date'].year) in dividend_data):
                             # If we have matched our stock data and our dividend data (by equityid and year)
                             # First check currencies, and use a multiplier for the conversion rate
                             conrate = Decimal(1.00)
-                            if didata['currency'] == "USD":
+                            if dividend_data['currency'] == "USD":
                                 conrate = usdtottd
-                            elif didata['currency'] == "JMD":
+                            elif dividend_data['currency'] == "JMD":
                                 conrate = jmdtottd
                             # Else our conrate should remain 1
                             # Now calculate the dividend yield for the year
-                            dividendyield = didata[str(
+                            dividendyield = dividend_data[str(
                                 stdata['date'].year)]*conrate*100/stdata['closingquote']
                             # Add this value to our list
                             dividendyielddata.append({'yieldpercent': dividendyield, 'yielddate': stdata['date'],
@@ -778,6 +783,7 @@ def update_dividend_yield():
             logging.info("Number of rows affected was "+str(result.rowcount))
             logging.info(
                 "Successfully wrote data for the dividendyield table into database.")
+            return 0
         else:
             raise ConnectionError("Failed to connect to database.")
     except Exception as ex:
@@ -789,7 +795,7 @@ def update_dividend_yield():
             logging.info("Successfully disconnected from database.")
 
 
-def scrapeequitysummarydata(datestofetch, alllistedsymbols):
+def scrape_equity_summary_data(datestofetch, alllistedsymbols):
     """
     In a new process, open the Firefox browser and browse through
     https://stockex.co.tt/controller.php?action=view_quote&TradingDate=03/13/2020
@@ -1164,10 +1170,9 @@ def scrapeequitysummarydata(datestofetch, alllistedsymbols):
                 result = dbcon.execute(on_duplicate_key_stmt)
                 logging.info(
                     "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount)+pidstring)
+        return 0
     except Exception as ex:
         raise
-    else:
-        return 0
     finally:
         if 'driver' in locals() and driver is not None:
             # Always close the browser
@@ -1243,7 +1248,7 @@ def update_equity_summary_data():
         processlist = []
         for coredatelist in datessublists:
             process = multiprocessing.Process(
-                target=scrapeequitysummarydata, args=(coredatelist, alllistedsymbols))
+                target=scrape_equity_summary_data, args=(coredatelist, alllistedsymbols))
             process.start()
             processlist.append(process)
         # now poll until all processes are done
@@ -1261,61 +1266,52 @@ def update_equity_summary_data():
                 logging.info("There are "+str(processesrunning) +
                              " processes still running.")
             time.sleep(60)
+        logging.debug("All processes completed.")
+        return 0
     except Exception as ex:
         raise
-    else:
-        return 0
 
 
 def main():
     """Main function for coordinating scraping"""
     try:
-        # Set message to describe script usage
-        cliprompt = "Usage: python3 dailyscrape.py -l (logging.DEBUG, logging.INFO etc.)<logging level> -c <True/False>(Whether to enable logging to console)"
-        # Check if the script has been called with a logging level set
-        parser = argparse.ArgumentParser(
-            description="Scrape daily data from the Trinidad stock exchange website")
-        parser.add_argument('-c', '--logtoconsole', choices=['True', 'False'], default='True',
-                            help='Whether to print logging output to the console as well')
-        parser.add_argument('-l', '--logginglevel', choices=['logging.DEBUG', 'logging.INFO', 'logging.WARNING', 'logging.ERROR', 'logging.CRITICAL'],
-                            default='logging.INFO', help='Logging level eg.logging.DEBUG (default: logging.INFO)')
-        args = parser.parse_args()
         # Set up logging for this module
-        logsetup = setuplogging(logfilestandardname='dailyscrape',
-                                logginglevel=args.logginglevel, stdoutenabled=args.logtoconsole)
+        logsetup = customlogging.setup_logging(
+            logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
+            logfilestandardname='dailyscrape',
+            smtploggingenabled=True,
+            smtplogginglevel=logging.ERROR,
+            smtpmailhost='localhost',
+            smtpfromaddr='server1@trinistats.com',
+            smtptoaddr=['latchmepersad@gmail.com'],
+            smtpsubj='Automated report from Python script: '+os.path.basename(__file__))
         if logsetup == 0:
             logging.info("Logging set up successfully.")
         # Set up a pidfile to ensure that only one instance of this script runs at a time
         with PidFile(piddir=tempfile.gettempdir()):
             logging.info("Updating listed equities and looking for new data")
             # Scrape basic data for all listed equities
-            alllistedequitydata = scrapelistedequitydata()
+            alllistedequitydata = scrape_listed_equity_data()
             # Then write this data to the db
-            writelistedequitydatatodb(alllistedequitydata)
-            # # Call the function to scrape the dividend data for all securities
+            write_listed_equity_data_to_db(alllistedequitydata)
+            # Call the function to scrape the dividend data for all securities
             logging.info("Now trying to scrape dividend data")
-            alldividenddata = scrapedividenddata()
-            # # alldividenddata = [{'symbol': 'test', 'equityid': 170, 'recorddate': '2020-02-22','dividendamount':0.50,'currency':'USD'} ]
+            alldividenddata = scrape_dividend_data()
             # Then call the function to write this data into the database
-            writedividenddatatodb(alldividenddata)
-            # # Then call the function to scrape the historical data for all securities
+            write_dividend_data_to_db(alldividenddata)
+            # Then call the function to scrape the historical data for all securities
             logging.info("Now trying to fetch historical data")
-            allhistoricalstockdata = scrapehistoricaldata()
+            allhistoricalstockdata = scrape_historical_data()
             # Then call the function to write this data into the database
-            # allhistoricalstockdata = [{'date': '2010-01-01','equityid':'223',
-            # #                            'closingquote':'100.00','changedollars':'1.00',
-            # #                            'volumetraded':'100','currency':'TTD', 'symbol':'TEST'}]
-            writehistoricaldatatodb(allhistoricalstockdata)
+            write_historical_data_to_db(allhistoricalstockdata)
             # Call the function to scrape market summary data and update DB immediately
             update_equity_summary_data()
             # Then call the function to calculate the dividend yield for all stocks and write to
             # the database immediately
             update_dividend_yield()
-    except getopt.GetoptError:
-        print(cliprompt)
-        sys.exit(2)
     except Exception:
         logging.exception("Error in script "+os.path.basename(__file__))
+        customlogging.flush_smtp_logger()
         sys.exit(1)
     else:
         logging.info("The script was executed successfully. " +

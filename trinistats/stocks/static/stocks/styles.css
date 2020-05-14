@@ -1,4 +1,13 @@
-html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif;}
+html,
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: "Roboto", sans-serif;
+}
 
 .w3-sidebar {
     z-index: 3;
@@ -8,38 +17,38 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif;}
     height: inherit;
 }
 
-.h2{
+.h2 {
     text-align: center;
 }
 
-.djangotables {
-}
+.djangotables {}
 
 table {
     border: 1px solid black;
     border-collapse: collapse;
-    width:100%;
+    width: 100%;
 }
 
-th{
+th {
     border: 1px solid black;
     background-color: black;
-    color:white; 
+    color: white;
 }
 
-td{
+td {
     border: 1px solid black;
 }
 
-.pagination{
+.pagination {
     list-style: none;
     display: inline;
     display: block;
     text-align: center;
-    margin:auto;
+    margin: auto;
 }
 
-.previous,.next{
+.previous,
+.next {
     font-weight: bold;
     font-size: 1em;
 }
@@ -48,47 +57,49 @@ td{
     list-style: none;
 }
 
-.pagination li{
+.pagination li {
     display: inline;
 }
 
-.active{
+.active {
     font-weight: bolder;
-    font-size:1.5em;
+    font-size: 1.5em;
 }
 
-.w3-date-selector{
-	cursor:pointer;
-    font-size:1em;
-    height:1.5em;
+.w3-date-selector {
+    cursor: pointer;
+    font-size: 1em;
+    height: 1.5em;
     border-radius: 0.2em;
     border-width: 0.1em;
-    color:black;
+    color: black;
     text-align: center;
-    width:9em;
+    width: 9em;
     flex-shrink: 1;
     background-color: white;
 }
 
-.w3-label1{
-    color:white;
+.w3-label1 {
+    color: white;
     flex-shrink: 3;
 }
 
-.w3-button3{
-	background-color:red;
-	border-radius:0.2em;
-    border:0.1em outset black;
-    cursor:pointer;
-    height:2.0em;
-    color:#ffffff;
-    font-size:1em;
+.w3-button3 {
+    background-color: red;
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+    border-width: 0em;
+    border-radius: 0.2em;
+    cursor: pointer;
+    height: 1.5em;
+    color: #ffffff;
+    font-size: 1em;
 }
 
-.w3-select1{
-	cursor:pointer;
-    font-size:1em;
-    height:1.5em;
+.w3-select1 {
+    cursor: pointer;
+    font-size: 1em;
+    height: 1.5em;
     width: 10em;
     border-radius: 0.2em;
     border-width: 0.1em;
@@ -96,15 +107,15 @@ td{
     background-color: white;
 }
 
-.second-top-bar{
+.second-top-bar {
     display: flex;
-    flex-direction:row;
-    flex-wrap:nowrap;
+    flex-direction: row;
+    flex-wrap: nowrap;
     justify-content: left;
     background-color: black;
     align-items: center;
 }
 
-.flexbox-item{
+.flexbox-item {
     margin-left: 0.5em;
 }
