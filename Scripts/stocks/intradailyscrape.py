@@ -31,7 +31,7 @@ from sqlalchemy import create_engine, Table, select, MetaData, bindparam
 from sqlalchemy.dialects.mysql import insert
 from pid import PidFile
 # Imports from the local machine
-from setuplogging import setuplogging
+from customlogging import customlogging
 import ttsescraperconfig
 
 # Put your constants here. These should be named in CAPS.
@@ -240,10 +240,9 @@ def updatedailytrades():
             result = dbcon.execute(on_duplicate_key_stmt)
             logging.info(
                 "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount))
+            return 0
     except Exception as ex:
         raise
-    else:
-        return 0
     finally:
         if 'driver' in locals() and driver is not None:
             # Always close the browser
@@ -254,37 +253,27 @@ def updatedailytrades():
 def main():
     """The main function for starting the web-parsing process"""
     try:
-        # Set message to describe script usage
-        cliprompt = "Usage: python3 intradailyscrape.py -l (logging.DEBUG, logging.INFO etc.)<logging level> -c <True/False>(Whether to enable logging to console)"
-        # Check if the script has been called with a logging level set
-        parser = argparse.ArgumentParser(
-            description="Scrape daily data from the Trinidad stock exchange website")
-        parser.add_argument('-c', '--logtoconsole', choices=['True', 'False'], default='True',
-                            help='Whether to print logging output to the console as well')
-        parser.add_argument('-l', '--logginglevel', choices=['logging.DEBUG', 'logging.INFO', 'logging.WARNING', 'logging.ERROR', 'logging.CRITICAL'],
-                            default='logging.INFO', help='Logging level eg.logging.DEBUG (default: logging.INFO)')
-        args = parser.parse_args()
         # Set up logging for this module
-        logsetup = setuplogging(logfilestandardname='intradailyscrape',
-                                logginglevel=args.logginglevel, stdoutenabled=args.logtoconsole)
+        logsetup = customlogging.setup_logging(
+            logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
+            logfilestandardname='intradailyscrape',
+            smtploggingenabled=True,
+            smtplogginglevel=logging.ERROR,
+            smtpmailhost='localhost',
+            smtpfromaddr='server1@trinistats.com',
+            smtptoaddr=['latchmepersad@gmail.com'],
+            smtpsubj='Automated report from Python script: '+os.path.basename(__file__))
         if logsetup == 0:
             logging.info("Logging set up successfully.")
         with PidFile(piddir=tempfile.gettempdir()):
             # call the function to scrape the daily data for all securities
             updatedailytrades()
-            # alllistedsecuritydata = [dict([('symbol', "TEST"), ('securityname', "TEST My"),
-            #                                 ('status', "INACTIVE"), ('issuedsharecapital', "2000"),
-            #                                 ('marketcapitalization', "10000"), ('sector', 'Banking'),
-            #                                 ('openingprice', "1"),('closingprice', "2"),('dailyvolume', "10"),
-            #                                 ('bidprice', "1"),('dailyhigh', "1"),('dailylow', "1")])]
-    except getopt.GetoptError:
-        print(cliprompt)
-        sys.exit(2)
     except Exception:
         logging.exception("Error in script "+os.path.basename(__file__))
+        customlogging.flush_smtp_logger()
         sys.exit(1)
     else:
-        logging.info("The script was executed successfully." +
+        logging.info("The script was executed successfully. " +
                      os.path.basename(__file__))
         sys.exit(0)
 
