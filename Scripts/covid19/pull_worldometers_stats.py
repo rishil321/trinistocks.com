@@ -131,13 +131,18 @@ def write_dataframe_csv(dataframe, directory_path, filename_prefix):
         with open(csv_full_path, 'x') as csv_file:
             # if we don't throw an error, the file does not exist
             # so write the dataframe to this new file
-            dataframe.to_csv(csv_file, index=False, header=True)
+            dataframe.to_csv(csv_file, index=False,
+                             header=True, encoding='utf-8')
             logging.info("Successfully created file "+csv_filename)
     except OSError:
         # error thrown if file exists
         # if this file already exists, we don't need to recreate as the reports are immutable
         logging.error("Could not create csv file " +
                       csv_filename+". Maybe file already exists?")
+    except UnicodeEncodeError as exc:
+        # error thrown if an invalid character was seen
+        logging.error("Encoding error for file " +
+                      csv_filename+str(exc))
 
 
 def write_dataframe_database(dataframe, table_name):

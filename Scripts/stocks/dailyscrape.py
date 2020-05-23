@@ -12,6 +12,7 @@ import os
 import traceback
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 import csv
 import shutil
 from decimal import Decimal
@@ -25,7 +26,7 @@ import tempfile
 from pid import PidFile
 import requests
 import urllib.request
-from sqlalchemy import create_engine, Table, select, MetaData, text
+from sqlalchemy import create_engine, Table, select, MetaData, text, and_
 from sqlalchemy.dialects.mysql import insert
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -686,8 +687,6 @@ def update_dividend_yield():
             # Each table is mapped to a class, so we create references to those classes
             historicaldividendinfo = Table(
                 'historicaldividendinfo', MetaData(), autoload=True, autoload_with=engine)
-            historicalstockinfo = Table(
-                'historicalstockinfo', MetaData(), autoload=True, autoload_with=engine)
             listedequities = Table(
                 'listedequities', MetaData(), autoload=True, autoload_with=engine)
             dividendyieldtable = Table(
@@ -711,41 +710,63 @@ def update_dividend_yield():
             logging.info(
                 "Now fetching required historical stock info listed in DB.")
             stockyearlydata = []
+            # ensure that we get the closing quote for each year from 2010 to now
+            datetime_years_to_fetch = []
+            current_year = datetime.now().year
+            temp_date = datetime.strptime('2010-01-01', '%Y-%m-%d')
+            while temp_date.year < current_year:
+                datetime_years_to_fetch.append(temp_date)
+                temp_date += relativedelta(years=1)
             for equity_id in unique_equity_ids:
-                selectstmt = text(
-                    "SELECT closingquote,date FROM historicalstockinfo WHERE MONTH(date) = 12 AND DAY(date) = 31 AND equityid = :eq")
-                result = dbcon.execute(selectstmt, eq=equity_id)
-                for row in result:
-                    stockyearlydata.append(
-                        dict(equity=equity_id, closingquote=row[0], date=row[1]))
+                # for each year in our list, get the last closingquote for the year and store it
+                for datetime_year in datetime_years_to_fetch:
+                    selectstmt = text(
+                        "SELECT closingquote,date FROM historicalstockinfo WHERE YEAR(date) = :yr AND equityid = :eq ORDER BY date DESC LIMIT 1;")
+                    result = dbcon.execute(
+                        selectstmt, yr=datetime_year.year, eq=equity_id)
+                    row = result.fetchone()
+                    try:
+                        stockyearlydata.append(
+                            dict(equity=equity_id, closingquote=row[0], date=row[1]))
+                    except TypeError:
+                        # if we do not have quotes for a particular year, simply ignore it
+                        pass
             # Now we need to compute the total dividend amount per year
             # Create a list of dictionaries to store the dividend per year per equityid
             dividend_yearly_data = []
             for equity_id in unique_equity_ids:
                 # Create a dictionary to store data for this equityid
-                yearlydata = {'equityid': equity_id}
+                equity_yearly_data = dict(equityid=equity_id)
                 # Also store the currency for one of the dividends
                 currencystored = False
-                # Now fetch the dividend data for this equityid
-                for dividend_data in all_dividend_data:
-                    if dividend_data['equityid'] == equity_id:
-                        # Get the year of this dividend entry for this equity
-                        year = dividend_data['date'].year
-                        if str(year) in yearlydata:
-                            # If a key has already been created in the dict for this year,
-                            # then we simply add our amount to this
-                            yearlydata[str(
-                                year)] += Decimal(dividend_data['amount'])
-                        else:
-                            # Else create a new key in the dictionary for this year pair
-                            yearlydata[str(year)] = Decimal(
-                                dividend_data['amount'])
-                        # Get the currency if we haven't already
-                        if not currencystored:
-                            yearlydata['currency'] = dividend_data['currency']
-                            currencystored = True
-                # Then store the dict in our large list
-                dividend_yearly_data.append(yearlydata)
+                # go through each year that we are interested in and check if we have dividend data
+                # for that year for this equityid
+                for datetime_year in datetime_years_to_fetch:
+                    # check if we have dividend data for this year
+                    for dividend_data in all_dividend_data:
+                        if dividend_data['equityid'] == equity_id and dividend_data['date'].year == datetime_year.year:
+                            # Get the year of this dividend entry for this equity
+                            if (str(datetime_year.year)+"_dividends") in equity_yearly_data:
+                                # If a key has already been created in the dict for this year,
+                                # then we simply add our amount to this
+                                equity_yearly_data[str(
+                                    datetime_year.year)+"_dividends"] += Decimal(dividend_data['amount'])
+                            else:
+                                # Else create a new key in the dictionary for this year pair
+                                equity_yearly_data[str(datetime_year.year)+"_dividends"] = Decimal(
+                                    dividend_data['amount'])
+                            # Get the currency if we haven't already
+                            if not currencystored:
+                                equity_yearly_data['currency'] = dividend_data['currency']
+                                currencystored = True
+                    # if we did not find any dividend data for this equity id and year, store 0
+                    if not str(datetime_year.year)+"_dividends" in equity_yearly_data:
+                        equity_yearly_data[str(
+                            datetime_year.year)+"_dividends"] = Decimal(0.00)
+                        # set the currency as TTD for these 0 dividend equities
+                        equity_yearly_data['currency'] = 'TTD'
+                # Then store the dict in our list of all dividend yearly data
+                dividend_yearly_data.append(equity_yearly_data)
             # Set up a list to store our dividendyielddata
             dividendyielddata = []
             # Now get our conversion rates to convert everything to TTD
@@ -761,7 +782,7 @@ def update_dividend_yield():
                 # Calculate our dividend yields using our values
                 for dividend_data in dividend_yearly_data:
                     for stdata in stockyearlydata:
-                        if (stdata['equity'] == dividend_data['equityid']) and (str(stdata['date'].year) in dividend_data):
+                        if (stdata['equity'] == dividend_data['equityid']) and (str(stdata['date'].year)+"_dividends" in dividend_data):
                             # If we have matched our stock data and our dividend data (by equityid and year)
                             # First check currencies, and use a multiplier for the conversion rate
                             conrate = Decimal(1.00)
@@ -772,10 +793,13 @@ def update_dividend_yield():
                             # Else our conrate should remain 1
                             # Now calculate the dividend yield for the year
                             dividendyield = dividend_data[str(
-                                stdata['date'].year)]*conrate*100/stdata['closingquote']
+                                stdata['date'].year)+"_dividends"]*conrate*100/stdata['closingquote']
                             # Add this value to our list
                             dividendyielddata.append({'yieldpercent': dividendyield, 'yielddate': stdata['date'],
                                                       'equityid': stdata['equity']})
+            else:
+                raise ConnectionError(
+                    "Could not connect to API to convert currencies.")
             logging.info("Dividend yield calculated successfully.")
             logging.info("Inserting data into database.")
             insertstmt = dividendyieldtable.insert().prefix_with("IGNORE")

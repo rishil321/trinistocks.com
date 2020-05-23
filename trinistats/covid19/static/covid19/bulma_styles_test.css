@@ -1,0 +1,33 @@
+.iconimg{
+    max-width:100%;
+    height:auto;
+}
+
+.right-side-menu{
+    max-width:12rem;
+    z-index:10;
+    position:absolute;
+    background-color:#363636;
+    color:white;
+    right:0;
+}
+
+.left-side-menu{
+    color:white;
+    background-color: #363636;
+    width:10rem;
+    z-index:10;
+    position:absolute;
+    background-color:#363636;
+    color:white;
+    left:0;
+}
+
+.left-side-menu div a{
+    color:white;
+    background-color: #363636;
+}
+
+.border-red {
+    border: 1px solid red;
+}

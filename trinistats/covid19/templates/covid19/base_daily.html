@@ -3,83 +3,60 @@
 
     {% block rightsidebarform %}
     <form action="{% url 'covid19:daily' %}" method="get">
-    <div >
-        <div class="field">
-            <label for="startdate" class="is-size-5">Start Date</label>
-            <div class="control">
-                <input class="input" type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate">
-            </div>
-        </div>
-        <div class="field">
-            <label for="enddate" class="is-size-5">End Date</label>
-            <div class="control">
-                <input class="input leftrightspace" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate">
-            </div>
-        </div>
-        <div class="field">
-            <label for="selectedcasetype" class="is-size-5">Data</label>
-            <div class="control">
-                <div class="select">
-                    <select id="selectedcasetype" name="selectedcasetype">
-                    {% for casetype in validcasetypes %}
-                        {% if casetype.attname == selectedcasetypestr %}
-                            <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
-                        {% else %}
-                            <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
-                        {% endif %}
-                    {% endfor %}
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="control has-text-centered">
-            <button style="" class="button is-danger" type="submit">Run Query &nbsp<i class="fa fa-database"></i></button>
-        </div>
-        <br>
+        <label for="startdate" class="w3-bar-item">Start Date</label>
+        <input class="w3-bar-item w3-theme-l5" type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate">
+        <label for="enddate" class="w3-bar-item">End Date</label>
+        <input class="w3-bar-item w3-theme-l5" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate">
+        <label for="selectedcasetype" class="w3-bar-item">Data</label>
+        <select class="w3-bar-item w3-theme-l5" id="selectedcasetype" name="selectedcasetype">
+        {% for casetype in validcasetypes %}
+            {% if casetype.attname == selectedcasetypestr %}
+                <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
+            {% else %}
+                <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
+            {% endif %}
+        {% endfor %}
+        </select>
+        </br>
+        <button style="" class="w3-bar-item w3-theme-l2 w3-button-2 w3-hover-theme w3-center" type="submit">Run Query &nbsp<i class="fa fa-database"></i></button>
     </form>
     {% endblock rightsidebarform %}
 
     <!--Start main content-->
-    {% block mainblock%}
+    {% block maindiv%}
     {% if errors != '' %}
-        <p>We encountered an error while displaying this page: {{errors}}
+        <p>{{errors}}</p>
     {% else %}
-        <br>
-        <h2 style="" id="dailyheader" class="is-size-2 has-text-centered">T&T Covid-19 events yesterday ({{yesterdaydata.date}})</h2>
-        {% block maindiv %}
-        <section style="" class="section" id="mainsection">
-            <div class="container has-text-centered" style="" id="maindiv">
-                <div class="columns is-centered has-text-centered">
-                    <div style="background-color:blue;color:white;" class="column">
-                        <p class="">{{ yesterdaydata.dailytests }} testing samples submitted &ensp;
-                        <i class="fas fa-microscope fa-2x"></i></p>
-                    </div>
-                    <div style="background-color:orange;color:white;" class="column">
-                        <p>{{ yesterdaydata.dailypositive }} persons tested positive &ensp; 
-                        <i class="fas fa-procedures fa-2x"></i></p>
-                    </div>
-                    <div style="background-color:green;color:white;" class="column">
-                        <p>{{ yesterdaydata.dailyrecovered }} person(s) discharged &ensp; 
-                        <i class="fas fa-virus-slash fa-2x"></i></p>
-                    </div>
-                    <div style="background-color:red;color:white;" class="column">
-                        <p>{{ yesterdaydata.dailydeaths }} person(s) died &ensp; 
-                        <i class=" far fa-heart fa-2x"></i></p>
-                    </div>
-                </div>
-            </div>
-        </section>
         {% block pagetitle %}
+            <h2 style="" id="dailyheader" class="w3-center">T&T Covid-19 events yesterday ({{yesterdaydata.date}})</h2>
         {% endblock pagetitle %}
+        </br>
+        <div class="w3-cell-row">
+            <div class="w3-container w3-blue w3-cell w3-mobile">
+                <p class="">{{ yesterdaydata.daily_tests }} testing samples submitted &ensp;
+                <i class="fas fa-microscope fa-2x"></i></p>
+            </div>
+            <div class="w3-container w3-yellow w3-cell w3-mobile">
+                <p>{{ yesterdaydata.daily_positive }} persons tested positive &ensp; 
+                <i class="fas fa-procedures fa-2x"></i></p>
+            </div>
+            <div class="w3-container w3-green w3-cell w3-mobile">
+                <p>{{ yesterdaydata.daily_recovered }} person(s) discharged &ensp; 
+                <i class="fas fa-virus-slash fa-2x"></i></p>
+            </div>
+            <div class="w3-container w3-red w3-cell w3-mobile">
+                <p>{{ yesterdaydata.daily_deaths }} person(s) died &ensp; 
+                <i class=" far fa-heart fa-2x"></i></p>
+            </div>
+        </div>
         <!-- Chart -->
         <div id="chartdiv" style="height:40rem;width:auto;" class="chartdiv">
         <canvas id="covid19chart">
             Covid19 Chart
         </canvas>
         </div>
-    {% endblock maindiv %}
     {% endif %}
-    {% endblock mainblock %}
+    {% endblock maindiv %}
     <!-- END MAIN -->
     
     <!--Javascript-->
@@ -137,8 +114,7 @@
     {% endblock chartjs %}
 
     {% block highlightpage%}
-    $("#cumulativelink").removeClass("border-red");
-    $("#dailylink").addClass("border-red");
+    $(dailylink).toggleClass("w3-theme-l3");
     {% endblock highlightpage %}
 
     {% block morejs%}

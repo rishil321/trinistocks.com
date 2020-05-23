@@ -34,59 +34,43 @@
     <title>{% block title %}T&T Stock Data{% endblock title %}</title>
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="stylesheet" href="{% static 'stocks/styles.css' %}">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulmaswatch/0.8.1/cosmo/bulmaswatch.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
 </head>
 {% endblock head %}
 <body>
     {% block navbartop %}
     <!-- Navbar -->
-    <div class="w3-top" id="navbartop">
-        <div class="w3-bar w3-theme-d5 w3-top w3-left-align w3-large">
-            <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme" href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
-            {% block navbartopbutton1 %}
-            <a href="{% url "dailyequitysummary" %}" class="w3-bar-item w3-button w3-theme-l2 w3-hover-white">Main</a>
-            {% endblock %}
+    <nav class="navbar" role="navigation" aria-label="main navigation" id="navbartop">
+        <div class="navbar-brand">
+            <a class="navbar-item" id="homelink" href="{% url "central:landingpage" %}">
+            <i class="fas fa-1x fa-home"></i></a>
+            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="left_sidebar" id="navbar_burger">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
         </div>
-    </div>
-    {% endblock %}
-
-    {% block navbarside %}
-    <!-- Sidebar -->
-    <nav class="w3-sidebar w3-bar-block w3-collapse w3-large w3-theme-d5 w3-animate-left" id="mySidebar">
-        <a href="javascript:void(0)" onclick="w3_close()" class="w3-right w3-xlarge w3-padding-large w3-hover-black w3-hide-large" title="Close Menu">
-        <i class="fa fa-remove"></i></a>
-        <h6 class="w3-bar-item"><b>T&T Stock Exchange</b></h6>
-        <hr style="border: 1px solid red;">
-        {% block dailysummarybutton %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "dailyequitysummary" %}">Daily Summary</a>
-        {% endblock %}
-        {% block markethistorybutton %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "markethistory" %}">Market History</a>
-        {% endblock %}
-        {% block stockhistorybutton %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "stockhistory" %}">Stock History</a>
-        {% endblock %}
-        {% block dividendhistorybutton %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "dividendhistory" %}">Dividend History</a>
-        {% endblock %}
-        {% block dividendyieldhistorybutton %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "dividendyieldhistory" %}">Dividend Yield</a>
-        {% endblock %}
-        {% block ostradeshistorybutton %}
-        <a class="w3-bar-item w3-button w3-theme w3-hover-white" href="{% url "ostradeshistory" %}">Outstanding Trades</a>
-        {% endblock %}
+        <div class="navbar-menu" id="navbar_menu">
+            <div class="navbar-start">
+                <a class="navbar-item" id="dailysummarylink" href="{% url "dailyequitysummary" %}">Daily Summary</a>
+                <a class="navbar-item" id="markethistorylink" href="{% url "markethistory" %}">Market History</a>
+                <a class="navbar-item" id="stockhistorylink" href="{% url "stockhistory" %}">Stock History</a>
+                <a class="navbar-item" id="dividendhistorylink" href="{% url "dividendhistory" %}">Dividend History</a>
+                <a class="navbar-item" id="dividendyieldlink" href="{% url "dividendyieldhistory" %}">Dividend Yield</a>
+                <a class="navbar-item" id="outstandingtradeslink" href="{% url "ostradeshistory" %}">Outstanding Trades</a>
+            </div>
+            <div class="navbar-end">
+            </div>
+        </div>
     </nav>
     {% endblock %}
 
     {% block mainblock %}
-    <!-- Overlay effect when opening sidebar on small screens -->
-    <div class="w3-overlay w3-hide-large" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
-    <!-- Main content: shift it to the right when the sidebar is visible -->
-    <div class="w3-main" style="margin-left:13em" id="maincontentdiv">
-        <div class="w3-row" style="margin-top:3.03em;">
+    <!-- Main content-->
+    <div class="" style="" id="maincontentdiv">
+        <div class="w3-row" style="">
             <form method="get">
             <!-- Top-inside Filter Bar 1-->
                 <div class="w3-left-align second-top-bar" id="navbarinsidetop">
@@ -123,7 +107,6 @@
     <!-- END MAIN -->
     {% endblock mainblock %}
     
-    {% block basejs %}
     <!--Javascript-->
     <!--Error Messages -->
     {% if errors != "" %}
@@ -160,28 +143,20 @@
     });
     </script>
     {% endblock chartjs %}
+    <!--Base JavaScript for all templated pages-->
     <script>
-    // Get the Sidebar
-    var mySidebar = document.getElementById("mySidebar");
-    // Get the DIV with overlay effect
-    var overlayBg = document.getElementById("myOverlay");
-    // Toggle between showing and hiding the sidebar, and add overlay effect
-    function w3_open() {
-    if (mySidebar.style.display === 'block') {
-        mySidebar.style.display = 'none';
-        overlayBg.style.display = "none";
-    } else {
-        mySidebar.style.display = 'block';
-        overlayBg.style.display = "block";
-    }
-    }
-    // Close the sidebar with the close button
-    function w3_close() {
-    mySidebar.style.display = "none";
-    overlayBg.style.display = "none";
-    }
+    $(document).ready(function() {
+        // Check for click events on the navbar burger icon
+        $(".navbar-burger").click(function() {
+            // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+            $(".navbar-burger").toggleClass("is-active");
+            $(".navbar-menu").toggleClass("is-active");
+        });
+        {% block activepagetoggle %}
+        {% endblock %}
+    });
     </script>
-    {% endblock basejs %}
+    <!--Extra Javascript for certain pages only-->
     <script>
     {% block morejs%}
     {% endblock morejs%}

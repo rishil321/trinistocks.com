@@ -20,13 +20,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'ti0b+f1@c4y3hxnk-q$z@sxkqrl$lka$552@(-+sh2%y1+r_c3')
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY', 'ti0b+f1@c4y3hxnk-q$z@sxkqrl$lka$552@(-+sh2%y1+r_c3')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = ["104.129.41.52","104.129.41.55","127.0.0.1",
-                 "[2607:ff48:aa81:1600:0:1:1e4:e27b]","trinistats.com"]
+ALLOWED_HOSTS = ["104.129.41.52", "104.129.41.55", "127.0.0.1",
+                 "[2607:ff48:aa81:1600:0:1:1e4:e27b]", "trinistats.com"]
 SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 
 # Application definition
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'drf_yasg',
+    'corsheaders'
 ]
 
 REST_FRAMEWORK = {
@@ -53,10 +55,12 @@ REST_FRAMEWORK = {
 }
 
 SWAGGER_SETTINGS = {
-    'USE_SESSION_AUTH' : False,
+    'USE_SESSION_AUTH': False,
 }
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -65,6 +69,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# If this is used then `CORS_ORIGIN_WHITELIST` will not have any effect
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'trinistats.urls'
 
@@ -93,12 +101,12 @@ WSGI_APPLICATION = 'trinistats.wsgi.application'
 
 DATABASES = {
     'default': {
-    'ENGINE': 'django.db.backends.mysql',
-    'NAME': 'trinistatsdb',
-    'USER': 'django',
-    'PASSWORD': 'djangopassword',
-    'HOST': 'localhost',
-    'PORT': '3306',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'trinistatsdb',
+        'USER': 'django',
+        'PASSWORD': 'djangopassword',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
@@ -140,7 +148,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, '/var/www/github_trinistats/trinistats/static')
+STATIC_ROOT = os.path.join(
+    BASE_DIR, '/var/www/github_trinistats/trinistats/static')
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -154,8 +163,8 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR,'log','django_debug.log'),
-            'maxBytes': 1024*1024*15, # 15MB
+            'filename': os.path.join(BASE_DIR, 'log', 'django_debug.log'),
+            'maxBytes': 1024*1024*15,  # 15MB
             'backupCount': 10,
         },
     },

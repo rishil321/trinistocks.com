@@ -1,17 +1,21 @@
-.headerimgdiv img{
-    width:30%;
-    height:auto;
+.headerimgdiv img {
+    width: 30%;
+    height: auto;
 }
 
-redtext{
-    color:red;
-}
-
-.w3-card2{
-    height:22em;
-    border-radius: 0.5em;
+.w3-card-custom-1 {
+    height: 22em;
+    width: 25em;
+    border-radius: 1em;
     border-style: ridge;
     border-width: 0.2em;
     cursor: pointer;
     border-color: black;
+    display: inline-block;
+}
+
+.w3-flexbox-container-center {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
 }

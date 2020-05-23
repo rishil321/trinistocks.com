@@ -25,7 +25,8 @@
      <!-- 3rd party CSS files-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-deep-orange.css">
     <!-- Local CSS files-->
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="stylesheet" href="{% static 'covid19/styles.css' %}">
@@ -46,45 +47,23 @@
 </head>
 <body id="mainbody">
     <!-- Top Navbar -->
-    <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
-        <div class="navbar-brand">
-            <div class="navbar-item">
-            <img src="{%  static 'central/tntflag.png' %}" class="iconimg">
-            </div>
-            <a role="button" class="navbar-burger burger has-text-white" aria-label="navbar-menu" aria-expanded="false" data-target="viewsnavbar">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            </a>
-        </div>
-        <div id="viewsnavbar" class="navbar-menu is-centered left-side-menu">
-            <div class="navbar-start">
-                <a id="homelink" class="navbar-item" href="{% url "central:landingpage" %}">
-                    Home
-                </a>
-                <a id="cumulativelink" class="navbar-item border-red" href="{% url "covid19:totals" %}">
-                    Cumulative
-                </a>
-                <a id="dailylink" class="navbar-item" href="{% url "covid19:daily" %}">
-                    Daily
-                </a>
-                <a id="aboutlink" class="navbar-item" href="{% url "covid19:about" %}">
-                    About
-                </a>
-            </div>
-            <div class="navbar-end ">
-            <a role="button" class="navbar-item" id="config-menu-button">
-            <i class="fas fa-cog fa-2x"></i>&nbsp Configure
-            </a>
-            </div>
-        </div>
-    </nav>
+    <div class="w3-bar w3-border w3-theme-l4 w3-large ">
+        <a id="homelink" class="w3-bar-item w3-mobile w3-hover-theme w3-border-right w3-border-bottom" href="{% url "central:landingpage" %}">
+            <i class="fas fa-1x fa-home"></i>
+        </a>
+        <a id="cumulativelink" class="w3-bar-item w3-mobile w3-hover-theme w3-border-right w3-border-bottom" href="{% url "covid19:totals" %}">Cumulative</a>
+        <a id="dailylink" class="w3-bar-item w3-mobile w3-hover-theme w3-border-right w3-border-bottom" href="{% url "covid19:daily" %}">Daily</a>
+        <a id="aboutlink" class="w3-bar-item w3-mobile w3-hover-theme w3-border-right w3-border-bottom" href="{% url "covid19:about" %}">About</a>
+        <button id="configurebutton" class="w3-bar-item w3-mobile w3-hover-theme w3-theme-l4 w3-right w3-border-left w3-button-2 w3-border-bottom" id="config-menu-button" onclick="w3_toggle_sidebar()">
+        <i class="fas fa-cogs"></i>
+        </button>
+    </div>
     <!--Right side menu-->
-    <aside class="has-text-centered menu is-hidden right-side-menu" id="config-menu">
-    <p class="is-size-4">Configuration Options</p>
+    <div class="w3-sidebar w3-theme-l4 w3-bar-block" id="configmenu" style="width:18em;right:0;display:none;">
+    <p class="w3-bar-item">Configuration Options</p>
         {% block rightsidebarform %}
         {% endblock rightsidebarform %}
-    </aside>
+    </div>
     
     <!-- Main content-->
     {% block mainblock %}
@@ -106,7 +85,6 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.touchswipe/1.6.19/jquery.touchSwipe.min.js"></script>
     {% block chartjs %}
     <script>
     var ctx = document.getElementById('covid19chart').getContext("2d");
@@ -146,23 +124,13 @@
     </script>
     {% endblock chartjs %}
     <script>
-    $(document).ready(function() {
     //highlight the current page
     {% block highlightpage%}
     {% endblock highlightpage %}
-    // Check for click events on the navbar burger icon
-    $(".navbar-burger").click(function() {
-        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-        $(".navbar-burger").toggleClass("is-active is-pulled-left");
-        $(".navbar-menu").toggleClass("is-active is-pulled-left");
-    });
-    // Check for click events on the navbar config menu icon
-    $("#config-menu-button").click(function() {
-        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-        $("#config-menu").toggleClass("is-hidden");
-        $("#config-menu-button").toggleClass("is-active");
-    });
-    });
+    function w3_toggle_sidebar() {
+        $(configmenu).toggle();
+        $(configurebutton).toggleClass("w3-theme-l3");
+    }
     </script>
     {% block morejs%}
     {% endblock morejs%}

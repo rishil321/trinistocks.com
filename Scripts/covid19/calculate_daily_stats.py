@@ -80,7 +80,6 @@ def calculate_worldometers_daily_tnt():
         # replace all nan with None
         daily_results_dataframe = daily_results_dataframe.where(
             daily_results_dataframe.notnull(), None)
-        print(daily_results_dataframe.to_string())
         # now write our list to the db
         insert_stmt = insert(covid19_daily_data_table).values(
             daily_results_dataframe.to_dict('records')).prefix_with('IGNORE')
