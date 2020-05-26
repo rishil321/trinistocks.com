@@ -2,26 +2,33 @@
 {% load render_table from django_tables2 %}
 {% load static %}
 
-    {% block markethistorybutton %}
-        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "markethistory" %}">Market History</a>
-    {% endblock %}
+    {% block sidepanelcontents %}
+    <div class="panel-block">
+        <label class="panellabel"for="startdate">Start Date:</label>
+        <input class="custom-date-selector" type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate">
+    </div>
+    <div class="panel-block">    
+        <label class="panellabel" for="enddate">End Date:</label>
+        <input class="custom-date-selector" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate"/>
+    </div>
+    <div class="panel-block">    
+        <input class="custom-red-button" type="submit" onclick="location.href='{% url 'markethistory' %}" value="Search"/>
+    </div>
+    {% endblock sidepanelcontents %}
 
-    {% block navbarinsidetop %}
-        <label for="startdate" class="w3-label1 flexbox-item">Start Date:</label>
-        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="w3-date-selector flexbox-item">
-        <label for="enddate" class="w3-label1 flexbox-item">End Date:</label>
-        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="w3-date-selector flexbox-item"/>
-        <input type="submit" onclick="location.href='{% url 'markethistory' %}" value="Query" class="w3-button3 flexbox-item"/>
-    {% endblock navbarinsidetop %}
-
-    {% block maincontentdiv %}
-        <h2 style="text-align:center" id="charttitle">Stock Market Index History</h2>
+    {% block mainblock %}
+        <h2 style="" id="charttitle">Stock Market Index History</h2>
         <!-- Chart -->
+        <div>
         <canvas id="stockchart" width="4" height="1">
             Stock Chart
         </canvas>
+        </div>
+         <br>
+        <div class="tablediv">
         {% render_table table %}
-    {% endblock %}
+        </div>
+    {% endblock mainblock %}
 
     {% block chartjs %}
     {{ graphlabels|json_script:"graphlabels" }}
@@ -52,3 +59,6 @@
     <!-- END MAIN -->
     
     <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#markethistorylink").toggleClass("has-background-danger");
+    {% endblock %}

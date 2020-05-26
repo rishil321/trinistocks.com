@@ -33,20 +33,23 @@
     <!--End Metadata-->
     <title>{% block title %}T&T Stock Data{% endblock title %}</title>
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
-    <link rel="stylesheet" href="{% static 'stocks/styles.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.2/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulmaswatch/0.8.1/cosmo/bulmaswatch.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{% static 'stocks/styles.css' %}">
 </head>
 {% endblock head %}
 <body>
     {% block navbartop %}
     <!-- Navbar -->
-    <nav class="navbar" role="navigation" aria-label="main navigation" id="navbartop">
+    <nav style="" class="navbar" role="navigation" aria-label="main navigation" id="navbartop">
         <div class="navbar-brand">
-            <a class="navbar-item" id="homelink" href="{% url "central:landingpage" %}">
+            <img class="navbaricon" src="{%  static 'stocks/trinistats_logo.svg.png' %}">
+            <a class="navbar-item" id="homelink" href="{% url "central:landingpage" %}">Home&nbsp
             <i class="fas fa-1x fa-home"></i></a>
+            <a class="navbar-item" id="configbutton">Options&nbsp
+            <i class="fas fa-1x fa-cogs"></i></a>
             <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="left_sidebar" id="navbar_burger">
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
@@ -55,10 +58,10 @@
         <div class="navbar-menu" id="navbar_menu">
             <div class="navbar-start">
                 <a class="navbar-item" id="dailysummarylink" href="{% url "dailyequitysummary" %}">Daily Summary</a>
-                <a class="navbar-item" id="markethistorylink" href="{% url "markethistory" %}">Market History</a>
                 <a class="navbar-item" id="stockhistorylink" href="{% url "stockhistory" %}">Stock History</a>
                 <a class="navbar-item" id="dividendhistorylink" href="{% url "dividendhistory" %}">Dividend History</a>
                 <a class="navbar-item" id="dividendyieldlink" href="{% url "dividendyieldhistory" %}">Dividend Yield</a>
+                <a class="navbar-item" id="markethistorylink" href="{% url "markethistory" %}">Market History</a>
                 <a class="navbar-item" id="outstandingtradeslink" href="{% url "ostradeshistory" %}">Outstanding Trades</a>
             </div>
             <div class="navbar-end">
@@ -67,45 +70,22 @@
     </nav>
     {% endblock %}
 
-    {% block mainblock %}
-    <!-- Main content-->
-    <div class="" style="" id="maincontentdiv">
-        <div class="w3-row" style="">
-            <form method="get">
-            <!-- Top-inside Filter Bar 1-->
-                <div class="w3-left-align second-top-bar" id="navbarinsidetop">
-                {% block navbarinsidetop %}
-                    <label for="" class="">Stock:</label>
-                    <select id="equityid" name="equityid" class="w3-theme-l4 w3-select1">
-                        <!--Add options based on dictionary items returned-->
-                        {% for listedstock in listedstocks %}
-                            {% if listedstock.equityid == selectedequityid %}
-                                <option value="{{ listedstock.equityid }}" selected>{{listedstock.securityname}} ({{ listedstock.symbol }})</option>
-                            {% else %}
-                                <option value="{{ listedstock.equityid }}">{{listedstock.securityname}} ({{ listedstock.symbol }})</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                    <label for="date" class="">Date:</label>
-                    <input type="date" value="{{ entereddate }}" id="date" name="selecteddate" class="w3-theme-l4 w3-button2">
-                    <input type="submit" onclick="location.href='{% url 'index' %}" value="Fetch Values" class="w3-theme-l4 w3-button3"/>
-                {% endblock navbarinsidetop %}
-                </div>
-             </form>
-            <div class="w3-container" id="maincontentdiv">
-            {% block maincontentdiv %}
-                <h2 style="text-align:center" id="charttitle">{{selectedstockname}}</h2>
-                <!-- Chart -->
-                <canvas id="stockchart" width="4" height="1">
-                    Stock Chart
-                </canvas>
-                {% render_table table %}
-            {% endblock %}
-            </div>
+    <nav class="panel is-pulled-left is-hidden" id="sidepanel">
+        <p class="panel-heading">
+            Options
+        </p>
+        <form method="get">
+            {% block sidepanelcontents%}
+            {% endblock sidepanelcontents%}
+        </form>
         </div>
-    </div>
-    <!-- END MAIN -->
+    </nav>
+    <div class="clearfix"></div>
+
+    <!-- Main content-->
+    {% block mainblock %}
     {% endblock mainblock %}
+    <!-- END MAIN -->
     
     <!--Javascript-->
     <!--Error Messages -->
@@ -114,7 +94,7 @@
             alert('{{ errors }}');
     </script>
     {% endif %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
     {% block chartjs %}
@@ -151,6 +131,10 @@
             // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
             $(".navbar-burger").toggleClass("is-active");
             $(".navbar-menu").toggleClass("is-active");
+        });
+        $("#configbutton").click(function() {
+            $("#sidepanel").toggleClass("is-hidden");
+            $("#configbutton").toggleClass("has-background-danger");
         });
         {% block activepagetoggle %}
         {% endblock %}

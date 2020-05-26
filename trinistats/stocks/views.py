@@ -105,7 +105,6 @@ def dailyequitysummary(request):
             orderby = request.GET.get('sort')
         else:
             orderby = 'date'
-        selecteddatestring = selecteddate.strftime('%Y-%m-%d')
         # Now select the records corresponding to this date, as well as their symbols, and order by the highest volume traded
         dailyequitysummaryrecords = models.Dailyequitysummary.objects.filter(
             date=selecteddate).select_related('equityid').order_by('-valuetraded')
@@ -129,6 +128,8 @@ def dailyequitysummary(request):
         # add the 'other' category to the graph
         graphsymbols.append(others['symbol'])
         graphvaluetraded.append(others['valuetraded'])
+        # get a human readable date
+        selecteddateparsed = selecteddate.strftime('%Y-%m-%d')
     except Exception as ex:
         errors = alertmessage+str(ex)
         logging.critical(traceback.format_exc())
@@ -137,8 +138,8 @@ def dailyequitysummary(request):
     context = {
         'errors': errors,
         'table': tabledata,
-        'selecteddatestring': selecteddatestring,
         'selecteddate': selecteddate,
+        'selecteddateparsed': selecteddateparsed,
         'graphsymbols': graphsymbols,
         'graphvaluetraded': graphvaluetraded,
     }
@@ -252,7 +253,7 @@ def dividendhistory(request):
         if request.GET.get('sort'):
             orderby = request.GET.get('sort')
         else:
-            orderby = 'date'
+            orderby = 'recorddate'
         selectedstock = models.Listedequities.objects.get(
             equityid=selectedequityid)
         # Fetch some default records

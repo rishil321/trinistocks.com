@@ -2,21 +2,29 @@
 {% load render_table from django_tables2 %}
 {% load static %}
 
-    {% block navbarinsidetop %}
-        <label for="date" class="w3-label1 flexbox-item">Date:</label>
-        <input type="date" value="{{ selecteddatestring }}" id="date" name="selecteddate" class="w3-date-selector flexbox-item">
-        <input type="submit" onclick="location.href='{% url 'dailyequitysummary' %}" value="Query" class="w3-button3 flexbox-item"/>
-    {% endblock navbarinsidetop %}
+    {% block sidepanelcontents %}
+    <div class="panel-block">
+        <label class="panellabel" for="date">Trading date</label>
+        <input type="date" class="custom-date-selector" value="{{ selecteddateparsed }}" id="date" name="selecteddate">
+    </div>
+    <div class="panel-block">
+        <input type="submit" class="custom-red-button" onclick="location.href='{% url 'dailyequitysummary' %}" value="Search"/>
+    <div>
+    {% endblock sidepanelcontents %}
 
-    {% block maincontentdiv %}
-        <h2 style="text-align:center" id="charttitle">Equities Traded for {{ selecteddate }}</h2>
-        <!-- Chart -->
+    {% block mainblock %}
+    <!-- Chart -->
+    <div>
+        <h2 style=""id="charttitle">Equities Traded on {{ selecteddate }}</h2>
         <canvas id="stockchart" width="4" height="1">
             Stock Chart
         </canvas>
-        <p style="text-align:center">Top 10 equities by value traded</p>
+    </div>
+        <br>
+    <div class="tablediv">
         {% render_table table %}
-    {% endblock %}
+    </div>
+    {% endblock mainblock %}
 
     {% block chartjs %}
     {{ graphvaluetraded|json_script:"graphvaluetraded" }}
@@ -39,6 +47,12 @@
             ]
         },
         options: {
+            legend: {
+            display: false
+         },
+         tooltips: {
+            enabled: true
+         }
         }
     });
     </script>

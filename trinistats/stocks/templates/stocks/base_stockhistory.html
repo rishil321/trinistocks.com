@@ -2,12 +2,9 @@
 {% load render_table from django_tables2 %}
 {% load static %}
 
-    {% block stockhistorybutton %}
-        <a class="w3-bar-item w3-button w3-theme-l2 w3-hover-white" href="{% url "stockhistory" %}">Stock History</a>
-    {% endblock %}
-
-    {% block navbarinsidetop %}
-        <label for="" class="w3-label1 flexbox-item">Stock:</label>
+    {% block sidepanelcontents %}
+    <div class="panel-block">
+        <label class="panellabel" for="equityid">Stock:</label>
             <select id="equityid" name="equityid" class="w3-select1 flexbox-item">
                 <!--Add options based on dictionary items returned-->
                 {% for listedstock in listedstocks %}
@@ -18,21 +15,34 @@
                     {% endif %}
                 {% endfor %}
             </select>
-        <label for="startdate" class="w3-label1 flexbox-item">Start Date:</label>
-        <input type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" class="w3-date-selector flexbox-item">
-        <label for="enddate" class="w3-label1 flexbox-item">End Date:</label>
-        <input type="date" value="{{ enteredenddate }}" id="enddate" name="enddate" class="w3-date-selector flexbox-item"/>
-        <input type="submit" onclick="location.href='{% url 'stockhistory' %}" value="Query" class="w3-button3 flexbox-item"/>
-    {% endblock navbarinsidetop %}
+     </div>
+    <div class="panel-block">
+        <label class="panellabel" for="startdate">Start Date:</label>
+        <input type="date" class="custom-date-selector" value="{{ enteredstartdate }}" id="startdate" name="startdate">
+    </div>
+    <div class="panel-block">    
+        <label class="panellabel" for="enddate">End Date:</label>
+        <input type="date" class="custom-date-selector" value="{{ enteredenddate }}" id="enddate" name="enddate"/>
+    </div>
+    <div class="panel-block">    
+        <input type="submit" class="custom-red-button" onclick="location.href='{% url 'stockhistory' %}" value="Search"/>
+    </div>
+    {% endblock sidepanelcontents %}
 
-    {% block maincontentdiv %}
-        <h2 style="text-align:center" id="charttitle">Stock Price History</h2>
+    {% block mainblock %}
+        <h2 style="" id="charttitle">Stock Price History</h2>
         <!-- Chart -->
+        <div>
         <canvas id="stockchart" width="4" height="1">
             Stock Chart
         </canvas>
-        {% render_table table %}
-    {% endblock %}
+        </div>
+        </div>
+        <br>
+        <div class="tablediv">
+            {% render_table table %}
+        </div>
+    {% endblock mainblock %}
 
     {% block chartjs %}
     {{ graphlabels|json_script:"graphlabels" }}
@@ -63,3 +73,6 @@
     <!-- END MAIN -->
     
     <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#stockhistorylink").toggleClass("has-background-danger");
+    {% endblock %}

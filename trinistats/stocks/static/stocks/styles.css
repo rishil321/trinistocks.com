@@ -2,16 +2,99 @@
     font-family: "Open Sans", sans-serif;
 }
 
-.w3-sidebar {
-    z-index: 3;
-    width: 2em;
-    top: 2.5em;
-    bottom: 0;
-    height: inherit;
+
+.navbar {
+    background-color: black;
 }
 
-.h2 {
+.navbar-item {
+    border-radius: 0.5em;
+}
+
+.panel,
+.panel-heading {
+    background-color: black;
+    color: white;
+}
+
+.panel {}
+
+.panel-heading {
     text-align: center;
+    border-bottom: 1px solid white;
+}
+
+a:hover {
+    background: gray;
+}
+
+.clearfix::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+.orderable a {
+    color: white;
+}
+
+.pagination li a {
+    color: black;
+}
+
+.is-selected {
+    color: white;
+}
+
+.custom-red-button {
+    background-color: red;
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+    border-width: 0em;
+    border-radius: 0.2em;
+    cursor: pointer;
+    padding-left: 1em;
+    padding-right: 1em;
+    color: #ffffff;
+    font-size: 1.5em;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+
+}
+
+.custom-date-selector {
+    cursor: pointer;
+    font-size: 1em;
+    border-radius: 0.2em;
+    border-width: 0.1em;
+    color: black;
+    text-align: center;
+    width: 9em;
+    flex-shrink: 1;
+    background-color: white;
+}
+
+.panellabel {
+    color: white !important;
+    margin-right: 0.4em;
+}
+
+.tablediv {
+    margin-left: 0.2em;
+    margin-right: 0.2em;
+}
+
+.navbaricon {
+    width: 8rem;
+    display: block;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+h2 {
+    text-align: center;
+    font-size: x-large;
 }
 
 .djangotables {}
@@ -38,12 +121,14 @@ td {
     display: block;
     text-align: center;
     margin: auto;
+    color: black;
 }
 
 .previous,
 .next {
     font-weight: bold;
     font-size: 1em;
+    color: black;
 }
 
 .pagination ul {
@@ -57,58 +142,4 @@ td {
 .active {
     font-weight: bolder;
     font-size: 1.5em;
-}
-
-.w3-date-selector {
-    cursor: pointer;
-    font-size: 1em;
-    height: 1.5em;
-    border-radius: 0.2em;
-    border-width: 0.1em;
-    color: black;
-    text-align: center;
-    width: 9em;
-    flex-shrink: 1;
-    background-color: white;
-}
-
-.w3-label1 {
-    color: white;
-    flex-shrink: 3;
-}
-
-.w3-button3 {
-    background-color: red;
-    margin-top: 0.2em;
-    margin-bottom: 0.2em;
-    border-width: 0em;
-    border-radius: 0.2em;
-    cursor: pointer;
-    height: 1.5em;
-    color: #ffffff;
-    font-size: 1em;
-}
-
-.w3-select1 {
-    cursor: pointer;
-    font-size: 1em;
-    height: 1.5em;
-    width: 10em;
-    border-radius: 0.2em;
-    border-width: 0.1em;
-    flex-shrink: 1;
-    background-color: white;
-}
-
-.second-top-bar {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: left;
-    background-color: black;
-    align-items: center;
-}
-
-.flexbox-item {
-    margin-left: 0.5em;
 }
