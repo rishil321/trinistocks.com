@@ -48,7 +48,7 @@
             <img class="navbaricon" src="{%  static 'stocks/trinistats_logo.svg.png' %}">
             <a class="navbar-item" id="homelink" href="{% url "central:landingpage" %}">Home&nbsp
             <i class="fas fa-1x fa-home"></i></a>
-            <a class="navbar-item" id="configbutton">Options&nbsp
+            <a class="navbar-item" id="configbutton">Configure&nbsp
             <i class="fas fa-1x fa-cogs"></i></a>
             <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="left_sidebar" id="navbar_burger">
             <span aria-hidden="true"></span>
@@ -72,7 +72,7 @@
 
     <nav class="panel is-pulled-left is-hidden" id="sidepanel">
         <p class="panel-heading">
-            Options
+            Configuration
         </p>
         <form method="get">
             {% block sidepanelcontents%}

@@ -329,7 +329,7 @@ def dividendyieldhistory(request):
         if request.GET.get('sort'):
             orderby = request.GET.get('sort')
         else:
-            orderby = 'date'
+            orderby = 'yielddate'
         selectedstock = models.Listedequities.objects.get(
             equityid=selectedequityid)
         # Fetch some default records

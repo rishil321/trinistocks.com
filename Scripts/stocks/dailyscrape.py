@@ -41,8 +41,8 @@ from customlogging import customlogging
 # Put your constants here. These should be named in CAPS.
 
 # Put your global variables here.
-# The following symbols are listed in USD on the exchange
-usdequitysymbols = ['MPCCEL']
+# The following equity ids are listed in USD on the exchange (all others are listed in TTD)
+usdequityids = [144]
 
 # Put your class definitions here. These should use the CapWords convention.
 
@@ -727,7 +727,7 @@ def update_dividend_yield():
                     row = result.fetchone()
                     try:
                         stockyearlydata.append(
-                            dict(equity=equity_id, closingquote=row[0], date=row[1]))
+                            dict(equityid=equity_id, closingquote=row[0], date=row[1]))
                     except TypeError:
                         # if we do not have quotes for a particular year, simply ignore it
                         pass
@@ -769,37 +769,49 @@ def update_dividend_yield():
                 dividend_yearly_data.append(equity_yearly_data)
             # Set up a list to store our dividendyielddata
             dividendyielddata = []
-            # Now get our conversion rates to convert everything to TTD
-            apidata = {'q': "JMD_TTD,USD_TTD", 'compact': "ultra",
-                       'apiKey': "3e74bdeb947243822c5c"}
-            apiresponse = requests.get(
-                url="https://free.currconv.com/api/v7/convert", params=apidata)
-            if apiresponse.status_code == 200:
-                jmdtottd = Decimal(json.loads(
-                    apiresponse.content.decode('utf-8'))['JMD_TTD'])
-                usdtottd = Decimal(json.loads(
-                    apiresponse.content.decode('utf-8'))['USD_TTD'])
+            # Now get our conversion rates to convert between TTD and USD/JMD
+            api_response_usdttd = requests.get(
+                url="https://www.freeforexapi.com/api/live?pairs=USDTTD")
+            api_response_usdjmd = requests.get(
+                url="https://www.freeforexapi.com/api/live?pairs=USDJMD")
+            if (api_response_usdttd.status_code == 200) and api_response_usdjmd.status_code == 200:
+                jmdusd = Decimal(1.00)/Decimal(json.loads(
+                    api_response_usdjmd.content.decode('utf-8'))['rates']['USDJMD']['rate'])
+                usdttd = Decimal(json.loads(
+                    api_response_usdttd.content.decode('utf-8'))['rates']['USDTTD']['rate'])
                 # Calculate our dividend yields using our values
                 for dividend_data in dividend_yearly_data:
                     for stdata in stockyearlydata:
-                        if (stdata['equity'] == dividend_data['equityid']) and (str(stdata['date'].year)+"_dividends" in dividend_data):
+                        if (stdata['equityid'] == dividend_data['equityid']) and (str(stdata['date'].year)+"_dividends" in dividend_data):
                             # If we have matched our stock data and our dividend data (by equityid and year)
-                            # First check currencies, and use a multiplier for the conversion rate
-                            conrate = Decimal(1.00)
-                            if dividend_data['currency'] == "USD":
-                                conrate = usdtottd
-                            elif dividend_data['currency'] == "JMD":
-                                conrate = jmdtottd
-                            # Else our conrate should remain 1
-                            # Now calculate the dividend yield for the year
-                            dividendyield = dividend_data[str(
-                                stdata['date'].year)+"_dividends"]*conrate*100/stdata['closingquote']
-                            # Add this value to our list
-                            dividendyielddata.append({'yieldpercent': dividendyield, 'yielddate': stdata['date'],
-                                                      'equityid': stdata['equity']})
+                            # Check if this is a USD listed equity id
+                            if stdata['equityid'] in usdequityids:
+                                # all of the USD listed equities so far have dividends in USD as well, so we don't need to convert
+                                dividendyield = dividend_data[str(
+                                    stdata['date'].year)+"_dividends"]*100/stdata['closingquote']
+                                # Add this value to our list
+                                dividendyielddata.append({'yieldpercent': dividendyield, 'yielddate': stdata['date'],
+                                                          'equityid': stdata['equityid']})
+                            else:
+                                # else this equity is listed in TTD
+                                # Check currencies, and use a multiplier for the conversion rate for dividends in other currencies
+                                conrate = Decimal(1.00)
+                                if dividend_data['currency'] == "USD":
+                                    conrate = usdttd
+                                elif dividend_data['currency'] == "JMD":
+                                    conrate = jmdusd*usdttd
+                                else:
+                                    pass
+                                    # Else our conrate should remain 1
+                                # Now calculate the dividend yield for the year
+                                dividendyield = dividend_data[str(
+                                    stdata['date'].year)+"_dividends"]*conrate*100/stdata['closingquote']
+                                # Add this value to our list
+                                dividendyielddata.append({'yieldpercent': dividendyield, 'yielddate': stdata['date'],
+                                                          'equityid': stdata['equityid']})
             else:
                 raise ConnectionError(
-                    "Could not connect to API to convert currencies.")
+                    "Could not connect to API to convert currencies. Status code "+api_response_usdjmd.status_code+". Reason: "+api_response_usdjmd.reason)
             logging.info("Dividend yield calculated successfully.")
             logging.info("Inserting data into database.")
             insertstmt = dividendyieldtable.insert().prefix_with("IGNORE")
@@ -1313,25 +1325,25 @@ def main():
             logging.info("Logging set up successfully.")
         # Set up a pidfile to ensure that only one instance of this script runs at a time
         with PidFile(piddir=tempfile.gettempdir()):
-            logging.info("Updating listed equities and looking for new data")
-            # Scrape basic data for all listed equities
-            alllistedequitydata = scrape_listed_equity_data()
-            # Then write this data to the db
-            write_listed_equity_data_to_db(alllistedequitydata)
-            # Call the function to scrape the dividend data for all securities
-            logging.info("Now trying to scrape dividend data")
-            alldividenddata = scrape_dividend_data()
-            # Then call the function to write this data into the database
-            write_dividend_data_to_db(alldividenddata)
-            # Then call the function to scrape the historical data for all securities
-            logging.info("Now trying to fetch historical data")
-            allhistoricalstockdata = scrape_historical_data()
-            # Then call the function to write this data into the database
-            write_historical_data_to_db(allhistoricalstockdata)
-            # Call the function to scrape market summary data and update DB immediately
-            update_equity_summary_data()
-            # Then call the function to calculate the dividend yield for all stocks and write to
-            # the database immediately
+            # logging.info("Updating listed equities and looking for new data")
+            # # Scrape basic data for all listed equities
+            # alllistedequitydata = scrape_listed_equity_data()
+            # # Then write this data to the db
+            # write_listed_equity_data_to_db(alllistedequitydata)
+            # # Call the function to scrape the dividend data for all securities
+            # logging.info("Now trying to scrape dividend data")
+            # alldividenddata = scrape_dividend_data()
+            # # Then call the function to write this data into the database
+            # write_dividend_data_to_db(alldividenddata)
+            # # Then call the function to scrape the historical data for all securities
+            # logging.info("Now trying to fetch historical data")
+            # allhistoricalstockdata = scrape_historical_data()
+            # # Then call the function to write this data into the database
+            # write_historical_data_to_db(allhistoricalstockdata)
+            # # Call the function to scrape market summary data and update DB immediately
+            # update_equity_summary_data()
+            # # Then call the function to calculate the dividend yield for all stocks and write to
+            # # the database immediately
             update_dividend_yield()
     except Exception:
         logging.exception("Error in script "+os.path.basename(__file__))
