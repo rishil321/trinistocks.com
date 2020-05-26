@@ -1325,25 +1325,25 @@ def main():
             logging.info("Logging set up successfully.")
         # Set up a pidfile to ensure that only one instance of this script runs at a time
         with PidFile(piddir=tempfile.gettempdir()):
-            # logging.info("Updating listed equities and looking for new data")
-            # # Scrape basic data for all listed equities
-            # alllistedequitydata = scrape_listed_equity_data()
-            # # Then write this data to the db
-            # write_listed_equity_data_to_db(alllistedequitydata)
-            # # Call the function to scrape the dividend data for all securities
-            # logging.info("Now trying to scrape dividend data")
-            # alldividenddata = scrape_dividend_data()
-            # # Then call the function to write this data into the database
-            # write_dividend_data_to_db(alldividenddata)
-            # # Then call the function to scrape the historical data for all securities
-            # logging.info("Now trying to fetch historical data")
-            # allhistoricalstockdata = scrape_historical_data()
-            # # Then call the function to write this data into the database
-            # write_historical_data_to_db(allhistoricalstockdata)
-            # # Call the function to scrape market summary data and update DB immediately
-            # update_equity_summary_data()
-            # # Then call the function to calculate the dividend yield for all stocks and write to
-            # # the database immediately
+            logging.info("Updating listed equities and looking for new data")
+            # Scrape basic data for all listed equities
+            alllistedequitydata = scrape_listed_equity_data()
+            # Then write this data to the db
+            write_listed_equity_data_to_db(alllistedequitydata)
+            # Call the function to scrape the dividend data for all securities
+            logging.info("Now trying to scrape dividend data")
+            alldividenddata = scrape_dividend_data()
+            # Then call the function to write this data into the database
+            write_dividend_data_to_db(alldividenddata)
+            # Then call the function to scrape the historical data for all securities
+            logging.info("Now trying to fetch historical data")
+            allhistoricalstockdata = scrape_historical_data()
+            # Then call the function to write this data into the database
+            write_historical_data_to_db(allhistoricalstockdata)
+            # Call the function to scrape market summary data and update DB immediately
+            update_equity_summary_data()
+            # Then call the function to calculate the dividend yield for all stocks and write to
+            # the database immediately
             update_dividend_yield()
     except Exception:
         logging.exception("Error in script "+os.path.basename(__file__))
