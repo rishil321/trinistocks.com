@@ -11,8 +11,9 @@
         <label class="panellabel" for="enddate">End Date:</label>
         <input class="custom-date-selector" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate"/>
     </div>
-    <div class="panel-block">    
-        <input class="custom-red-button" type="submit" onclick="location.href='{% url 'markethistory' %}" value="Search"/>
+    <div class="panel-block">   
+        <input type="hidden" value="date" name="sort"></input>
+        <input class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:markethistory' %}" value="Search"/>
     </div>
     {% endblock sidepanelcontents %}
 

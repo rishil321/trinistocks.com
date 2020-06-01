@@ -234,6 +234,7 @@ def updatedailytrades():
                 osoffervol=insert_stmt.inserted.osoffervol,
                 saleprice=insert_stmt.inserted.saleprice,
                 volumetraded=insert_stmt.inserted.volumetraded,
+                valuetraded=insert_stmt.inserted.valuetraded,
                 closeprice=insert_stmt.inserted.closeprice,
                 changedollars=insert_stmt.inserted.changedollars
             )

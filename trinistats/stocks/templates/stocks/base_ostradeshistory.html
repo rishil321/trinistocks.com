@@ -4,14 +4,14 @@
 
     {% block sidepanelcontents %}
     <div class="panel-block">
-        <label class="panellabel" for="equityid">Stock:</label>
-        <select class="custom-date-selector" id="equityid" name="equityid">
+        <label class="panellabel" for="stockcode">Stock:</label>
+        <select class="custom-date-selector" id="stockcode" name="stockcode">
             <!--Add options based on dictionary items returned-->
             {% for listedstock in listedstocks %}
-                {% if listedstock.equityid == selectedequityid %}
-                    <option value="{{ listedstock.equityid }}" selected>{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
+                {% if listedstock.stockcode == selectedstockcode %}
+                    <option value="{{ listedstock.stockcode }}" selected>{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
                 {% else %}
-                    <option value="{{ listedstock.equityid }}">{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
+                    <option value="{{ listedstock.stockcode }}">{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
                 {% endif %}
             {% endfor %}
         </select>
@@ -33,8 +33,9 @@
         <label class="panellabel" for="enddate">End Date:</label>
         <input class="custom-date-selector" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate"/>
     </div>
-    <div class="panel-block">    
-        <input class="custom-red-button" type="submit" onclick="location.href='{% url 'ostradeshistory' %}" value="Search"/>
+    <div class="panel-block">
+        <input type="hidden" value="date" name="sort"></input>    
+        <input class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:ostradeshistory' %}" value="Search"/>
     </div>
     {% endblock sidepanelcontents %}
 

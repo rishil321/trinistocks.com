@@ -22,6 +22,7 @@ import getopt
 import multiprocessing
 import time
 import tempfile
+from pathlib import Path
 # Imports from the cheese factory
 from pid import PidFile
 import requests
@@ -41,8 +42,7 @@ from customlogging import customlogging
 # Put your constants here. These should be named in CAPS.
 
 # Put your global variables here.
-# The following equity ids are listed in USD on the exchange (all others are listed in TTD)
-usdequityids = [144]
+
 
 # Put your class definitions here. These should use the CapWords convention.
 
@@ -633,7 +633,7 @@ def write_historical_data_to_db(allhistoricaldatatoinsert):
                     if historicaldatatoinsert['symbol'] == row[0]:
                         historicaldatatoinsert['equityid'] = row[1]
                     # Check whether this data is for a non-TTD equity
-                    if historicaldatatoinsert['symbol'] in usdequitysymbols:
+                    if historicaldatatoinsert['equityid'] in usdequityids:
                         historicaldatatoinsert['currency'] = 'USD'
                     else:
                         historicaldatatoinsert['currency'] = 'TTD'
@@ -1184,8 +1184,10 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
                         # Map the symbol for each equity to an equityid in our table
                         if equitytradingdata['symbol'] == row[0]:
                             equitytradingdata['equityid'] = row[1]
-                # Now remove our unneeded columns
+                # Calculate the valuetraded for each row and remove our unneeded columns
                 for equitytradingdata in allequitytradingdata:
+                    equitytradingdata['valuetraded'] = float(
+                        equitytradingdata['saleprice']) * float(equitytradingdata['volumetraded'])
                     equitytradingdata.pop('symbol', None)
                 # insert data into dailyequitysummary table
                 insert_stmt = insert(dailyequitysummarytable).values(
@@ -1200,6 +1202,7 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
                     osoffervol=insert_stmt.inserted.osoffervol,
                     saleprice=insert_stmt.inserted.saleprice,
                     volumetraded=insert_stmt.inserted.volumetraded,
+                    valuetraded=insert_stmt.inserted.valuetraded,
                     closeprice=insert_stmt.inserted.closeprice,
                     changedollars=insert_stmt.inserted.changedollars
                 )

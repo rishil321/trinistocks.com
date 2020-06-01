@@ -1,15 +1,22 @@
 from django.urls import path
 
 from . import views
+from . import models
 
-# app_name = 'ttseanalytics'
+# Functions for URLS
+
+
+app_name = 'stocks'
 
 urlpatterns = [
-    path('', views.dailyequitysummary, name='dailyequitysummary'),
-    path('dailyequitysummary', views.dailyequitysummary, name='dailyequitysummary'),
-    path('markethistory', views.markethistory, name='markethistory'),
-    path('stockhistory', views.stockhistory, name='stockhistory'),
-    path('dividendhistory', views.dividendhistory, name='dividendhistory'),
-    path('dividendyieldhistory', views.dividendyieldhistory, name='dividendyieldhistory'),
+    path('dailyequitysummary', views.DailyEquitySummaryView.as_view(),
+         name='dailyequitysummary'),
+    path('marketindexhistory', views.MarketIndexHistoryView.as_view(),
+         name='marketindexhistory'),
+    path('stockhistory', views.StockHistoryView.as_view(), name='stockhistory'),
+    path('dividendhistory', views.DividendHistoryView.as_view(),
+         name='dividendhistory'),
+    path('dividendyieldhistory', views.DividendYieldHistoryView.as_view(),
+         name='dividendyieldhistory'),
     path('ostradeshistory', views.ostradeshistory, name='ostradeshistory'),
 ]

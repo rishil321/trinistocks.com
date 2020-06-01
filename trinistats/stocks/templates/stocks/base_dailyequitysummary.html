@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% load render_table from django_tables2 %}
+{% load django_tables2 %}
 {% load static %}
 
     {% block sidepanelcontents %}
     <div class="panel-block">
         <label class="panellabel" for="date">Trading date</label>
-        <input type="date" class="custom-date-selector" value="{{ selecteddateparsed }}" id="date" name="selecteddate">
+        <input type="date" class="custom-date-selector" value="{{ selecteddateparsed }}" id="date" name="date">
     </div>
     <div class="panel-block">
-        <input type="submit" class="custom-red-button" onclick="location.href='{% url 'dailyequitysummary' %}" value="Search"/>
+        <input type="submit" class="custom-red-button" onclick="location.href='{% url 'stocks:dailyequitysummary' %}" value="Search"/>
     <div>
     {% endblock sidepanelcontents %}
 
@@ -20,7 +20,11 @@
             Stock Chart
         </canvas>
     </div>
-        <br>
+    <br>
+    <div class="buttons is-centered">
+        <a class="button export-csv-button" id="exportcsvbutton" href="{% export_url "csv" %}">Export as CSV</a>
+    </div>
+    <div class="is-clearfix clearfix"></div>    
     <div class="tablediv">
         {% render_table table %}
     </div>
