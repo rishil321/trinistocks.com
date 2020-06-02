@@ -797,7 +797,9 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
         # This list of dicts will contain all data to be written to the db
         allmarketsummarydata = []
         allequitytradingdata = []
-        for fetchdate in datestofetch:
+        for index, fetchdate in enumerate(datestofetch):
+            logging.info("Now loading webpage "+str(index) +
+                         " of "+str(len(datestofetch))+pidstring)
             # set up a variable to retry page loads on Internet failures
             webretries = 1
             # check if the page was loaded or has failed enough times
@@ -985,67 +987,67 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
                                             equitytradingdata['openprice'] = float(
                                                 openprice.replace(",", ""))
                                         else:
-                                            equitytradingdata['openprice'] = None
+                                            equitytradingdata['openprice'] = 0
                                         high = rowcells[3].text
                                         if high != ' ':
                                             equitytradingdata['high'] = float(
                                                 high.replace(",", ""))
                                         else:
-                                            equitytradingdata['high'] = None
+                                            equitytradingdata['high'] = 0
                                         low = rowcells[4].text
                                         if low != ' ':
                                             equitytradingdata['low'] = float(
                                                 low.replace(",", ""))
                                         else:
-                                            equitytradingdata['low'] = None
+                                            equitytradingdata['low'] = 0
                                         osbid = rowcells[5].text
                                         if osbid != ' ':
                                             equitytradingdata['osbid'] = float(
                                                 osbid.replace(",", ""))
                                         else:
-                                            equitytradingdata['osbid'] = None
+                                            equitytradingdata['osbid'] = 0
                                         osbidvol = rowcells[6].text
                                         if osbidvol != ' ':
                                             equitytradingdata['osbidvol'] = int(
                                                 osbidvol.replace(",", ""))
                                         else:
-                                            equitytradingdata['osbidvol'] = None
+                                            equitytradingdata['osbidvol'] = 0
                                         osoffer = rowcells[7].text
                                         if osoffer != ' ':
                                             equitytradingdata['osoffer'] = float(
                                                 osoffer.replace(",", ""))
                                         else:
-                                            equitytradingdata['osoffer'] = None
+                                            equitytradingdata['osoffer'] = 0
                                         osoffervol = rowcells[8].text
                                         if osoffervol != ' ':
                                             equitytradingdata['osoffervol'] = int(
                                                 osoffervol.replace(",", ""))
                                         else:
-                                            equitytradingdata['osoffervol'] = None
+                                            equitytradingdata['osoffervol'] = 0
                                         saleprice = rowcells[9].text
                                         if saleprice != ' ':
                                             equitytradingdata['saleprice'] = float(
                                                 saleprice.replace(",", ""))
                                         else:
-                                            equitytradingdata['saleprice'] = None
+                                            equitytradingdata['saleprice'] = 0
                                         volumetraded = rowcells[11].text
                                         if volumetraded != ' ':
                                             equitytradingdata['volumetraded'] = int(
                                                 volumetraded.replace(",", ""))
                                         else:
-                                            equitytradingdata['volumetraded'] = None
+                                            equitytradingdata['volumetraded'] = 0
                                         closeprice = rowcells[12].text
                                         if closeprice != ' ':
                                             equitytradingdata['closeprice'] = float(
                                                 closeprice.replace(",", ""))
                                         else:
-                                            equitytradingdata['closeprice'] = None
+                                            equitytradingdata['closeprice'] = 0
                                         changedollars = rowcells[13].text
                                         if changedollars != ' ':
                                             equitytradingdata['changedollars'] = float(
                                                 changedollars.replace(",", ""))
                                         else:
-                                            equitytradingdata['changedollars'] = None
+                                            equitytradingdata['changedollars'] = 0.00
                                         # now add our dictionary to our list
                                         allequitytradingdata.append(
                                             equitytradingdata)
@@ -1447,10 +1449,10 @@ def main():
                     multipool.apply_async(
                         update_daily_trades, ())
                 else:
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(scrape_dividend_data, ())
-                    multipool.apply_async(scrape_historical_data, ())
-                    multipool.apply_async(update_dividend_yield, ())
+                    # multipool.apply_async(scrape_listed_equity_data, ())
+                    # multipool.apply_async(scrape_dividend_data, ())
+                    # multipool.apply_async(scrape_historical_data, ())
+                    # multipool.apply_async(update_dividend_yield, ())
                     # block on the next function to wait until the dates are ready
                     dates_to_fetch_sublists, alllistedsymbols = multipool.apply(
                         update_equity_summary_data, ())

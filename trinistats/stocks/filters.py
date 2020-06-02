@@ -41,3 +41,12 @@ class MarketIndexHistoryFilter(django_filters.FilterSet):
         fields = {
             'date': ['gte', 'lte', ],
         }
+
+
+class OSTradesHistoryFilter(django_filters.FilterSet):
+    class Meta:
+        model = models.DailyEquitySummary
+        fields = {
+            'date': ['gte', 'lte', ],
+            'stockcode': ['exact', ],
+        }

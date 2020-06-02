@@ -27,11 +27,11 @@
     </div>
     <div class="panel-block">
         <label class="panellabel" for="startdate">Start Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate" >
+        <input class="custom-date-selector" type="date" value="{{ enteredstartdate }}" id="startdate" name="date__gte" >
     </div>
     <div class="panel-block">    
         <label class="panellabel" for="enddate">End Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate"/>
+        <input class="custom-date-selector" type="date" value="{{ enteredenddate }}" id="enddate" name="date__lte"/>
     </div>
     <div class="panel-block">
         <input type="hidden" value="date" name="sort"></input>    
@@ -83,5 +83,5 @@
     
     <!--Javascript-->
     {% block activepagetoggle %}
-    $("#outstandingtradeslink").toggleClass("has-background-danger");
+    $("#outstandingtradeslink").toggleClass("has-background-red");
     {% endblock %}

@@ -99,10 +99,15 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
     page_name = ''  # a string representing the name of the page
     historicalrecords = None
     selectedstock = None
-    graph_dict = None  # the dictionary of objects to display in the graph
+    graph_dataset = []  # the list of dictionary of objects to display in the graph
+    stock_code_needed = None
+    osparameter = None
 
-    def set_graph_dict(self,):
-        self.graph_dict = None
+    def set_graph_dataset(self,):
+        self.graph_dataset = []
+
+    def set_stock_code_needed(self, bool_input_arg):
+        self.stock_code_needed = bool_input_arg
 
     def get_context_data(self, *args, **kwargs):
         try:
@@ -134,39 +139,43 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
                 selectedstockcode = int(self.request.GET.get('stockcode'))
                 self.request.session['selectedstockcode'] = selectedstockcode
             else:
-                raise ValueError(
-                    " Please ensure that you have included a stockcode in the URL! For example: ?stockcode=169")
+                if self.stock_code_needed:
+                    raise ValueError(
+                        " Please ensure that you have included a stockcode in the URL! For example: ?stockcode=169")
             if self.request.GET.get('sort'):
                 orderby = self.request.GET.get('sort')
             else:
                 raise ValueError(
                     " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
-            selectedstock = models.ListedEquities.objects.get(
-                stockcode=selectedstockcode)
+            if self.request.GET.get('osparameter'):
+                self.osparameter = self.request.GET.get('osparameter')
             # validate input data
             if enteredstartdate >= enteredenddate:
                 errors += "Your starting date must be before your ending date. Please recheck."
             # Fetch the records
-            historicalrecords = self.model.objects.filter(
-                stockcode=selectedstockcode).filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate)
+            if 'selectedstockcode' in locals():
+                self.selectedstock = models.ListedEquities.objects.get(
+                    stockcode=selectedstockcode)
+                self.historicalrecords = self.model.objects.filter(
+                    stockcode=selectedstockcode).filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).order_by(orderby)
+            else:
+                self.historicalrecords = self.model.objects.filter(
+                    date__gt=enteredstartdate).filter(date__lt=enteredenddate).order_by(orderby)
             # Set up our graph
             graphlabels = [obj.date.strftime('%Y-%m-%d')
-                           for obj in historicalrecords]
-            graphdataset = []
+                           for obj in self.historicalrecords]
             # Store the variables for the subclasses to calculate the required dict
-            self.historicalrecords = historicalrecords
-            self.selectedstock = selectedstock
-            self.set_graph_dict()
-            graphdataset.append(self.graph_dict)
+            self.set_graph_dataset()
             # add the context keys
             context['errors'] = errors
             context['listedstocks'] = listedstocks
-            context['selectedstockcode'] = selectedstockcode
-            context['selectedstockname'] = selectedstock.securityname
+            if 'selectedstockcode' in locals():
+                context['selectedstockcode'] = selectedstockcode
+                context['selectedstockname'] = self.selectedstock.securityname
             context['enteredstartdate'] = enteredstartdate.strftime('%Y-%m-%d')
             context['enteredenddate'] = enteredenddate.strftime('%Y-%m-%d')
             context['graphlabels'] = graphlabels
-            context['graphdataset'] = graphdataset
+            context['graphdataset'] = self.graph_dataset
         except Exception as ex:
             logging.exception(
                 "Sorry. Ran into a problem while attempting to load this page.")
@@ -184,397 +193,78 @@ class StockHistoryView(BasicLineChartAndTableView):
     table_class = tables.HistoricalStockInfoTable  # tables.something
     filterset_class = filters.StockHistoryFilter  # filters.something
     page_name = 'Stock History'  # a string representing the name of the page
-    graph_dict = None  # the dictionary of objects to display in the graph
 
-    def set_graph_dict(self,):
-        self.graph_dict = dict(data=[float(obj.closingquote) for obj in self.historicalrecords],
-                               borderColor='rgb(0, 0, 0)',
-                               backgroundColor='rgb(255, 0, 0)',
-                               label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')
+    def set_stock_code_needed(self, bool_input_arg):
+        self.stock_code_needed = True
+
+    def set_graph_dataset(self,):
+        self.graph_dataset = [dict(data=[float(obj.closingquote) for obj in self.historicalrecords],
+                                   borderColor='rgb(0, 0, 0)',
+                                   backgroundColor='rgb(255, 0, 0)',
+                                   label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
 
 
-class StockHistoryView2(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class DividendHistoryView(BasicLineChartAndTableView):
     """
-    Set up the data for the stock history page
+    The class for displaying the dividend history view website
     """
-    template_name = 'stocks/base_stockhistory.html'
-    model = models.HistoricalStockInfo
-    table_class = tables.HistoricalStockInfoTable
-    filterset_class = filters.StockHistoryFilter
+    template_name = 'base_dividendhistory.html'
+    model = models.HistoricalDividendInfo  # models.something
+    table_class = tables.HistoricalDividendInfoTable  # tables.something
+    filterset_class = filters.DividendHistoryFilter  # filters.something
+    page_name = 'Dividend History'  # a string representing the name of the page
 
-    def get_context_data(self, *args, **kwargs):
-        try:
-            errors = ""
-            # get the current context
-            context = super().get_context_data(
-                *args, **kwargs)
-            logger.info("Stock history page was called")
-            listedstocks = models.ListedEquities.objects.all().order_by('symbol')
-            # get the filters included in the URL.
-            # If the required filters are not present, raise an error
-            if self.request.GET.get('date__gte'):
-                enteredstartdate = datetime.strptime(
-                    self.request.GET.get('date__gte'), "%Y-%m-%d")
-                self.request.session['enteredstartdate'] = enteredstartdate.strftime(
-                    '%Y-%m-%d')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a starting date in the URL! For example: ?date__gte=2019-05-12")
-            if self.request.GET.get('date__lte'):
-                enteredenddate = datetime.strptime(
-                    self.request.GET.get('date__lte'), "%Y-%m-%d")
-                self.request.session['enteredenddate'] = enteredenddate.strftime(
-                    '%Y-%m-%d')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
-            if self.request.GET.get('stockcode'):
-                selectedstockcode = int(self.request.GET.get('stockcode'))
-                self.request.session['selectedstockcode'] = selectedstockcode
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a stockcode in the URL! For example: ?stockcode=169")
-            if self.request.GET.get('sort'):
-                orderby = self.request.GET.get('sort')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
-            selectedstock = models.ListedEquities.objects.get(
-                stockcode=selectedstockcode)
-            # validate input data
-            if enteredstartdate >= enteredenddate:
-                errors += "Your starting date must be before your ending date. Please recheck."
-            # Fetch the records
-            historicalrecords = models.HistoricalStockInfo.objects.filter(
-                stockcode=selectedstockcode).filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate)
-            # Set up our graph
-            graphlabels = [obj.date.strftime('%Y-%m-%d')
-                           for obj in historicalrecords]
-            graphdataset = []
-            # Add the composite totals
-            graphdict = dict(data=[float(obj.closingquote) for obj in historicalrecords],
-                             borderColor='rgb(0, 0, 0)',
-                             backgroundColor='rgb(255, 0, 0)',
-                             label=selectedstock.securityname+'('+selectedstock.symbol+')')
-            graphdataset.append(graphdict)
-            # add the context keys
-            context['errors'] = errors
-            context['listedstocks'] = listedstocks
-            context['selectedstockcode'] = selectedstockcode
-            context['selectedstockname'] = selectedstock.securityname
-            context['enteredstartdate'] = enteredstartdate.strftime('%Y-%m-%d')
-            context['enteredenddate'] = enteredenddate.strftime('%Y-%m-%d')
-            context['graphlabels'] = graphlabels
-            context['graphdataset'] = graphdataset
-        except Exception as ex:
-            logging.exception(
-                "Sorry. Ran into a problem while attempting to load this page.")
-            logger.exception(errors)
-            context['errors'] = ALERTMESSAGE+str(ex)
-        return context
+    def set_stock_code_needed(self, bool_input_arg):
+        self.stock_code_needed = True
+
+    def set_graph_dataset(self,):
+        self.graph_dataset = [dict(data=[float(obj.dividendamount) for obj in self.historicalrecords],
+                                   borderColor='rgb(0, 0, 0)',
+                                   backgroundColor='rgb(255, 0, 0)',
+                                   label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
 
 
-class DividendHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class DividendYieldHistoryView(BasicLineChartAndTableView):
     """
-    Set up the data for the stock history page
+    The class for displaying the dividend history view website
     """
-    template_name = 'stocks/base_dividendhistory.html'
-    model = models.HistoricalDividendInfo
-    table_class = tables.HistoricalDividendInfoTable
-    filterset_class = filters.DividendHistoryFilter
+    template_name = 'base_dividendyieldhistory.html'
+    model = models.DividendYield  # models.something
+    table_class = tables.HistoricalDividendYieldTable  # tables.something
+    filterset_class = filters.DividendYieldHistoryFilter  # filters.something
+    # a string representing the name of the page
+    page_name = 'Dividend Yield History'
 
-    def get_context_data(self, *args, **kwargs):
-        try:
-            errors = ""
-            # get the current context
-            context = super().get_context_data(
-                *args, **kwargs)
-            logger.info("Dividend history page was called")
-            listedstocks = models.ListedEquities.objects.all().order_by('symbol')
-            # get the filters included in the URL.
-            # If the required filters are not present, raise an error
-            if self.request.GET.get('date__gte'):
-                enteredstartdate = datetime.strptime(
-                    self.request.GET.get('date__gte'), "%Y-%m-%d")
-                self.request.session['enteredstartdate'] = enteredstartdate.strftime(
-                    '%Y-%m-%d')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a starting date in the URL! For example: ?date__gte=2019-05-12")
-            if self.request.GET.get('date__lte'):
-                enteredenddate = datetime.strptime(
-                    self.request.GET.get('date__lte'), "%Y-%m-%d")
-                self.request.session['enteredenddate'] = enteredenddate.strftime(
-                    '%Y-%m-%d')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
-            if self.request.GET.get('stockcode'):
-                selectedstockcode = int(self.request.GET.get('stockcode'))
-                self.request.session['selectedstockcode'] = selectedstockcode
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a stockcode in the URL! For example: ?stockcode=169")
-            selectedstock = models.ListedEquities.objects.get(
-                stockcode=selectedstockcode)
-            if self.request.GET.get('sort'):
-                orderby = self.request.GET.get('sort')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
-            # validate input data
-            if enteredstartdate >= enteredenddate:
-                errors += "Your starting date must be before your ending date. Please recheck."
-            # Fetch the records
-            historicalrecords = models.HistoricalDividendInfo.objects.filter(
-                stockcode=selectedstockcode).filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).order_by(orderby)
-            # Set up our graph
-            graphlabels = [obj.date.strftime('%Y-%m-%d')
-                           for obj in historicalrecords]
-            graphdataset = []
-            # Add the composite totals
-            graphdict = dict(data=[float(obj.dividendamount) for obj in historicalrecords],
-                             borderColor='rgb(0, 0, 0)',
-                             backgroundColor='rgb(255, 0, 0)',
-                             label=selectedstock.securityname+'('+selectedstock.symbol+')')
-            graphdataset.append(graphdict)
-            # add the context keys
-            context['errors'] = errors
-            context['listedstocks'] = listedstocks
-            context['selectedstockcode'] = selectedstockcode
-            context['selectedstockname'] = selectedstock.securityname
-            context['enteredstartdate'] = enteredstartdate.strftime('%Y-%m-%d')
-            context['enteredenddate'] = enteredenddate.strftime('%Y-%m-%d')
-            context['graphlabels'] = graphlabels
-            context['graphdataset'] = graphdataset
-        except Exception as ex:
-            logging.exception(
-                "Sorry. Ran into a problem while attempting to load this page.")
-            logger.exception(errors)
-            context['errors'] = ALERTMESSAGE+str(ex)
-        return context
+    def set_stock_code_needed(self, bool_input_arg):
+        self.stock_code_needed = True
+
+    def set_graph_dataset(self,):
+        self.graph_dataset = [dict(data=[float(obj.yieldpercent) for obj in self.historicalrecords],
+                                   borderColor='rgb(0, 0, 0)',
+                                   backgroundColor='rgb(255, 0, 0)',
+                                   label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
 
 
-class DividendYieldHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class MarketIndexHistoryView(BasicLineChartAndTableView):
     """
-    Set up the data for the stock history page
-    """
-    template_name = 'stocks/base_dividendyieldhistory.html'
-    model = models.DividendYield
-    table_class = tables.HistoricalDividendYieldTable
-    filterset_class = filters.DividendHistoryFilter
-
-    def get_context_data(self, *args, **kwargs):
-        try:
-            errors = ""
-            # get the current context
-            context = super().get_context_data(
-                *args, **kwargs)
-            logger.info("Dividend history page was called")
-            listedstocks = models.ListedEquities.objects.all().order_by('symbol')
-            # get the filters included in the URL.
-            # If the required filters are not present, raise an error
-            if self.request.GET.get('date__gte'):
-                enteredstartdate = datetime.strptime(
-                    self.request.GET.get('date__gte'), "%Y-%m-%d")
-                self.request.session['enteredstartdate'] = enteredstartdate.strftime(
-                    '%Y-%m-%d')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a starting date in the URL! For example: ?date__gte=2019-05-12")
-            if self.request.GET.get('date__lte'):
-                enteredenddate = datetime.strptime(
-                    self.request.GET.get('date__lte'), "%Y-%m-%d")
-                self.request.session['enteredenddate'] = enteredenddate.strftime(
-                    '%Y-%m-%d')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
-            if self.request.GET.get('stockcode'):
-                selectedstockcode = int(self.request.GET.get('stockcode'))
-                self.request.session['selectedstockcode'] = selectedstockcode
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a stockcode in the URL! For example: ?stockcode=169")
-            selectedstock = models.ListedEquities.objects.get(
-                stockcode=selectedstockcode)
-            if self.request.GET.get('sort'):
-                orderby = self.request.GET.get('sort')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
-            # validate input data
-            if enteredstartdate >= enteredenddate:
-                errors += "Your starting date must be before your ending date. Please recheck."
-            # Fetch the records
-            historicalrecords = models.DividendYield.objects.filter(
-                stockcode=selectedstockcode).filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).order_by(orderby)
-            # Set up our graph
-            graphlabels = [obj.date.strftime('%Y-%m-%d')
-                           for obj in historicalrecords]
-            graphdataset = []
-            # Add the composite totals
-            graphdict = dict(data=[float(obj.yieldpercent) for obj in historicalrecords],
-                             borderColor='rgb(0, 0, 0)',
-                             backgroundColor='rgb(255, 0, 0)',
-                             label=selectedstock.securityname+'('+selectedstock.symbol+')')
-            graphdataset.append(graphdict)
-            # add the context keys
-            context['errors'] = errors
-            context['listedstocks'] = listedstocks
-            context['selectedstockcode'] = selectedstockcode
-            context['selectedstockname'] = selectedstock.securityname
-            context['enteredstartdate'] = enteredstartdate.strftime('%Y-%m-%d')
-            context['enteredenddate'] = enteredenddate.strftime('%Y-%m-%d')
-            context['graphlabels'] = graphlabels
-            context['graphdataset'] = graphdataset
-        except Exception as ex:
-            logging.exception(
-                "Sorry. Ran into a problem while attempting to load this page.")
-            logger.exception(errors)
-            context['errors'] = ALERTMESSAGE+str(ex)
-        return context
-
-
-class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
-    """
-    Set up the data for the stock history page
+    Set up the data for the market indices history page
     """
     template_name = 'stocks/base_marketindexhistory.html'
     model = models.HistoricalMarketSummary
     table_class = tables.HistoricalMarketSummaryTable
-    filterset_class = filters.DividendHistoryFilter
+    filterset_class = filters.MarketIndexHistoryFilter
 
-    def get_context_data(self, *args, **kwargs):
-        try:
-            errors = ""
-            # get the current context
-            context = super().get_context_data(
-                *args, **kwargs)
-            logger.info("Dividend history page was called")
-            listedstocks = models.ListedEquities.objects.all().order_by('symbol')
-            # get the filters included in the URL.
-            # If the required filters are not present, raise an error
-            if self.request.GET.get('date__gte'):
-                enteredstartdate = datetime.strptime(
-                    self.request.GET.get('date__gte'), "%Y-%m-%d")
-                self.request.session['enteredstartdate'] = enteredstartdate.strftime(
-                    '%Y-%m-%d')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a starting date in the URL! For example: ?date__gte=2019-05-12")
-            if self.request.GET.get('date__lte'):
-                enteredenddate = datetime.strptime(
-                    self.request.GET.get('date__lte'), "%Y-%m-%d")
-                self.request.session['enteredenddate'] = enteredenddate.strftime(
-                    '%Y-%m-%d')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
-            if self.request.GET.get('stockcode'):
-                selectedstockcode = int(self.request.GET.get('stockcode'))
-                self.request.session['selectedstockcode'] = selectedstockcode
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a stockcode in the URL! For example: ?stockcode=169")
-            selectedstock = models.ListedEquities.objects.get(
-                stockcode=selectedstockcode)
-            if self.request.GET.get('sort'):
-                orderby = self.request.GET.get('sort')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
-            # validate input data
-            if enteredstartdate >= enteredenddate:
-                errors += "Your starting date must be before your ending date. Please recheck."
-            # Fetch the records
-            historicalrecords = models.DividendYield.objects.filter(
-                stockcode=selectedstockcode).filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).order_by(orderby)
-            # Set up our graph
-            graphlabels = [obj.date.strftime('%Y-%m-%d')
-                           for obj in historicalrecords]
-            graphdataset = []
-            # Add the composite totals
-            graphdict = dict(data=[float(obj.yieldpercent) for obj in historicalrecords],
-                             borderColor='rgb(0, 0, 0)',
-                             backgroundColor='rgb(255, 0, 0)',
-                             label=selectedstock.securityname+'('+selectedstock.symbol+')')
-            graphdataset.append(graphdict)
-            # add the context keys
-            context['errors'] = errors
-            context['listedstocks'] = listedstocks
-            context['selectedstockcode'] = selectedstockcode
-            context['selectedstockname'] = selectedstock.securityname
-            context['enteredstartdate'] = enteredstartdate.strftime('%Y-%m-%d')
-            context['enteredenddate'] = enteredenddate.strftime('%Y-%m-%d')
-            context['graphlabels'] = graphlabels
-            context['graphdataset'] = graphdataset
-        except Exception as ex:
-            logging.exception(
-                "Sorry. Ran into a problem while attempting to load this page.")
-            logger.exception(errors)
-            context['errors'] = ALERTMESSAGE+str(ex)
-        return context
+    def set_stock_code_needed(self, bool_input_arg):
+        self.stock_code_needed = False
 
-
-# CONSTANTS
-ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
-
-# Global variables
-logger = logging.getLogger(__name__)
-
-# Create functions used by the views here
-
-# Create your view functions here.
-
-
-def markethistory(request):
-    try:
-        errors = ""
-        logger.info("Market history page was called")
-        # Check if our request contains any GET variables
-        # search the database by those parameters if they are present in the request, and store them for the session
-        # Else check if we have any variables stored for the current sessions
-        # else provide some defaults as fallback
-        if request.GET.get('startdate'):
-            enteredstartdate = parse(request.GET.get(
-                'startdate')).strftime('%Y-%m-%d')
-            request.session['enteredstartdate'] = enteredstartdate
-        else:
-            enteredstartdate = request.session.get(
-                'enteredstartdate', (datetime.now(
-                )+dateutil.relativedelta.relativedelta(months=-3)).strftime('%Y-%m-%d'))
-        if request.GET.get('enddate'):
-            enteredenddate = parse(request.GET.get(
-                'enddate')).strftime('%Y-%m-%d')
-            request.session['enteredenddate'] = enteredenddate
-        else:
-            enteredenddate = request.session.get(
-                'enteredenddate', datetime.now().strftime('%Y-%m-%d'))
-        if request.GET.get('sort'):
-            orderby = request.GET.get('sort')
-        else:
-            orderby = 'date'
-        # validate input data
-        if datetime.strptime(enteredstartdate, '%Y-%m-%d') >= datetime.strptime(enteredenddate, '%Y-%m-%d'):
-            errors += "Your starting date must be before your ending date. Please recheck."
-        # Fetch the records
-        historicalrecords = models.HistoricalMarketSummary.objects.filter(
-            date__gt=enteredstartdate).filter(date__lt=enteredenddate).order_by(orderby)
-        # Set up our table
-        tabledata = tables.HistoricalMarketSummaryTable(
-            historicalrecords, order_by=orderby)
-        tabledata.paginate(page=request.GET.get("page", 1), per_page=25)
-        # Set up our graph
-        graphlabels = [obj.date.strftime('%Y-%m-%d')
-                       for obj in historicalrecords]
-        graphdataset = []
+    def set_graph_dataset(self,):
+        self.graph_dataset = []
         # Add the composite totals
         composite_totals_data = []
         all_tnt_totals_data = []
         crosslisted_totals_data = []
         sme_totals_data = []
-        for historical_market_record in historicalrecords:
+        for historical_market_record in self.historicalrecords:
             try:
                 composite_totals_data.append(
                     float(historical_market_record.compositetotalsindexvalue))
@@ -595,44 +285,59 @@ def markethistory(request):
                     float(historical_market_record.smetotalsindexvalue))
             except TypeError as exc:
                 pass
-
         graphdict = dict(data=composite_totals_data,
                          borderColor='rgb(255, 0, 0)',
                          backgroundColor='transparent',
                          label='Composite Totals Index')
-        graphdataset.append(graphdict)
+        self.graph_dataset.append(graphdict)
         # Add the TnT totals
         graphdict = dict(data=all_tnt_totals_data,
                          borderColor='rgb(0,255, 0)',
                          backgroundColor='transparent',
                          label='All TnT Totals Index')
-        graphdataset.append(graphdict)
+        self.graph_dataset.append(graphdict)
         # Cross-listed totals
         graphdict = dict(data=crosslisted_totals_data,
                          borderColor='rgb(0,0,255)',
                          backgroundColor='transparent',
                          label='Cross-listed Totals Index')
-        graphdataset.append(graphdict)
+        self.graph_dataset.append(graphdict)
         # SME totals
         graphdict = dict(data=sme_totals_data,
                          borderColor='rgb(0,255, 128)',
                          backgroundColor='transparent',
                          label='SME Totals Index')
-        graphdataset.append(graphdict)
-    except Exception as ex:
-        errors = ALERTMESSAGE+str(ex)
-        logging.critical(traceback.format_exc())
-        logger.error(errors)
-    # Now add our context data and return a response
-    context = {
-        'errors': errors,
-        'table': tabledata,
-        'enteredstartdate': enteredstartdate,
-        'enteredenddate': enteredenddate,
-        'graphlabels': graphlabels,
-        'graphdataset': graphdataset,
-    }
-    return render(request, "stocks/base_markethistory.html", context)
+        self.graph_dataset.append(graphdict)
+
+
+class OSTradesHistoryView(BasicLineChartAndTableView):
+    """
+    Set up the data for the outstanding trades history page
+    """
+    template_name = 'stocks/base_ostradeshistory.html'
+    model = models.DailyEquitySummary
+    table_class = tables.OSTradesHistoryTable
+    filterset_class = filters.OSTradesHistoryFilter
+
+    def set_stock_code_needed(self, bool_input_arg):
+        self.stock_code_needed = True
+
+    def set_graph_dataset(self,):
+        self.graph_dataset = [dict(data=[obj[self.osparameter] for obj in self.historicalrecords.values()],
+                                   borderColor='rgb(0, 0, 0)',
+                                   backgroundColor='rgb(255, 0, 0)',
+                                   label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
+
+
+# CONSTANTS
+ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
+
+# Global variables
+logger = logging.getLogger(__name__)
+
+# Create functions used by the views here
+
+# Create your view functions here.
 
 
 def ostradeshistory(request):

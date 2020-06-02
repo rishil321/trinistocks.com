@@ -2,15 +2,6 @@
     font-family: "Open Sans", sans-serif;
 }
 
-
-.navbar {
-    background-color: black;
-}
-
-.navbar-item {
-    border-radius: 0.2em;
-}
-
 .panel,
 .panel-heading {
     background-color: black;
@@ -162,4 +153,8 @@ td {
 .active {
     font-weight: bolder;
     font-size: 1.5em;
+}
+
+.has-background-red {
+    background-color: red !important;
 }

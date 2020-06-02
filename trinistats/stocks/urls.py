@@ -18,5 +18,6 @@ urlpatterns = [
          name='dividendhistory'),
     path('dividendyieldhistory', views.DividendYieldHistoryView.as_view(),
          name='dividendyieldhistory'),
-    path('ostradeshistory', views.ostradeshistory, name='ostradeshistory'),
+    path('ostradeshistory', views.OSTradesHistoryView.as_view(),
+         name='ostradeshistory'),
 ]
