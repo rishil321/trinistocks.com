@@ -974,14 +974,14 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
                                         testsaledate, '%d/%m/%y')
                                     currentfetchdate = datetime.strptime(
                                         fetchdate, '%m/%d/%Y')
+                                    # create a dictionary to store data
+                                    equitytradingdata = dict(
+                                        date=fetchdatedb)
+                                    # and start storing our useful data
+                                    equitytradingdata['symbol'] = rowcells[1].text
                                     # if the last sale date is the date that we have fetched
                                     if lastsaledate == currentfetchdate:
-                                        # then create a dictionary to store data
-                                        equitytradingdata = dict(
-                                            date=fetchdatedb)
-                                        # and start storing our useful data
-                                        equitytradingdata['symbol'] = rowcells[1].text
-                                        # for each value, check if a value is present
+                                        # check if a value is present in each cell
                                         openprice = rowcells[2].text
                                         if openprice != ' ':
                                             equitytradingdata['openprice'] = float(
@@ -1048,9 +1048,13 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
                                                 changedollars.replace(",", ""))
                                         else:
                                             equitytradingdata['changedollars'] = 0.00
+                                    else:
+                                        # else if the last sale date does not match the current date being checked, simply store 0s
+                                        for key in ['openprice', 'high', 'low', 'osbid', 'osbidvol', 'osoffer', 'osoffervol', 'saleprice', 'volumetraded', 'closeprice', 'changedollars']:
+                                            equitytradingdata[key] = 0
                                         # now add our dictionary to our list
-                                        allequitytradingdata.append(
-                                            equitytradingdata)
+                                    allequitytradingdata.append(
+                                        equitytradingdata)
                         pageloaded = True
                 except WebDriverException as ex:
                     logging.error(

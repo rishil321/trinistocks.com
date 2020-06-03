@@ -52,7 +52,7 @@
     <!-- Navbar -->
     <nav style="" class="navbar is-black" role="navigation" aria-label="main navigation" id="navbartop">
         <div class="navbar-brand">
-            <img class="navbaricon" src="{%  static 'stocks/trinistats_logo.svg.png' %}">
+            <img class="navbaricon" src="{%  static 'central/trinistats_logo.svg.png' %}">
             <a class="navbar-item" id="homelink" href="{% url "central:landingpage" %}">Home&nbsp
             <i class="fas fa-1x fa-home"></i></a>
             <a class="navbar-item" id="configbutton">Configure&nbsp
@@ -140,7 +140,7 @@
         });
         $("#configbutton").click(function() {
             $("#sidepanel").toggleClass("is-hidden");
-            $("#configbutton").toggleClass("has-background-danger");
+            $("#configbutton").toggleClass("has-background-red");
         });
         {% block activepagetoggle %}
         {% endblock %}

@@ -119,15 +119,38 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
             listedstocks = models.ListedEquities.objects.all().order_by('symbol')
             # get the filters included in the URL.
             # If the required filters are not present, raise an error
-            if self.request.GET.get('date__gte'):
+            # check if the configuration button was clicked
+            if self.request.GET.get("configure_button"):
+                enteredstartdate = datetime.strptime(
+                    self.request.GET.get('date__gte'), "%Y-%m-%d")
+                self.request.session['enteredstartdate'] = enteredstartdate.strftime(
+                    '%Y-%m-%d')
+            # check if we have a starting date stored in the session variable
+            elif self.request.session['enteredstartdate']:
+                enteredstartdate = datetime.strptime(
+                    self.request.session['enteredstartdate'], "%Y-%m-%d")
+            # else look for the starting date in the GET variables
+            elif self.request.GET.get('date__gte'):
                 enteredstartdate = datetime.strptime(
                     self.request.GET.get('date__gte'), "%Y-%m-%d")
                 self.request.session['enteredstartdate'] = enteredstartdate.strftime(
                     '%Y-%m-%d')
             else:
+                # else raise an error
                 raise ValueError(
                     " Please ensure that you have included a starting date in the URL! For example: ?date__gte=2019-05-12")
-            if self.request.GET.get('date__lte'):
+            # check if the configuration button was clicked
+            if self.request.GET.get("configure_button"):
+                enteredenddate = datetime.strptime(
+                    self.request.GET.get('date__lte'), "%Y-%m-%d")
+                self.request.session['enteredenddate'] = enteredenddate.strftime(
+                    '%Y-%m-%d')
+            # check if we have a ending date stored in the session variable
+            elif self.request.session['enteredenddate']:
+                enteredenddate = datetime.strptime(
+                    self.request.session['enteredenddate'], "%Y-%m-%d")
+            # else look for the ending date in the GET variables
+            elif self.request.GET.get('date__lte'):
                 enteredenddate = datetime.strptime(
                     self.request.GET.get('date__lte'), "%Y-%m-%d")
                 self.request.session['enteredenddate'] = enteredenddate.strftime(
@@ -135,7 +158,16 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
             else:
                 raise ValueError(
                     " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
-            if self.request.GET.get('stockcode'):
+            # check if the configuration button was clicked
+            if self.request.GET.get("configure_button"):
+                selectedstockcode = int(self.request.GET.get('stockcode'))
+                self.request.session['selectedstockcode'] = selectedstockcode
+            # check if we have a stock code stored in the session
+            elif self.request.session['selectedstockcode']:
+                selectedstockcode = int(
+                    self.request.session['selectedstockcode'])
+            # else look for the stock code in the GET variables
+            elif self.request.GET.get('stockcode'):
                 selectedstockcode = int(self.request.GET.get('stockcode'))
                 self.request.session['selectedstockcode'] = selectedstockcode
             else:

@@ -18,10 +18,6 @@
     border-bottom: 1px solid white;
 }
 
-a:hover {
-    background: gray;
-}
-
 .clearfix::after {
     content: "";
     clear: both;
@@ -156,5 +152,6 @@ td {
 }
 
 .has-background-red {
-    background-color: red !important;
+    background-color: red;
+    border-radius: 0.2em;
 }

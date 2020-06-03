@@ -8,7 +8,7 @@
         <input type="date" class="custom-date-selector" value="{{ selecteddateparsed }}" id="date" name="date">
     </div>
     <div class="panel-block">
-        <input type="submit" class="custom-red-button" onclick="location.href='{% url 'stocks:dailyequitysummary' %}" value="Search"/>
+        <input type="submit" name="configure_button"  class="custom-red-button" onclick="location.href='{% url 'stocks:dailyequitysummary' %}" value="Search"/>
     <div>
     {% endblock sidepanelcontents %}
 

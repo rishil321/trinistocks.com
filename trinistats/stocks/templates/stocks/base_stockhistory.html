@@ -26,7 +26,7 @@
     </div>
     <div class="panel-block">  
         <input type="hidden" value="date" name="sort"></input>
-        <input type="submit" class="custom-red-button" onclick="location.href='{% url 'stocks:stockhistory' %}" value="Search"/>
+        <input type="submit" name="configure_button" class="custom-red-button" onclick="location.href='{% url 'stocks:stockhistory' %}" value="Search"/>
     </div>
     {% endblock sidepanelcontents %}
 

@@ -15,12 +15,12 @@
     <!--Metadata-->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Statistical data concerning the Island of Trinidad and Tobago.">
+    <meta name="description" content="Bringing more data to the people of Trinidad and Tobago.">
     <meta name="author" content="Rishi Latchmepersad">
     <!-- Twitter Card data -->
     <meta name="twitter:card" content="Trinistats: Bringing more data to T&T.">
     <meta name="twitter:title" content="Trinistats">
-    <meta name="twitter:description" content="Statistical data concerning the Island of Trinidad and Tobago.">
+    <meta name="twitter:description" content="Bringing more data to the people of Trinidad and Tobago.">
     <meta name="twitter:creator" content="Rishi Latchmepersad">
     <!-- Twitter Summary card images must be at least 120x120px -->
     <meta name="twitter:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE">
@@ -29,59 +29,54 @@
     <meta property="og:type" content="graph" />
     <meta property="og:url" content="http://www.trinistats.com" />
     <meta property="og:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE" />
-    <meta property="og:description" content="Statistical data concerning the Island of Trinidad and Tobago." />
+    <meta property="og:description" content="Bringing more data to the people of Trinidad and Tobago." />
     <meta property="og:site_name" content="trinistats.com" />
     <!--End Metadata-->
-    {% block title %}<title>Trinistats | Home</title>{% endblock title %}
+    {% block title %}<title>trinistats | Home</title>{% endblock title %}
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
-    <link rel="stylesheet" href="{% static 'central/styles.css' %}">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+    <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{% static 'central/bulma.css' %}">
+    <link rel="stylesheet" href="{% static 'central/styles.css' %}">
 </head>
 <body>
 
     <!-- Header -->
-    <header class="w3-container w3-theme w3-padding" id="myHeader">
-    <div class="w3-center">
-        <h1 class="w3-animate-top">Trinistats</h1>
-    <h2 class="w3-large">Bringing data to the island of T&amp;T</h2>
-    </div>
-    </header>
-  
-    <div class="w3-flexbox-container-center" style="">
-      <div class="w3-mobile w3-margin w3-center w3-orange w3-card-custom-1">
-        <a {% url "covid19:totals" %} style="text-decoration:none;">
-          <div class="">
-            <h3>COVID-19</h3><br>
-            <i class="fas fa-virus fa-10x"></i>
-            <p>How is Trinidad and Tobago handling the disease</p>
-          </div>
-        </a>
-      </div>
-      <div class="w3-mobile w3-margin w3-center w3-container w3-red w3-card-custom-1">
-        {% get_latest_date_dailyequitysummary as latest_date %}
-        <a href='{% url "stocks:dailyequitysummary" %}?date={{latest_date}}' style="text-decoration:none;">
-          <div class="w3-text-black">
-            <h3>Stock Exchange</h3><br>
-            <i class="fas fa-chart-line fa-10x"></i>
-            <p>Data from the Trinidad and Tobago Stock Exchange</p>
-          </div>
-        </a>
-      </div>
-      <div class="w3-mobile w3-margin w3-center w3-container w3-blue w3-card-custom-1">
-        <a href="#" style="text-decoration:none;">
-          <div class="w3-text-black">
-            <h3>Movies</h3><br>
-            <i class="fas fa-video fa-10x"></i>
-            <p>Coming soon</p>
-          </div>
-        </a>
+  <section class="hero is-dark">
+    <div class="hero-body">
+      <div class="container has-text-centered">
+        <img class="bannerimage" src="{%  static 'central/trinistats_logo.svg.png' %}"></img>
+        <h2 class="subtitle">
+          Bringing more data to the people of Trinidad and Tobago.
+        </h2>
       </div>
     </div>
+  </section>
 
+  <div class="tile is-ancestor">
+    <div class="tile is-parent has-text-centered custom-tile-parent">
+      <a class="tile is-child box" style="background-color:green;color:white;" class="" href={% url "covid19:totals" %}>
+        <p class="is-size-3">COVID-19</p>
+        <i class="fas fa-virus fa-10x"></i>
+        <p class="is-size-5">Data on the tests and deaths within the country</p>
+      </a>
+    </div>
+    <div class="tile is-parent has-text-centered custom-tile-parent" >
+      {% get_latest_date_dailyequitysummary as latest_date %}
+      <a class="tile is-child box" style="background-color:red;color:white;" href='{% url "stocks:dailyequitysummary" %}?date={{latest_date}}'>
+        <p class="is-size-3">Stock Exchange</p>
+        <i class="fas fa-chart-line fa-10x"></i>
+        <p class="is-size-5">Data on equities listed on the local Stock Exchange</p>
+      </a>
+    </div>
+    <div class="tile is-parent has-text-centered custom-tile-parent">
+      <a class="tile is-child box" href="#" style="background-color:blue;color:white;">
+        <p class="is-size-3">Bank Rates</p>
+        <i class="fas fa-money-check-alt fa-10x"></i>
+        <p class="is-size-5">Coming soon...</p>
+      </a>
+    </div>
   </div>
     
     {% block basejs %}
