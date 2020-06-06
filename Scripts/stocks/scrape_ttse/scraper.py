@@ -41,6 +41,8 @@ from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import WebDriverException
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import pandas as pd
+import numpy as np
 
 # Imports from the local filesystem
 import ttsescraperconfig
@@ -790,283 +792,37 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
         # declare a string to identify this PID
         pidstring = " in PID: "+str(os.getpid())
         logging.info(
-            "Now opening the Chrome browser to fetch market summary data"+pidstring)
-        options = Options()
-        options.headless = True
-        driver = webdriver.Chrome(options=options)
-        # This list of dicts will contain all data to be written to the db
-        allmarketsummarydata = []
-        allequitytradingdata = []
-        for index, fetchdate in enumerate(datestofetch):
-            logging.info("Now loading webpage "+str(index) +
-                         " of "+str(len(datestofetch))+pidstring)
-            # set up a variable to retry page loads on Internet failures
-            webretries = 1
-            # check if the page was loaded or has failed enough times
-            pageloaded = False
-            failmaxtimes = 3
-            while not pageloaded and webretries <= failmaxtimes:
-                try:
-                    # get a date object suitable for the db
-                    fetchdatedb = datetime.strftime(
-                        datetime.strptime(fetchdate, '%m/%d/%Y'), '%Y-%m-%d')
-                    # start a dictionary to write to the db
-                    marketsummarydata = dict(date=fetchdatedb)
-                    # for each date, we need to navigate to this summary page for that day
-                    urlsummarypage = "https://stockex.co.tt/controller.php?action=view_quote&TradingDate="+fetchdate
-                    logging.info("Navigating to "+urlsummarypage+pidstring)
-                    driver.get(urlsummarypage)
-                    # All important data for us is wrapped in <p> tags, so we first find these elements
-                    textelements = driver.find_elements_by_tag_name("p")
-                    # Then we create a list with the text from all of these elements
-                    textblocksonpage = []
-                    for textelement in textelements:
-                        if textelement.text is not None:
-                            textblocksonpage.append(textelement.text)
-                    # Now check if an error message was thrown
-                    errormessage = "Sorry. No data for date selected. Kindly select another date."
-                    if errormessage in textblocksonpage:
-                        logging.info(
-                            "No data is available for: "+fetchdate+pidstring)
-                        pageloaded = True
-                    # if our error message was not thrown, then we continue
-                    else:
-                        logging.info(
-                            "Found market summary date for: "+fetchdate+pidstring)
-                        # find the index of the first line of each important row
-                        try:
-                            compositetotalsindex = textblocksonpage.index(
-                                "Composite Totals")
-                            # Now use the index to access interesting data
-                            marketsummarydata['compositetotalsindexvalue'] = float(
-                                textblocksonpage[compositetotalsindex+1].replace(",", ""))
-                            marketsummarydata['compositetotalsindexchange'] = float(
-                                textblocksonpage[compositetotalsindex+2].replace(",", ""))
-                            marketsummarydata['compositetotalschange'] = float(
-                                textblocksonpage[compositetotalsindex+3].replace(",", ""))
-                            marketsummarydata['compositetotalsvolumetraded'] = int(
-                                textblocksonpage[compositetotalsindex+4].replace(",", ""))
-                            marketsummarydata['compositetotalsvaluetraded'] = float(
-                                textblocksonpage[compositetotalsindex+5].replace(",", ""))
-                            marketsummarydata['compositetotalsnumtrades'] = int(
-                                textblocksonpage[compositetotalsindex+6].replace(",", ""))
-                        except ValueError as ex:
-                            logging.info(
-                                'Could not find Composite Totals for this date'+pidstring)
-                            marketsummarydata['compositetotalsindexvalue'] = None
-                            marketsummarydata['compositetotalsindexchange'] = None
-                            marketsummarydata['compositetotalschange'] = None
-                            marketsummarydata['compositetotalsvolumetraded'] = None
-                            marketsummarydata['compositetotalsvaluetraded'] = None
-                            marketsummarydata['compositetotalsnumtrades'] = None
-                        try:
-                            alltnttotalsindex = textblocksonpage.index(
-                                "All T&T Totals")
-                            marketsummarydata['alltnttotalsindexvalue'] = float(
-                                textblocksonpage[alltnttotalsindex+1].replace(",", ""))
-                            marketsummarydata['alltnttotalsindexchange'] = float(
-                                textblocksonpage[alltnttotalsindex+2].replace(",", ""))
-                            marketsummarydata['alltnttotalschange'] = float(
-                                textblocksonpage[alltnttotalsindex+3].replace(",", ""))
-                            marketsummarydata['alltnttotalsvolumetraded'] = int(
-                                textblocksonpage[alltnttotalsindex+4].replace(",", ""))
-                            marketsummarydata['alltnttotalsvaluetraded'] = float(
-                                textblocksonpage[alltnttotalsindex+5].replace(",", ""))
-                            marketsummarydata['alltnttotalsnumtrades'] = int(
-                                textblocksonpage[alltnttotalsindex+6].replace(",", ""))
-                        except ValueError:
-                            logging.info(
-                                'Could not find All TNT Totals for this date'+pidstring)
-                            marketsummarydata['alltnttotalsindexvalue'] = None
-                            marketsummarydata['alltnttotalsindexchange'] = None
-                            marketsummarydata['alltnttotalschange'] = None
-                            marketsummarydata['alltnttotalsvolumetraded'] = None
-                            marketsummarydata['alltnttotalsvaluetraded'] = None
-                            marketsummarydata['alltnttotalsnumtrades'] = None
-                        try:
-                            crosslistedtotalsindex = textblocksonpage.index(
-                                "Cross Listed Totals")
-                            marketsummarydata['crosslistedtotalsindexvalue'] = float(
-                                textblocksonpage[crosslistedtotalsindex+1].replace(",", ""))
-                            marketsummarydata['crosslistedtotalsindexchange'] = float(
-                                textblocksonpage[crosslistedtotalsindex+2].replace(",", ""))
-                            marketsummarydata['crosslistedtotalschange'] = float(
-                                textblocksonpage[crosslistedtotalsindex+3].replace(",", ""))
-                            marketsummarydata['crosslistedtotalsvolumetraded'] = int(
-                                textblocksonpage[crosslistedtotalsindex+4].replace(",", ""))
-                            marketsummarydata['crosslistedtotalsvaluetraded'] = float(
-                                textblocksonpage[compositetotalsindex+5].replace(",", ""))
-                            marketsummarydata['crosslistedtotalsnumtrades'] = int(
-                                textblocksonpage[compositetotalsindex+6].replace(",", ""))
-                        except ValueError:
-                            logging.info(
-                                'Could not find Crosslisted Totals for this date'+pidstring)
-                            marketsummarydata['crosslistedtotalsindexvalue'] = None
-                            marketsummarydata['crosslistedtotalsindexchange'] = None
-                            marketsummarydata['crosslistedtotalschange'] = None
-                            marketsummarydata['crosslistedtotalsvolumetraded'] = None
-                            marketsummarydata['crosslistedtotalsvaluetraded'] = None
-                            marketsummarydata['crosslistedtotalsnumtrades'] = None
-                        try:
-                            smetotalsindex = textblocksonpage.index(
-                                "SME Totals")
-                            marketsummarydata['smetotalsindexvalue'] = float(
-                                textblocksonpage[smetotalsindex+1].replace(",", ""))
-                            marketsummarydata['smetotalsindexchange'] = float(
-                                textblocksonpage[smetotalsindex+2].replace(",", ""))
-                            marketsummarydata['smetotalschange'] = float(
-                                textblocksonpage[smetotalsindex+3].replace(",", ""))
-                            marketsummarydata['smetotalsvolumetraded'] = int(
-                                textblocksonpage[smetotalsindex+4].replace(",", ""))
-                            marketsummarydata['smetotalsvaluetraded'] = float(
-                                textblocksonpage[smetotalsindex+5].replace(",", ""))
-                            marketsummarydata['smetotalsnumtrades'] = int(
-                                textblocksonpage[smetotalsindex+6].replace(",", ""))
-                        except ValueError:
-                            logging.info(
-                                'Could not find SME Totals for this date'+pidstring)
-                            marketsummarydata['smetotalsindexvalue'] = None
-                            marketsummarydata['smetotalsindexchange'] = None
-                            marketsummarydata['smetotalschange'] = None
-                            marketsummarydata['smetotalsvolumetraded'] = None
-                            marketsummarydata['smetotalsvaluetraded'] = None
-                            marketsummarydata['smetotalsnumtrades'] = None
-                        try:
-                            mutualfundstotalsindex = textblocksonpage.index(
-                                "Mutual Funds Totals")
-                            marketsummarydata['mutualfundstotalsvolumetraded'] = int(
-                                textblocksonpage[mutualfundstotalsindex+4].replace(",", ""))
-                            marketsummarydata['mutualfundstotalsvaluetraded'] = float(
-                                textblocksonpage[mutualfundstotalsindex+5].replace(",", ""))
-                            marketsummarydata['mutualfundstotalsnumtrades'] = int(
-                                textblocksonpage[mutualfundstotalsindex+6].replace(",", ""))
-                        except ValueError:
-                            logging.info(
-                                'Could not find Mutual Funds Totals for this date'+pidstring)
-                            marketsummarydata['mutualfundstotalsvolumetraded'] = None
-                            marketsummarydata['mutualfundstotalsvaluetraded'] = None
-                            marketsummarydata['mutualfundstotalsnumtrades'] = None
-                        try:
-                            secondtiertotalsindex = textblocksonpage.index(
-                                "Second Tier Totals")
-                            marketsummarydata['secondtiertotalsnumtrades'] = int(
-                                textblocksonpage[secondtiertotalsindex+6].replace(",", ""))
-                        except ValueError:
-                            logging.info(
-                                'Could not find Second Tier Totals for this date'+pidstring)
-                            marketsummarydata['secondtiertotalsnumtrades'] = None
-                        # add our dict to our list
-                        allmarketsummarydata.append(marketsummarydata)
-                        # Now parse the dailyequitysummary data
-                        tablerows = driver.find_elements_by_tag_name("tr")
-                        for row in tablerows:
-                            # for each row in the table, get the td elements
-                            rowcells = row.find_elements_by_tag_name("td")
-                            # If we have exactly 14 elements in the row, then this is a valid row
-                            if len(rowcells) == 14:
-                                # we need to get the symbol and the sale date to test/validate the row data
-                                testsymbol = rowcells[1].text
-                                testsaledate = rowcells[10].text
-                                # first check that the word in rowcells[1] is actually a valid symbol
-                                if testsymbol in alllistedsymbols and testsaledate != ' ':
-                                    # if it is a valid symbol, check the last sale date
-                                    lastsaledate = datetime.strptime(
-                                        testsaledate, '%d/%m/%y')
-                                    currentfetchdate = datetime.strptime(
-                                        fetchdate, '%m/%d/%Y')
-                                    # create a dictionary to store data
-                                    equitytradingdata = dict(
-                                        date=fetchdatedb)
-                                    # and start storing our useful data
-                                    equitytradingdata['symbol'] = rowcells[1].text
-                                    # if the last sale date is the date that we have fetched
-                                    if lastsaledate == currentfetchdate:
-                                        # check if a value is present in each cell
-                                        openprice = rowcells[2].text
-                                        if openprice != ' ':
-                                            equitytradingdata['openprice'] = float(
-                                                openprice.replace(",", ""))
-                                        else:
-                                            equitytradingdata['openprice'] = 0
-                                        high = rowcells[3].text
-                                        if high != ' ':
-                                            equitytradingdata['high'] = float(
-                                                high.replace(",", ""))
-                                        else:
-                                            equitytradingdata['high'] = 0
-                                        low = rowcells[4].text
-                                        if low != ' ':
-                                            equitytradingdata['low'] = float(
-                                                low.replace(",", ""))
-                                        else:
-                                            equitytradingdata['low'] = 0
-                                        osbid = rowcells[5].text
-                                        if osbid != ' ':
-                                            equitytradingdata['osbid'] = float(
-                                                osbid.replace(",", ""))
-                                        else:
-                                            equitytradingdata['osbid'] = 0
-                                        osbidvol = rowcells[6].text
-                                        if osbidvol != ' ':
-                                            equitytradingdata['osbidvol'] = int(
-                                                osbidvol.replace(",", ""))
-                                        else:
-                                            equitytradingdata['osbidvol'] = 0
-                                        osoffer = rowcells[7].text
-                                        if osoffer != ' ':
-                                            equitytradingdata['osoffer'] = float(
-                                                osoffer.replace(",", ""))
-                                        else:
-                                            equitytradingdata['osoffer'] = 0
-                                        osoffervol = rowcells[8].text
-                                        if osoffervol != ' ':
-                                            equitytradingdata['osoffervol'] = int(
-                                                osoffervol.replace(",", ""))
-                                        else:
-                                            equitytradingdata['osoffervol'] = 0
-                                        saleprice = rowcells[9].text
-                                        if saleprice != ' ':
-                                            equitytradingdata['saleprice'] = float(
-                                                saleprice.replace(",", ""))
-                                        else:
-                                            equitytradingdata['saleprice'] = 0
-                                        volumetraded = rowcells[11].text
-                                        if volumetraded != ' ':
-                                            equitytradingdata['volumetraded'] = int(
-                                                volumetraded.replace(",", ""))
-                                        else:
-                                            equitytradingdata['volumetraded'] = 0
-                                        closeprice = rowcells[12].text
-                                        if closeprice != ' ':
-                                            equitytradingdata['closeprice'] = float(
-                                                closeprice.replace(",", ""))
-                                        else:
-                                            equitytradingdata['closeprice'] = 0
-                                        changedollars = rowcells[13].text
-                                        if changedollars != ' ':
-                                            equitytradingdata['changedollars'] = float(
-                                                changedollars.replace(",", ""))
-                                        else:
-                                            equitytradingdata['changedollars'] = 0.00
-                                    else:
-                                        # else if the last sale date does not match the current date being checked, simply store 0s
-                                        for key in ['openprice', 'high', 'low', 'osbid', 'osbidvol', 'osoffer', 'osoffervol', 'saleprice', 'volumetraded', 'closeprice', 'changedollars']:
-                                            equitytradingdata[key] = 0
-                                        # now add our dictionary to our list
-                                    allequitytradingdata.append(
-                                        equitytradingdata)
-                        pageloaded = True
-                except WebDriverException as ex:
-                    logging.error(
-                        "Problem found while fetching date at "+fetchdate+pidstring+" : "+str(ex))
-                    timewaitsecs = 30
-                    time.sleep(timewaitsecs)
-                    logging.error("Waited "+str(timewaitsecs)+" seconds. Now retrying " +
-                                  fetchdate+pidstring+" attempt ("+str(webretries)+"/"+str(failmaxtimes)+")")
-                    webretries += 1
-        # Now write the data to the db if there is data to write
-        logging.info("Now writing scraped data to DB"+pidstring)
-        # Create a variable for our database engine
+            "Now opening using pandas to fetch market summary data"+pidstring)
+        # set up a dictionary to store the market summary data (per day) and initialize the values to 0
+        market_summary_data = dict()
+        # set up the keys for the dict, and set some dummy keys to make sure the lists are equal lengths
+        market_summary_data_keys = [['compositetotalsindexvalue', 'compositetotalsindexchange', 'compositetotalschange',
+                                     'compositetotalsvolumetraded', 'compositetotalsvaluetraded', 'compositetotalsnumtrades'],
+                                    ['alltnttotalsindexvalue', 'alltnttotalsindexchange', 'alltnttotalschange',
+                                        'alltnttotalsvolumetraded', 'alltnttotalsvaluetraded', 'alltnttotalsnumtrades'],
+                                    ['crosslistedtotalsindexvalue', 'crosslistedtotalsindexchange', 'crosslistedtotalschange',
+                                        'crosslistedtotalsvolumetraded', 'crosslistedtotalsvaluetraded', 'crosslistedtotalsnumtrades'],
+                                    ['smetotalsindexvalue', 'smetotalsindexchange', 'smetotalschange',
+                                        'smetotalsvolumetraded', 'smetotalsvaluetraded', 'smetotalsnumtrades'],
+                                    ['dummykey', 'dummykey', 'dummykey',
+                                     'mutualfundstotalsvolumetraded', 'mutualfundstotalsvaluetraded', 'mutualfundstotalsnumtrades'],
+                                    ['dummykey', 'dummykey', 'dummykey',
+                                     'secondtiertotalsvolumetraded', 'secondtiertotalsvaluetraded', 'secondtiertotalsnumtrades'],
+                                    ['dummykey', 'dummykey', 'dummykey',
+                                     'usdequitytotalsvolumetraded', 'usdequitytotalsvaluetraded', 'usdequitytotalsnumtrades']
+                                    ]
+        for inner_list in market_summary_data_keys:
+            for key in inner_list:
+                market_summary_data[key] = 0
+        # set up another dictionary to store the daily data for all equities (shares)
+        daily_shares_data = dict()
+        # set up a list of all the required keys in the dict
+        daily_shares_data_keys = ['openprice', 'high', 'low', 'osbid', 'osbidvol', 'osoffer',
+                                  'osoffervol', 'saleprice', 'closeprice', 'volumetraded', 'valuetraded', 'changedollars']
+        # initialize all keys to be 0
+        for key in daily_shares_data_keys:
+            daily_shares_data[key] = 0
+        # set up the database connection to write data to the db
         db_connect = DatabaseConnect()
         logging.debug("Successfully connected to database"+pidstring)
         # Reflect the tables already created in our db
@@ -1076,80 +832,480 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
             'dailyequitysummary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
         listedequities_table = Table(
             'listedequities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        if allmarketsummarydata:
-            # insert data into historicalmarketsummary table
-            insert_stmt = insert(historicalmarketsummary_table).values(
-                allmarketsummarydata)
-            on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
-                compositetotalsindexvalue=insert_stmt.inserted.compositetotalsindexvalue,
-                compositetotalsindexchange=insert_stmt.inserted.compositetotalsindexchange,
-                compositetotalschange=insert_stmt.inserted.compositetotalschange,
-                compositetotalsvolumetraded=insert_stmt.inserted.compositetotalsvolumetraded,
-                compositetotalsvaluetraded=insert_stmt.inserted.compositetotalsvaluetraded,
-                compositetotalsnumtrades=insert_stmt.inserted.compositetotalsnumtrades,
-                alltnttotalsindexvalue=insert_stmt.inserted.alltnttotalsindexvalue,
-                alltnttotalsindexchange=insert_stmt.inserted.alltnttotalsindexchange,
-                alltnttotalschange=insert_stmt.inserted.alltnttotalschange,
-                alltnttotalsvolumetraded=insert_stmt.inserted.alltnttotalsvolumetraded,
-                alltnttotalsvaluetraded=insert_stmt.inserted.alltnttotalsvaluetraded,
-                alltnttotalsnumtrades=insert_stmt.inserted.alltnttotalsnumtrades,
-                crosslistedtotalsindexvalue=insert_stmt.inserted.crosslistedtotalsindexvalue,
-                crosslistedtotalsindexchange=insert_stmt.inserted.crosslistedtotalsindexchange,
-                crosslistedtotalschange=insert_stmt.inserted.crosslistedtotalschange,
-                crosslistedtotalsvolumetraded=insert_stmt.inserted.crosslistedtotalsvolumetraded,
-                crosslistedtotalsvaluetraded=insert_stmt.inserted.crosslistedtotalsvaluetraded,
-                crosslistedtotalsnumtrades=insert_stmt.inserted.crosslistedtotalsnumtrades,
-                smetotalsindexvalue=insert_stmt.inserted.smetotalsindexvalue,
-                smetotalsindexchange=insert_stmt.inserted.smetotalsindexchange,
-                smetotalschange=insert_stmt.inserted.smetotalschange,
-                smetotalsvolumetraded=insert_stmt.inserted.smetotalsvolumetraded,
-                smetotalsvaluetraded=insert_stmt.inserted.smetotalsvaluetraded,
-                smetotalsnumtrades=insert_stmt.inserted.smetotalsnumtrades,
-                mutualfundstotalsvolumetraded=insert_stmt.inserted.mutualfundstotalsvolumetraded,
-                mutualfundstotalsvaluetraded=insert_stmt.inserted.mutualfundstotalsvaluetraded,
-                mutualfundstotalsnumtrades=insert_stmt.inserted.mutualfundstotalsnumtrades,
-                secondtiertotalsnumtrades=insert_stmt.inserted.secondtiertotalsnumtrades
-            )
-            result = db_connect.dbcon.execute(on_duplicate_key_stmt)
+        # prepare the insert statement for the historicalmarketsummary table
+        # note that we will actually execute this statement later on
+        market_summary_insert_stmt = insert(historicalmarketsummary_table).values(
+            market_summary_data)
+        market_summary_on_duplicate_key_stmt = market_summary_insert_stmt.on_duplicate_key_update(
+            {x.name: x for x in market_summary_insert_stmt.inserted})
+        # prepare the insert statement for the dailyequitysummary
+        daily_equity_summary_insert_stmt = insert(dailyequitysummary_table).values(
+            daily_shares_data)
+        daily_equity_summary_on_duplicate_key_stmt = daily_equity_summary_insert_stmt.on_duplicate_key_update(
+            {x.name: x for x in daily_equity_summary_insert_stmt.inserted})
+        # now fetch the data at each url(each market trading date)
+        for index, fetchdate in enumerate(datestofetch):
+            logging.info("Now loading webpage "+str(index) +
+                         " of "+str(len(datestofetch))+pidstring)
+            # get a date object suitable for the db
+            fetchdatedb = datetime.strftime(
+                datetime.strptime(fetchdate, '%m/%d/%Y'), '%Y-%m-%d')
+            # store the date
+            market_summary_data['date'] = fetchdatedb
+            # for each date, we need to navigate to this summary page for that day
+            urlsummarypage = "https://stockex.co.tt/controller.php?action=view_quote&TradingDate="+fetchdate
+            logging.info("Navigating to "+urlsummarypage+pidstring)
+            http_get_req = requests.get(urlsummarypage)
+            # get a list of tables from the URL
+            dataframe_list = pd.read_html(http_get_req.text)
+            # if this is a valid trading day, extract the values we need from the tables
+            if dataframe_list[1][0][0].startswith("Daily Equity Summary for "):
+                # get the tables holding data for all the shares
+                market_summary_table = dataframe_list[3]
+                ordinary_shares_table = dataframe_list[4]
+                preference_shares_table = dataframe_list[5]
+                second_tier_shares_table = dataframe_list[6]
+                mutual_funds_shares_table = dataframe_list[7]
+                sme_shares_table = dataframe_list[8]
+                usd_equity_shares_table = dataframe_list[9]
+                # extract the values required from the tables
+                try:
+                    # first extract the data from the market summary table
+                    # go through the rows and columns of the table to extract the data we need
+                    for row_index in range(1, 8):
+                        for column_index in range(2, 8):
+                            # check if the data is null in the dataframe
+                            if not pd.isnull(market_summary_table[column_index][row_index]):
+                                # check if the value needs to be converted to a float or int
+                                if any(partial_key_name in market_summary_data_keys[row_index-1][column_index-2] for partial_key_name in ['volumetraded', 'numtrades']):
+                                    market_summary_data[market_summary_data_keys[row_index-1][column_index-2]] = int(
+                                        market_summary_table[column_index][row_index])
+                                else:
+                                    market_summary_data[market_summary_data_keys[row_index-1][column_index-2]] = float(
+                                        market_summary_table[column_index][row_index])
+                            else:
+                                pass
+                    # pop the dummy key so that we can insert this dict into the db later
+                    market_summary_data.pop('dummykey',None)
+                    if not pd.isnull(market_summary_table[2][1]):
+                        market_summary_data['compositetotalsindexvalue'] = float(
+                            market_summary_table[2][1])
+                    if not pd.isnull(market_summary_table[3][1]):
+                        market_summary_data['compositetotalsindexchange'] = float(
+                            market_summary_table[3][1])
+                    if not pd.isnull(market_summary_table[4][1]):
+                        market_summary_data['compositetotalschange'] = float(
+                            market_summary_table[4][1])
+                    if not pd.isnull(market_summary_table[5][1]):
+                        market_summary_data['compositetotalsvolumetraded'] = int(
+                            market_summary_table[5][1])
+                    if not pd.isnull(market_summary_table[6][1]):
+                        market_summary_data['compositetotalsvaluetraded'] = float(
+                            market_summary_table[6][1])
+                    if not pd.isnull(market_summary_table[7][1]):
+                        market_summary_data['compositetotalsnumtrades'] = int(
+                            market_summary_table[7][1])
+                    if not pd.isnull(market_summary_table[2][2]):
+                        market_summary_data['alltnttotalsindexvalue'] = float(
+                            market_summary_table[2][2])
+                    if not pd.isnull(market_summary_table[3][2]):
+                        market_summary_data['alltnttotalsindexchange'] = float(
+                            market_summary_table[3][2])
+                    if not pd.isnull(market_summary_table[4][2]):
+                        market_summary_data['alltnttotalschange'] = float(
+                            market_summary_table[4][2])
+                    if not pd.isnull(market_summary_table[5][2]):
+                        market_summary_data['alltnttotalsvolumetraded'] = int(
+                            market_summary_table[5][2])
+                    if not pd.isnull(market_summary_table[6][2]):
+                        market_summary_data['alltnttotalsvaluetraded'] = float(
+                            market_summary_table[6][2])
+                    if not pd.isnull(market_summary_table[7][2]):
+                        market_summary_data['alltnttotalsnumtrades'] = int(
+                            market_summary_table[7][2])
+                    if not pd.isnull(market_summary_table[2][3]):
+                        market_summary_data['crosslistedtotalsindexvalue'] = float(
+                            market_summary_table[2][3])
+                    if not pd.isnull(market_summary_table[3][3]):
+                        market_summary_data['crosslistedtotalsindexchange'] = float(
+                            market_summary_table[3][3])
+                    if not pd.isnull(market_summary_table[4][3]):
+                        market_summary_data['crosslistedtotalschange'] = float(
+                            market_summary_table[4][3])
+                    if not pd.isnull(market_summary_table[5][3]):
+                        market_summary_data['crosslistedtotalsvolumetraded'] = int(
+                            market_summary_table[5][3])
+                    if not pd.isnull(market_summary_table[6][3]):
+                        market_summary_data['crosslistedtotalsvaluetraded'] = float(
+                            market_summary_table[6][3])
+                    if not pd.isnull(market_summary_table[7][3]):
+                        market_summary_data['crosslistedtotalsnumtrades'] = int(
+                            market_summary_table[7][3])
+                    if not pd.isnull(market_summary_table[2][4]):
+                        market_summary_data['smetotalsindexvalue'] = float(
+                            market_summary_table[2][4])
+                    if not pd.isnull(market_summary_table[3][4]):
+                        market_summary_data['smetotalsindexchange'] = float(
+                            market_summary_table[3][4])
+                    if not pd.isnull(market_summary_table[4][4]):
+                        market_summary_data['smetotalschange'] = float(
+                            market_summary_table[4][4])
+                    if not pd.isnull(market_summary_table[5][4]):
+                        market_summary_data['smetotalsvolumetraded'] = int(
+                            market_summary_table[5][4])
+                    if not pd.isnull(market_summary_table[6][4]):
+                        market_summary_data['smetotalsvaluetraded'] = float(
+                            market_summary_table[6][4])
+                    if not pd.isnull(market_summary_table[7][4]):
+                        market_summary_data['smetotalsnumtrades'] = int(
+                            market_summary_table[7][4])
+                    if not pd.isnull(market_summary_table[5][5]):
+                        market_summary_data['mutualfundstotalsvolumetraded'] = int(
+                            market_summary_table[5][5])
+                    if not pd.isnull(market_summary_table[6][5]):
+                        market_summary_data['mutualfundstotalsvaluetraded'] = float(
+                            market_summary_table[6][5])
+                    if not pd.isnull(market_summary_table[7][5]):
+                        market_summary_data['mutualfundstotalsnumtrades'] = int(
+                            market_summary_table[7][5])
+                    if not pd.isnull(market_summary_table[5][6]):
+                        market_summary_data['secondtiertotalsvolumetraded'] = int(
+                            market_summary_table[5][6])
+                    if not pd.isnull(market_summary_table[6][6]):
+                        market_summary_data['secondtiertotalsvaluetraded'] = float(
+                            market_summary_table[6][6])
+                    if not pd.isnull(market_summary_table[7][6]):
+                        market_summary_data['secondtiertotalsnumtrades'] = int(
+                            market_summary_table[7][6])
+                    if not pd.isnull(market_summary_table[5][7]):
+                        market_summary_data['usdequitytotalsvolumetraded'] = int(
+                            market_summary_table[5][7])
+                    if not pd.isnull(market_summary_table[6][7]):
+                        market_summary_data['usdequitytotalsvaluetraded'] = float(
+                            market_summary_table[6][7])
+                    if not pd.isnull(market_summary_table[7][7]):
+                        market_summary_data['usdequitytotalsnumtrades'] = int(
+                            market_summary_table[7][7])
+                    # then extract the data from all of the equity (shares) tables
+                    for shares_table in [ordinary_shares_table, preference_shares_table, second_tier_shares_table, mutual_funds_shares_table,
+                                         sme_shares_table, usd_equity_shares_table]:
+                        pass
+                except KeyError as keyerr:
+                    logging.warning(
+                        "Could not find a required key on date "+fetchdatedb+pidstring+str(keyerr))
+                except IndexError as idxerr:
+                    logging.warning(
+                        "Could not locate index in a list. "+fetchdatedb+pidstring+str(idxerr))
+            # now write the dict to the db
+            # if we had any errors, the values will be written as their defaults (0 or null)
+            result = db_connect.dbcon.execute(
+                market_summary_on_duplicate_key_stmt)
+            logging.info("Successfully scraped market data for " +
+                         fetchdatedb+pidstring)
             logging.info(
                 "Number of rows affected in the historicalmarketsummary table was "+str(result.rowcount)+pidstring)
-        if allequitytradingdata:
-            # convert symbols into stockcodes for the dailyequitysummary table
-            selectstmt = select(
-                [listedequities_table.c.symbol, listedequities_table.c.stockcode])
-            result = db_connect.dbcon.execute(selectstmt)
-            for row in result:
-                # The first element in our row tuple is the symbol, and the second is our stockcode
-                for equitytradingdata in allequitytradingdata:
-                    # Map the symbol for each equity to an stockcode in our table
-                    if equitytradingdata['symbol'] == row[0]:
-                        equitytradingdata['stockcode'] = row[1]
-            # Calculate the valuetraded for each row and remove our unneeded columns
-            for equitytradingdata in allequitytradingdata:
-                equitytradingdata['valuetraded'] = float(
-                    equitytradingdata['saleprice']) * float(equitytradingdata['volumetraded'])
-                equitytradingdata.pop('symbol', None)
-            # insert data into dailyequitysummary table
-            insert_stmt = insert(dailyequitysummary_table).values(
-                allequitytradingdata)
-            on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
-                openprice=insert_stmt.inserted.openprice,
-                high=insert_stmt.inserted.high,
-                low=insert_stmt.inserted.low,
-                osbid=insert_stmt.inserted.osbid,
-                osbidvol=insert_stmt.inserted.osbidvol,
-                osoffer=insert_stmt.inserted.osoffer,
-                osoffervol=insert_stmt.inserted.osoffervol,
-                saleprice=insert_stmt.inserted.saleprice,
-                volumetraded=insert_stmt.inserted.volumetraded,
-                valuetraded=insert_stmt.inserted.valuetraded,
-                closeprice=insert_stmt.inserted.closeprice,
-                changedollars=insert_stmt.inserted.changedollars
-            )
-            result = db_connect.dbcon.execute(on_duplicate_key_stmt)
-            logging.info(
-                "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount)+pidstring)
-            db_connect.close()
+        #     # set up a variable to retry page loads on Internet failures
+        #     webretries = 1
+        #     # check if the page was loaded or has failed enough times
+        #     pageloaded = False
+        #     failmaxtimes = 3
+        #     while not pageloaded and webretries <= failmaxtimes:
+        #         try:
+        #             # get a date object suitable for the db
+        #             fetchdatedb = datetime.strftime(
+        #                 datetime.strptime(fetchdate, '%m/%d/%Y'), '%Y-%m-%d')
+        #             # start a dictionary to write to the db
+        #             marketsummarydata = dict(date=fetchdatedb)
+        #             # for each date, we need to navigate to this summary page for that day
+        #             urlsummarypage = "https://stockex.co.tt/controller.php?action=view_quote&TradingDate="+fetchdate
+        #             logging.info("Navigating to "+urlsummarypage+pidstring)
+        #             driver.get(urlsummarypage)
+        #             # All important data for us is wrapped in <p> tags, so we first find these elements
+        #             textelements = driver.find_elements_by_tag_name("p")
+        #             # Then we create a list with the text from all of these elements
+        #             textblocksonpage = []
+        #             for textelement in textelements:
+        #                 if textelement.text is not None:
+        #                     textblocksonpage.append(textelement.text)
+        #             # Now check if an error message was thrown
+        #             errormessage = "Sorry. No data for date selected. Kindly select another date."
+        #             if errormessage in textblocksonpage:
+        #                 logging.info(
+        #                     "No data is available for: "+fetchdate+pidstring)
+        #                 pageloaded = True
+        #             # if our error message was not thrown, then we continue
+        #             else:
+        #                 logging.info(
+        #                     "Found market summary date for: "+fetchdate+pidstring)
+        #                 # find the index of the first line of each important row
+        #                 try:
+        #                     compositetotalsindex = textblocksonpage.index(
+        #                         "Composite Totals")
+        #                     # Now use the index to access interesting data
+        #                     marketsummarydata['compositetotalsindexvalue'] = float(
+        #                         textblocksonpage[compositetotalsindex+1].replace(",", ""))
+        #                     marketsummarydata['compositetotalsindexchange'] = float(
+        #                         textblocksonpage[compositetotalsindex+2].replace(",", ""))
+        #                     marketsummarydata['compositetotalschange'] = float(
+        #                         textblocksonpage[compositetotalsindex+3].replace(",", ""))
+        #                     marketsummarydata['compositetotalsvolumetraded'] = int(
+        #                         textblocksonpage[compositetotalsindex+4].replace(",", ""))
+        #                     marketsummarydata['compositetotalsvaluetraded'] = float(
+        #                         textblocksonpage[compositetotalsindex+5].replace(",", ""))
+        #                     marketsummarydata['compositetotalsnumtrades'] = int(
+        #                         textblocksonpage[compositetotalsindex+6].replace(",", ""))
+        #                 except ValueError as ex:
+        #                     logging.info(
+        #                         'Could not find Composite Totals for this date'+pidstring)
+        #                     marketsummarydata['compositetotalsindexvalue'] = None
+        #                     marketsummarydata['compositetotalsindexchange'] = None
+        #                     marketsummarydata['compositetotalschange'] = None
+        #                     marketsummarydata['compositetotalsvolumetraded'] = None
+        #                     marketsummarydata['compositetotalsvaluetraded'] = None
+        #                     marketsummarydata['compositetotalsnumtrades'] = None
+        #                 try:
+        #                     alltnttotalsindex = textblocksonpage.index(
+        #                         "All T&T Totals")
+        #                     marketsummarydata['alltnttotalsindexvalue'] = float(
+        #                         textblocksonpage[alltnttotalsindex+1].replace(",", ""))
+        #                     marketsummarydata['alltnttotalsindexchange'] = float(
+        #                         textblocksonpage[alltnttotalsindex+2].replace(",", ""))
+        #                     marketsummarydata['alltnttotalschange'] = float(
+        #                         textblocksonpage[alltnttotalsindex+3].replace(",", ""))
+        #                     marketsummarydata['alltnttotalsvolumetraded'] = int(
+        #                         textblocksonpage[alltnttotalsindex+4].replace(",", ""))
+        #                     marketsummarydata['alltnttotalsvaluetraded'] = float(
+        #                         textblocksonpage[alltnttotalsindex+5].replace(",", ""))
+        #                     marketsummarydata['alltnttotalsnumtrades'] = int(
+        #                         textblocksonpage[alltnttotalsindex+6].replace(",", ""))
+        #                 except ValueError:
+        #                     logging.info(
+        #                         'Could not find All TNT Totals for this date'+pidstring)
+        #                     marketsummarydata['alltnttotalsindexvalue'] = None
+        #                     marketsummarydata['alltnttotalsindexchange'] = None
+        #                     marketsummarydata['alltnttotalschange'] = None
+        #                     marketsummarydata['alltnttotalsvolumetraded'] = None
+        #                     marketsummarydata['alltnttotalsvaluetraded'] = None
+        #                     marketsummarydata['alltnttotalsnumtrades'] = None
+        #                 try:
+        #                     crosslistedtotalsindex = textblocksonpage.index(
+        #                         "Cross Listed Totals")
+        #                     marketsummarydata['crosslistedtotalsindexvalue'] = float(
+        #                         textblocksonpage[crosslistedtotalsindex+1].replace(",", ""))
+        #                     marketsummarydata['crosslistedtotalsindexchange'] = float(
+        #                         textblocksonpage[crosslistedtotalsindex+2].replace(",", ""))
+        #                     marketsummarydata['crosslistedtotalschange'] = float(
+        #                         textblocksonpage[crosslistedtotalsindex+3].replace(",", ""))
+        #                     marketsummarydata['crosslistedtotalsvolumetraded'] = int(
+        #                         textblocksonpage[crosslistedtotalsindex+4].replace(",", ""))
+        #                     marketsummarydata['crosslistedtotalsvaluetraded'] = float(
+        #                         textblocksonpage[compositetotalsindex+5].replace(",", ""))
+        #                     marketsummarydata['crosslistedtotalsnumtrades'] = int(
+        #                         textblocksonpage[compositetotalsindex+6].replace(",", ""))
+        #                 except ValueError:
+        #                     logging.info(
+        #                         'Could not find Crosslisted Totals for this date'+pidstring)
+        #                     marketsummarydata['crosslistedtotalsindexvalue'] = None
+        #                     marketsummarydata['crosslistedtotalsindexchange'] = None
+        #                     marketsummarydata['crosslistedtotalschange'] = None
+        #                     marketsummarydata['crosslistedtotalsvolumetraded'] = None
+        #                     marketsummarydata['crosslistedtotalsvaluetraded'] = None
+        #                     marketsummarydata['crosslistedtotalsnumtrades'] = None
+        #                 try:
+        #                     smetotalsindex = textblocksonpage.index(
+        #                         "SME Totals")
+        #                     marketsummarydata['smetotalsindexvalue'] = float(
+        #                         textblocksonpage[smetotalsindex+1].replace(",", ""))
+        #                     marketsummarydata['smetotalsindexchange'] = float(
+        #                         textblocksonpage[smetotalsindex+2].replace(",", ""))
+        #                     marketsummarydata['smetotalschange'] = float(
+        #                         textblocksonpage[smetotalsindex+3].replace(",", ""))
+        #                     marketsummarydata['smetotalsvolumetraded'] = int(
+        #                         textblocksonpage[smetotalsindex+4].replace(",", ""))
+        #                     marketsummarydata['smetotalsvaluetraded'] = float(
+        #                         textblocksonpage[smetotalsindex+5].replace(",", ""))
+        #                     marketsummarydata['smetotalsnumtrades'] = int(
+        #                         textblocksonpage[smetotalsindex+6].replace(",", ""))
+        #                 except ValueError:
+        #                     logging.info(
+        #                         'Could not find SME Totals for this date'+pidstring)
+        #                     marketsummarydata['smetotalsindexvalue'] = None
+        #                     marketsummarydata['smetotalsindexchange'] = None
+        #                     marketsummarydata['smetotalschange'] = None
+        #                     marketsummarydata['smetotalsvolumetraded'] = None
+        #                     marketsummarydata['smetotalsvaluetraded'] = None
+        #                     marketsummarydata['smetotalsnumtrades'] = None
+        #                 try:
+        #                     mutualfundstotalsindex = textblocksonpage.index(
+        #                         "Mutual Funds Totals")
+        #                     marketsummarydata['mutualfundstotalsvolumetraded'] = int(
+        #                         textblocksonpage[mutualfundstotalsindex+4].replace(",", ""))
+        #                     marketsummarydata['mutualfundstotalsvaluetraded'] = float(
+        #                         textblocksonpage[mutualfundstotalsindex+5].replace(",", ""))
+        #                     marketsummarydata['mutualfundstotalsnumtrades'] = int(
+        #                         textblocksonpage[mutualfundstotalsindex+6].replace(",", ""))
+        #                 except ValueError:
+        #                     logging.info(
+        #                         'Could not find Mutual Funds Totals for this date'+pidstring)
+        #                     marketsummarydata['mutualfundstotalsvolumetraded'] = None
+        #                     marketsummarydata['mutualfundstotalsvaluetraded'] = None
+        #                     marketsummarydata['mutualfundstotalsnumtrades'] = None
+        #                 try:
+        #                     secondtiertotalsindex = textblocksonpage.index(
+        #                         "Second Tier Totals")
+        #                     marketsummarydata['secondtiertotalsnumtrades'] = int(
+        #                         textblocksonpage[secondtiertotalsindex+6].replace(",", ""))
+        #                 except ValueError:
+        #                     logging.info(
+        #                         'Could not find Second Tier Totals for this date'+pidstring)
+        #                     marketsummarydata['secondtiertotalsnumtrades'] = None
+        #                 # add our dict to our list
+        #                 allmarketsummarydata.append(marketsummarydata)
+        #                 # Now parse the dailyequitysummary data
+        #                 tablerows = driver.find_elements_by_tag_name("tr")
+        #                 for row in tablerows:
+        #                     # for each row in the table, get the td elements
+        #                     rowcells = row.find_elements_by_tag_name("td")
+        #                     # If we have exactly 14 elements in the row, then this is a valid row
+        #                     if len(rowcells) == 14:
+        #                         # we need to get the symbol and the sale date to test/validate the row data
+        #                         testsymbol = rowcells[1].text
+        #                         testsaledate = rowcells[10].text
+        #                         # first check that the word in rowcells[1] is actually a valid symbol
+        #                         if testsymbol in alllistedsymbols and testsaledate != ' ':
+        #                             # if it is a valid symbol, check the last sale date
+        #                             lastsaledate = datetime.strptime(
+        #                                 testsaledate, '%d/%m/%y')
+        #                             currentfetchdate = datetime.strptime(
+        #                                 fetchdate, '%m/%d/%Y')
+        #                             # create a dictionary to store data
+        #                             equitytradingdata = dict(
+        #                                 date=fetchdatedb)
+        #                             # and start storing our useful data
+        #                             equitytradingdata['symbol'] = rowcells[1].text
+        #                             # if the last sale date is the date that we have fetched
+        #                             if lastsaledate == currentfetchdate:
+        #                                 # check if a value is present in each cell
+        #                                 openprice = rowcells[2].text
+        #                                 if openprice != ' ':
+        #                                     equitytradingdata['openprice'] = float(
+        #                                         openprice.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['openprice'] = 0
+        #                                 high = rowcells[3].text
+        #                                 if high != ' ':
+        #                                     equitytradingdata['high'] = float(
+        #                                         high.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['high'] = 0
+        #                                 low = rowcells[4].text
+        #                                 if low != ' ':
+        #                                     equitytradingdata['low'] = float(
+        #                                         low.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['low'] = 0
+        #                                 osbid = rowcells[5].text
+        #                                 if osbid != ' ':
+        #                                     equitytradingdata['osbid'] = float(
+        #                                         osbid.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['osbid'] = 0
+        #                                 osbidvol = rowcells[6].text
+        #                                 if osbidvol != ' ':
+        #                                     equitytradingdata['osbidvol'] = int(
+        #                                         osbidvol.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['osbidvol'] = 0
+        #                                 osoffer = rowcells[7].text
+        #                                 if osoffer != ' ':
+        #                                     equitytradingdata['osoffer'] = float(
+        #                                         osoffer.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['osoffer'] = 0
+        #                                 osoffervol = rowcells[8].text
+        #                                 if osoffervol != ' ':
+        #                                     equitytradingdata['osoffervol'] = int(
+        #                                         osoffervol.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['osoffervol'] = 0
+        #                                 saleprice = rowcells[9].text
+        #                                 if saleprice != ' ':
+        #                                     equitytradingdata['saleprice'] = float(
+        #                                         saleprice.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['saleprice'] = 0
+        #                                 volumetraded = rowcells[11].text
+        #                                 if volumetraded != ' ':
+        #                                     equitytradingdata['volumetraded'] = int(
+        #                                         volumetraded.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['volumetraded'] = 0
+        #                                 closeprice = rowcells[12].text
+        #                                 if closeprice != ' ':
+        #                                     equitytradingdata['closeprice'] = float(
+        #                                         closeprice.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['closeprice'] = 0
+        #                                 changedollars = rowcells[13].text
+        #                                 if changedollars != ' ':
+        #                                     equitytradingdata['changedollars'] = float(
+        #                                         changedollars.replace(",", ""))
+        #                                 else:
+        #                                     equitytradingdata['changedollars'] = 0.00
+        #                             else:
+        #                                 # else if the last sale date does not match the current date being checked, simply store 0s
+        #                                 for key in ['openprice', 'high', 'low', 'osbid', 'osbidvol', 'osoffer', 'osoffervol', 'saleprice', 'volumetraded', 'closeprice', 'changedollars']:
+        #                                     equitytradingdata[key] = 0
+        #                                 # now add our dictionary to our list
+        #                             allequitytradingdata.append(
+        #                                 equitytradingdata)
+        #                 pageloaded = True
+        #         except WebDriverException as ex:
+        #             logging.error(
+        #                 "Problem found while fetching date at "+fetchdate+pidstring+" : "+str(ex))
+        #             timewaitsecs = 30
+        #             time.sleep(timewaitsecs)
+        #             logging.error("Waited "+str(timewaitsecs)+" seconds. Now retrying " +
+        #                           fetchdate+pidstring+" attempt ("+str(webretries)+"/"+str(failmaxtimes)+")")
+        #             webretries += 1
+        # Now write the data to the db if there is data to write
+        # if allequitytradingdata:
+        #     # convert symbols into stockcodes for the dailyequitysummary table
+        #     selectstmt = select(
+        #         [listedequities_table.c.symbol, listedequities_table.c.stockcode])
+        #     result = db_connect.dbcon.execute(selectstmt)
+        #     for row in result:
+        #         # The first element in our row tuple is the symbol, and the second is our stockcode
+        #         for equitytradingdata in allequitytradingdata:
+        #             # Map the symbol for each equity to an stockcode in our table
+        #             if equitytradingdata['symbol'] == row[0]:
+        #                 equitytradingdata['stockcode'] = row[1]
+        #     # Calculate the valuetraded for each row and remove our unneeded columns
+        #     for equitytradingdata in allequitytradingdata:
+        #         equitytradingdata['valuetraded'] = float(
+        #             equitytradingdata['saleprice']) * float(equitytradingdata['volumetraded'])
+        #         equitytradingdata.pop('symbol', None)
+        #     # insert data into dailyequitysummary table
+        #     insert_stmt = insert(dailyequitysummary_table).values(
+        #         allequitytradingdata)
+        #     on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
+        #         openprice=insert_stmt.inserted.openprice,
+        #         high=insert_stmt.inserted.high,
+        #         low=insert_stmt.inserted.low,
+        #         osbid=insert_stmt.inserted.osbid,
+        #         osbidvol=insert_stmt.inserted.osbidvol,
+        #         osoffer=insert_stmt.inserted.osoffer,
+        #         osoffervol=insert_stmt.inserted.osoffervol,
+        #         saleprice=insert_stmt.inserted.saleprice,
+        #         volumetraded=insert_stmt.inserted.volumetraded,
+        #         valuetraded=insert_stmt.inserted.valuetraded,
+        #         closeprice=insert_stmt.inserted.closeprice,
+        #         changedollars=insert_stmt.inserted.changedollars
+        #     )
+        #     result = db_connect.dbcon.execute(on_duplicate_key_stmt)
+        #     logging.info(
+        #         "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount)+pidstring)
+        db_connect.close()
         return 0
     except Exception:
         logging.exception("Could not complete dailyequitysummary update.")
