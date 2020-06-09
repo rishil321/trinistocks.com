@@ -34,7 +34,7 @@ class DailyEquitySummaryTable(tables.Table):
     symbol = tables.Column(
         accessor="stockcode__symbol")
     volumetraded = tables.Column(verbose_name="Volume Traded")
-    saleprice = tables.Column(verbose_name="Sale Price ($)")
+    lastsaleprice = tables.Column(verbose_name="Sale Price ($)")
     valuetraded = tables.Column(verbose_name="Value Traded ($)")
     low = tables.Column(verbose_name="Low ($)")
     high = tables.Column(verbose_name="High ($)")
@@ -49,8 +49,8 @@ class HistoricalMarketSummaryTable(tables.Table):
     class Meta:
         model = models.HistoricalMarketSummary
         attrs = {"class": "djangotables"}
-        fields = ('date', 'compositetotalsindexvalue', 'alltnttotalsindexvalue',
-                  'crosslistedtotalsindexvalue', 'smetotalsindexvalue')
+        fields = ('date', 'indexvalue', 'changepercent',
+                  'volumetraded', 'valuetraded', 'numtrades')
         export_formats = ['csv', 'xlsx']
 
 

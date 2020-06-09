@@ -159,20 +159,52 @@ STATIC_ROOT = os.path.join(
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'django.server': {
+            '()': 'django.utils.log.ServerFormatter',
+            'format': '[{asctime}]:{levelname}:{pathname}({funcName}): {message}',
+            'style': '{',
+        }
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
     'handlers': {
         'file': {
             'level': 'DEBUG',
+            'formatter': 'django.server',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'log', 'django_debug.log'),
             'maxBytes': 1024*1024*15,  # 15MB
             'backupCount': 10,
         },
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'formatter': 'django.server',
+            'class': 'logging.StreamHandler',
+        },
+        'django.server': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'django.server',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'formatter': 'django.server',
+            'class': 'django.utils.log.AdminEmailHandler'}
     },
     'loggers': {
-        'django': {
-            'handlers': ['file'],
+        'root': {
+            'handlers': ['file', 'console', 'mail_admins'],
             'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,
         },
     },
 }

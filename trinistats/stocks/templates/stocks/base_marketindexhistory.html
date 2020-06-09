@@ -4,6 +4,23 @@
 
     {% block sidepanelcontents %}
     <div class="panel-block">
+        <label class="panellabel" for="">Market Index Name</label>
+        <select class="custom-date-selector" id="indexname" name="indexname">
+            <option value="Composite Totals">Composite Totals</option>
+            <option value="All T&T Totals">All T&T Totals</option>
+            <option value="Cross Listed Totals">Cross-Listed Totals</option>
+        </select>
+    </div>
+    <div class="panel-block">
+    <label class="panellabel" for="">Market Parameter</label>
+    <select class="custom-date-selector" id="indexparameter" name="indexparameter">
+        <option value="indexvalue">Index Value</option>
+        <option value="volumetraded">Volume Traded</option>
+        <option value="valuetraded">Value Traded</option>
+        <option value="numtrades">No. of Trades</option>
+    </select>
+    </div>
+    <div class="panel-block">
         <label class="panellabel"for="startdate">Start Date:</label>
         <input class="custom-date-selector" type="date" value="{{ enteredstartdate }}" id="startdate" name="date__gte">
     </div>
@@ -18,7 +35,7 @@
     {% endblock sidepanelcontents %}
 
     {% block mainblock %}
-        <h2 style="" id="charttitle">Stock Market Index History</h2>
+        <h2 style="" id="charttitle">Market Index History</h2>
         <!-- Chart -->
         <div>
         <canvas id="stockchart" width="4" height="1">
@@ -38,6 +55,7 @@
     var ctx = document.getElementById('stockchart').getContext("2d");
     var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
     var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+    var index_parameter_string = '{{ index_parameter_string }}';
     var myChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -47,11 +65,31 @@
         options: {
             scales: {
                 yAxes: [{
+                        ticks: {
+                            callback : function(value,index,array) 
+                            { 
+                                if (value <1000) {
+                                    return value}
+                                else if (value < 1000000) {
+                                    return value/1000 + 'K'}
+                                else if (value>1000000) {
+                                    return value/1000000 + 'M';
+                              } 
+                            }
+                        },
                     scaleLabel: {
                         display: true,
-                        labelString: 'Index Value'
+                        labelString: index_parameter_string
                     }
-                }]
+                }],
+                xAxes: [
+                    {
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Date'
+                        }
+                    }
+                ]
             }
         }
     });
@@ -62,4 +100,12 @@
     <!--Javascript-->
     {% block activepagetoggle %}
     $("#markethistorylink").toggleClass("has-background-red");
+    // set the selected value for the configurations
+    $("#indexname").val("{{ indexname|safe }}").change();
+    $("#indexparameter").val("{{ indexparameter|safe }}").change();
     {% endblock %}
+
+     {% block morejs%}
+    <script>
+    </script>
+    {% endblock morejs%}

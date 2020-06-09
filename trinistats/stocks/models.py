@@ -37,13 +37,15 @@ class DailyEquitySummary(models.Model):
         max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="O/S Offer Price($)")
     osoffervol = models.PositiveIntegerField(
         blank=True, null=True, verbose_name="O/S Offer Volume")
-    saleprice = models.DecimalField(
+    lastsaleprice = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="Last Sale Price($)")
+    wastradedtoday = models.SmallIntegerField(
+        blank=True, null=True, verbose_name="Was Traded Today")
+    volumetraded = models.PositiveIntegerField(blank=True, null=True)
     closeprice = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True)
     changedollars = models.DecimalField(
         max_digits=7, decimal_places=2, blank=True, null=True)
-    volumetraded = models.PositiveIntegerField(blank=True, null=True)
     valuetraded = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True)
 
@@ -104,62 +106,20 @@ class HistoricalStockInfo(models.Model):
 class HistoricalMarketSummary(models.Model):
     summaryid = models.AutoField(primary_key=True)
     date = models.DateField(verbose_name="Date Recorded", unique=True)
-    compositetotalsindexvalue = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Composite Totals Index Value")
-    compositetotalsindexchange = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Composite Totals Index Change")
-    compositetotalschange = models.DecimalField(
-        max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="Composite Totals Change(%)")
-    compositetotalsvolumetraded = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="Composite Totals Volume Traded")
-    compositetotalsvaluetraded = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Composite Totals Value Traded($)")
-    compositetotalsnumtrades = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="Composite Totals Number Traded")
-    alltnttotalsindexvalue = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="All TnT Totals Index Value")
-    alltnttotalsindexchange = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="All TnT Totals Index Change")
-    alltnttotalschange = models.DecimalField(
-        max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="All TnT Totals Change(%)")
-    alltnttotalsvolumetraded = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="All TnT Totals Volume Traded")
-    alltnttotalsvaluetraded = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="All TnT Totals Value Traded($)")
-    alltnttotalsnumtrades = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="All TnT Totals Number Traded")
-    crosslistedtotalsindexvalue = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Cross-listed Totals Index Value")
-    crosslistedtotalsindexchange = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Cross-listed Totals Index Change")
-    crosslistedtotalschange = models.DecimalField(
-        max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="Cross-lised Totals Change(%)")
-    crosslistedtotalsvolumetraded = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="Cross-listed Totals Volume Traded")
-    crosslistedtotalsvaluetraded = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Cross-listed Totals Value Traded($)")
-    crosslistedtotalsnumtrades = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="Cross-listed Totals Number Traded")
-    smetotalsindexvalue = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SME Totals Index Value")
-    smetotalsindexchange = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="SME Totals Index Change")
-    smetotalschange = models.DecimalField(
-        max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="SME Totals Change(%)")
-    smetotalsvolumetraded = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="SME Totals Volume Traded")
-    smetotalsvaluetraded = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="SME Totals Value Traded($)")
-    smetotalsnumtrades = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="SME Totals Number Traded")
-    mutualfundstotalsvolumetraded = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="Mutual Funds Totals Volume Traded")
-    mutualfundstotalsvaluetraded = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Mutual Funds Totals Value Traded($)")
-    mutualfundstotalsnumtrades = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="Mutual Funds Totals Number Traded")
-    secondtiertotalsnumtrades = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="Second Tier Totals Number Traded")
+    indexname = models.CharField(
+        verbose_name="Market Index Name", null=False, blank=False, max_length=100)
+    indexvalue = models.DecimalField(
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Index Value")
+    indexchange = models.DecimalField(
+        max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Index Change")
+    changepercent = models.DecimalField(
+        max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="Change (%)")
+    volumetraded = models.PositiveIntegerField(
+        blank=True, null=True, verbose_name="Volume Traded (Shares)")
+    valuetraded = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Value Traded ($)")
+    numtrades = models.PositiveIntegerField(
+        blank=True, null=True, verbose_name="Number of Trades")
 
     class Meta:
         managed = False

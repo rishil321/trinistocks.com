@@ -5,7 +5,10 @@ from stocks import models
 class DailyEquitySummaryFilter(django_filters.FilterSet):
     class Meta:
         model = models.DailyEquitySummary
-        fields = ['date']
+        fields = {
+            'date': ['exact', ],
+            'wastradedtoday': ['exact', ],
+        }
 
 
 class StockHistoryFilter(django_filters.FilterSet):
@@ -40,6 +43,10 @@ class MarketIndexHistoryFilter(django_filters.FilterSet):
         model = models.HistoricalMarketSummary
         fields = {
             'date': ['gte', 'lte', ],
+            'indexname': ['exact', ],
+            'volumetraded': ['exact', ],
+            'valuetraded': ['exact', ],
+            'numtrades': ['exact', ],
         }
 
 

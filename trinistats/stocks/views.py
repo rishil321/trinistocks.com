@@ -22,6 +22,9 @@ from django.db.models import F
 # Imports from local machine
 from stocks import models, tables, filters
 
+# Set up logging
+logger = logging.getLogger('root')
+
 # Class definitions
 
 
@@ -50,10 +53,10 @@ class DailyEquitySummaryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                     " Please ensure that you have set a date in the URL! For example: stocks/dailyequitysummary?date=2020-05-12 ")
             # Now select the records corresponding to the selected date
             # as well as their symbols, and order by the highest volume traded
-            dailyequitysummaryrecords = models.DailyEquitySummary.objects.filter(
+            dailyequitysummaryrecords = models.DailyEquitySummary.objects.exclude(wastradedtoday=0).filter(
                 date=selecteddate).select_related('stockcode').order_by('-valuetraded')
             if not dailyequitysummaryrecords:
-                errors += "No data available for the date selected. Please choose another date."
+                errors += "No data available for the date selected. Please press the back button and choose another date."
             # rename the symbol field properly and select only required fields
             selectedrecords = dailyequitysummaryrecords.annotate(
                 symbol=F('stockcode__symbol')).values('symbol', 'valuetraded')
@@ -80,10 +83,10 @@ class DailyEquitySummaryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             context['selecteddateparsed'] = selecteddateparsed
             context['graphsymbols'] = graphsymbols
             context['graphvaluetraded'] = graphvaluetraded
+            logger.info("Successfully loaded page.")
         except Exception as ex:
-            logging.exception(
+            logger.exception(
                 "Sorry. Ran into a problem while attempting to load this page.")
-            logger.exception(errors)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -92,22 +95,34 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
     """
     A generic class for displaying a line chart using ChartJS and a table using djangotables2
     """
+
     template_name = ''
     model = None  # models.something
     table_class = None  # tables.something
     filterset_class = None  # filters.something
     page_name = ''  # a string representing the name of the page
     historicalrecords = None
+    selectedstockcode = None
     selectedstock = None
     graph_dataset = []  # the list of dictionary of objects to display in the graph
-    stock_code_needed = None
+    stock_code_needed = True
+    os_parameter_needed = False
     osparameter = None
+    os_parameter_string = None
+    indexname = None
+    index_name_needed = False
+    indexparameter = None
+    index_parameter_string = None
+    enteredstartdate = None
+    enteredenddate = None
+    orderby = None
+
+    def __init__(self):
+        super(BasicLineChartAndTableView, self).__init__()
+        logger.debug("Now loading template: "+self.template_name)
 
     def set_graph_dataset(self,):
         self.graph_dataset = []
-
-    def set_stock_code_needed(self, bool_input_arg):
-        self.stock_code_needed = bool_input_arg
 
     def get_context_data(self, *args, **kwargs):
         try:
@@ -115,26 +130,27 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            logger.info(self.page_name+" page was called.")
+            logger.debug("Now loading all listedequities.")
             listedstocks = models.ListedEquities.objects.all().order_by('symbol')
-            # get the filters included in the URL.
-            # If the required filters are not present, raise an error
+            # now load all the data for the subclasses (pages)
+            # note that different pages require different data, so we check which data is needed for the page
             # check if the configuration button was clicked
+            logger.debug(
+                "Checking which GET parameters were included in the request.")
             if self.request.GET.get("configure_button"):
                 enteredstartdate = datetime.strptime(
                     self.request.GET.get('date__gte'), "%Y-%m-%d")
+                # store the date as a session variable to be reused
                 self.request.session['enteredstartdate'] = enteredstartdate.strftime(
                     '%Y-%m-%d')
-            # check if we have a starting date stored in the session variable
-            elif self.request.session['enteredstartdate']:
-                enteredstartdate = datetime.strptime(
-                    self.request.session['enteredstartdate'], "%Y-%m-%d")
+                self.enteredstartdate = enteredstartdate
             # else look for the starting date in the GET variables
             elif self.request.GET.get('date__gte'):
                 enteredstartdate = datetime.strptime(
                     self.request.GET.get('date__gte'), "%Y-%m-%d")
                 self.request.session['enteredstartdate'] = enteredstartdate.strftime(
                     '%Y-%m-%d')
+                self.enteredstartdate = enteredstartdate
             else:
                 # else raise an error
                 raise ValueError(
@@ -145,73 +161,99 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
                     self.request.GET.get('date__lte'), "%Y-%m-%d")
                 self.request.session['enteredenddate'] = enteredenddate.strftime(
                     '%Y-%m-%d')
-            # check if we have a ending date stored in the session variable
-            elif self.request.session['enteredenddate']:
-                enteredenddate = datetime.strptime(
-                    self.request.session['enteredenddate'], "%Y-%m-%d")
+                self.enteredenddate = enteredenddate
             # else look for the ending date in the GET variables
             elif self.request.GET.get('date__lte'):
                 enteredenddate = datetime.strptime(
                     self.request.GET.get('date__lte'), "%Y-%m-%d")
                 self.request.session['enteredenddate'] = enteredenddate.strftime(
                     '%Y-%m-%d')
+                self.enteredenddate = enteredenddate
             else:
                 raise ValueError(
                     " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
             # check if the configuration button was clicked
-            if self.request.GET.get("configure_button"):
-                selectedstockcode = int(self.request.GET.get('stockcode'))
-                self.request.session['selectedstockcode'] = selectedstockcode
-            # check if we have a stock code stored in the session
-            elif self.request.session['selectedstockcode']:
-                selectedstockcode = int(
-                    self.request.session['selectedstockcode'])
-            # else look for the stock code in the GET variables
-            elif self.request.GET.get('stockcode'):
-                selectedstockcode = int(self.request.GET.get('stockcode'))
-                self.request.session['selectedstockcode'] = selectedstockcode
-            else:
-                if self.stock_code_needed:
+            if self.stock_code_needed:
+                if self.request.GET.get("configure_button"):
+                    selectedstockcode = int(self.request.GET.get('stockcode'))
+                    self.selectedstockcode = selectedstockcode
+                    self.request.session['selectedstockcode'] = selectedstockcode
+                # else look for the stock code in the GET variables
+                elif self.request.GET.get('stockcode'):
+                    selectedstockcode = int(self.request.GET.get('stockcode'))
+                    self.selectedstockcode = selectedstockcode
+                    self.request.session['selectedstockcode'] = selectedstockcode
+                else:
                     raise ValueError(
                         " Please ensure that you have included a stockcode in the URL! For example: ?stockcode=169")
             if self.request.GET.get('sort'):
-                orderby = self.request.GET.get('sort')
+                self.orderby = self.request.GET.get('sort')
             else:
                 raise ValueError(
                     " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
-            if self.request.GET.get('osparameter'):
-                self.osparameter = self.request.GET.get('osparameter')
+            if self.os_parameter_needed:
+                if self.request.GET.get('osparameter'):
+                    self.osparameter = self.request.GET.get('osparameter')
+                    self.os_parameter_string = models.DailyEquitySummary._meta.get_field(
+                        self.osparameter).verbose_name
+            if self.index_name_needed:
+                if self.request.GET.get('indexname'):
+                    self.indexname = self.request.GET.get('indexname')
+                else:
+                    raise ValueError(
+                        "Please ensure that you have an indexname included in your URL! eg. &indexname=Composite Totals")
+                if self.request.GET.get('indexparameter'):
+                    self.indexparameter = self.request.GET.get(
+                        'indexparameter')
+                    self.index_parameter_string = models.HistoricalMarketSummary._meta.get_field(
+                        self.indexparameter).verbose_name
+                else:
+                    raise ValueError(
+                        "Please ensure that you have an indexparameter included in your URL! eg. &indexparameter=indexvalue")
             # validate input data
             if enteredstartdate >= enteredenddate:
                 errors += "Your starting date must be before your ending date. Please recheck."
             # Fetch the records
-            if 'selectedstockcode' in locals():
+            if self.stock_code_needed:
                 self.selectedstock = models.ListedEquities.objects.get(
-                    stockcode=selectedstockcode)
+                    stockcode=self.selectedstockcode)
                 self.historicalrecords = self.model.objects.filter(
-                    stockcode=selectedstockcode).filter(date__gt=enteredstartdate).filter(date__lt=enteredenddate).order_by(orderby)
+                    stockcode=self.selectedstockcode).filter(date__gt=self.enteredstartdate).filter(date__lt=self.enteredenddate).order_by(self.orderby)
+            elif self.index_name_needed:
+                self.historicalrecords = self.model.objects.filter(
+                    date__gt=self.enteredstartdate).filter(date__lt=self.enteredenddate).filter(indexname=self.indexname).order_by(self.orderby)
             else:
                 self.historicalrecords = self.model.objects.filter(
-                    date__gt=enteredstartdate).filter(date__lt=enteredenddate).order_by(orderby)
+                    date__gt=self.enteredstartdate).filter(date__lt=self.enteredenddate).order_by(self.orderby)
+            logger.debug(
+                "Finished parsing GET parameters. Now loading graph data.")
             # Set up our graph
             graphlabels = [obj.date.strftime('%Y-%m-%d')
                            for obj in self.historicalrecords]
             # Store the variables for the subclasses to calculate the required dict
             self.set_graph_dataset()
             # add the context keys
+            logger.debug("Loading context keys.")
             context['errors'] = errors
             context['listedstocks'] = listedstocks
-            if 'selectedstockcode' in locals():
+            if self.stock_code_needed:
                 context['selectedstockcode'] = selectedstockcode
                 context['selectedstockname'] = self.selectedstock.securityname
+            if self.index_name_needed:
+                context['indexparameter'] = self.indexparameter
+                context['index_parameter_string'] = self.index_parameter_string
+                context['indexname'] = self.indexname
+            if self.os_parameter_needed:
+                context['osparameter'] = self.osparameter
+                context['os_parameter_string'] = self.os_parameter_string
             context['enteredstartdate'] = enteredstartdate.strftime('%Y-%m-%d')
             context['enteredenddate'] = enteredenddate.strftime('%Y-%m-%d')
             context['graphlabels'] = graphlabels
             context['graphdataset'] = self.graph_dataset
+            logger.info("Successfully loaded page.")
         except Exception as ex:
-            logging.exception(
+            logger.exception(
                 "Sorry. Ran into a problem while attempting to load this page.")
-            logger.exception(errors)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -286,59 +328,17 @@ class MarketIndexHistoryView(BasicLineChartAndTableView):
     table_class = tables.HistoricalMarketSummaryTable
     filterset_class = filters.MarketIndexHistoryFilter
 
-    def set_stock_code_needed(self, bool_input_arg):
+    def __init__(self):
+        super(MarketIndexHistoryView, self).__init__()
         self.stock_code_needed = False
+        self.index_name_needed = True
 
     def set_graph_dataset(self,):
         self.graph_dataset = []
-        # Add the composite totals
-        composite_totals_data = []
-        all_tnt_totals_data = []
-        crosslisted_totals_data = []
-        sme_totals_data = []
-        for historical_market_record in self.historicalrecords:
-            try:
-                composite_totals_data.append(
-                    float(historical_market_record.compositetotalsindexvalue))
-            except TypeError as exc:
-                pass
-            try:
-                all_tnt_totals_data.append(
-                    float(historical_market_record.alltnttotalsindexvalue))
-            except TypeError as exc:
-                pass
-            try:
-                crosslisted_totals_data.append(
-                    float(historical_market_record.crosslistedtotalsindexvalue))
-            except TypeError as exc:
-                pass
-            try:
-                sme_totals_data.append(
-                    float(historical_market_record.smetotalsindexvalue))
-            except TypeError as exc:
-                pass
-        graphdict = dict(data=composite_totals_data,
+        graphdict = dict(data=[float(obj[self.indexparameter]) for obj in self.historicalrecords.values()],
                          borderColor='rgb(255, 0, 0)',
-                         backgroundColor='transparent',
-                         label='Composite Totals Index')
-        self.graph_dataset.append(graphdict)
-        # Add the TnT totals
-        graphdict = dict(data=all_tnt_totals_data,
-                         borderColor='rgb(0,255, 0)',
-                         backgroundColor='transparent',
-                         label='All TnT Totals Index')
-        self.graph_dataset.append(graphdict)
-        # Cross-listed totals
-        graphdict = dict(data=crosslisted_totals_data,
-                         borderColor='rgb(0,0,255)',
-                         backgroundColor='transparent',
-                         label='Cross-listed Totals Index')
-        self.graph_dataset.append(graphdict)
-        # SME totals
-        graphdict = dict(data=sme_totals_data,
-                         borderColor='rgb(0,255, 128)',
-                         backgroundColor='transparent',
-                         label='SME Totals Index')
+                         backgroundColor='rgb(255, 0, 0)',
+                         label=self.indexname)
         self.graph_dataset.append(graphdict)
 
 
@@ -351,8 +351,11 @@ class OSTradesHistoryView(BasicLineChartAndTableView):
     table_class = tables.OSTradesHistoryTable
     filterset_class = filters.OSTradesHistoryFilter
 
-    def set_stock_code_needed(self, bool_input_arg):
+    def __init__(self):
+        super(OSTradesHistoryView, self).__init__()
         self.stock_code_needed = True
+        self.index_name_needed = False
+        self.os_parameter_needed = True
 
     def set_graph_dataset(self,):
         self.graph_dataset = [dict(data=[obj[self.osparameter] for obj in self.historicalrecords.values()],
@@ -365,88 +368,7 @@ class OSTradesHistoryView(BasicLineChartAndTableView):
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
 
 # Global variables
-logger = logging.getLogger(__name__)
 
 # Create functions used by the views here
 
 # Create your view functions here.
-
-
-def ostradeshistory(request):
-    try:
-        errors = ""
-        logger.info("O/S trades history page was called")
-        listedstocks = models.ListedEquities.objects.all().order_by('symbol')
-        # Check if our request contains any GET variables
-        # search the database by those parameters if they are present in the request, and store them for the session
-        # Else check if we have any variables stored for the current sessions
-        # else provide some defaults as fallback
-        if request.GET.get('startdate'):
-            enteredstartdate = parse(request.GET.get(
-                'startdate')).strftime('%Y-%m-%d')
-            request.session['enteredstartdate'] = enteredstartdate
-        else:
-            enteredstartdate = request.session.get(
-                'enteredstartdate', (datetime.now(
-                )+dateutil.relativedelta.relativedelta(months=-3)).strftime('%Y-%m-%d'))
-        if request.GET.get('enddate'):
-            enteredenddate = parse(request.GET.get(
-                'enddate')).strftime('%Y-%m-%d')
-            request.session['enteredenddate'] = enteredenddate
-        else:
-            enteredenddate = request.session.get(
-                'enteredenddate', datetime.now().strftime('%Y-%m-%d'))
-        if request.GET.get('stockcode'):
-            selectedstockcode = int(request.GET.get('stockcode'))
-            request.session['selectedstockcode'] = selectedstockcode
-        else:
-            selectedstockcode = request.session.get(
-                'selectedstockcode', models.ListedEquities.objects.order_by('symbol').first().stockcode)
-        if request.GET.get('sort'):
-            orderby = request.GET.get('sort')
-        else:
-            orderby = 'date'
-        if request.GET.get('osparameter'):
-            osparameter = request.GET.get('osparameter')
-        else:
-            osparameter = 'osoffervol'
-        selectedstock = models.ListedEquities.objects.get(
-            stockcode=selectedstockcode)
-        # validate input data
-        if datetime.strptime(enteredstartdate, '%Y-%m-%d') >= datetime.strptime(enteredenddate, '%Y-%m-%d'):
-            errors += "Your starting date must be before your ending date. Please recheck."
-        # Fetch the records
-        selectedrecords = models.DailyEquitySummary.objects.filter(stockcode=selectedstockcode).filter(date__gt=enteredstartdate).filter(
-            date__lt=enteredenddate).values('date', 'osbid', 'osbidvol', 'osoffer', 'osoffervol').order_by(orderby)
-        # Set up our table
-        tabledata = tables.OSTradesHistoryTable(
-            selectedrecords, order_by=orderby)
-        tabledata.paginate(page=request.GET.get("page", 1), per_page=25)
-        # Set up our graph
-        graphlabels = [obj['date'].strftime(
-            '%Y-%m-%d') for obj in selectedrecords]
-        graphdataset = []
-        # Add the composite totals
-        graphdict = dict(data=[obj[osparameter] for obj in selectedrecords],
-                         borderColor='rgb(0, 0, 0)',
-                         backgroundColor='rgb(255, 0, 0)',
-                         label=selectedstock.securityname+'('+selectedstock.symbol+')')
-        graphdataset.append(graphdict)
-    except Exception as ex:
-        errors = ALERTMESSAGE+str(ex)
-        logging.critical(traceback.format_exc())
-        logger.error(errors)
-    # Now add our context data and return a response
-    context = {
-        'errors': errors,
-        'listedstocks': listedstocks,
-        'selectedstockcode': selectedstockcode,
-        'osparameterstr': osparameter,
-        'selectedstockname': selectedstock.securityname,
-        'table': tabledata,
-        'enteredstartdate': enteredstartdate,
-        'enteredenddate': enteredenddate,
-        'graphlabels': graphlabels,
-        'graphdataset': graphdataset,
-    }
-    return render(request, "stocks/base_ostradeshistory.html", context)

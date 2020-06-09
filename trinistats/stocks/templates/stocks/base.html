@@ -32,7 +32,7 @@
     <meta property="og:description" content="Tabular/graphical data about T&T's stock exchange." />
     <meta property="og:site_name" content="Trinistats:Stocks" />
     <!--End Metadata-->
-    <title>{% block title %}T&T Stock Data{% endblock title %}</title>
+    <title>{% block title %}trinistats | Stocks{% endblock title %}</title>
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
@@ -65,16 +65,16 @@
         <div class="navbar-menu" id="navbar_menu">
             <div class="navbar-start">
                 {% get_latest_date_dailyequitysummary as latest_date %}
-                <a class="navbar-item" id="dailysummarylink" href="{% url "stocks:dailyequitysummary" %}?date={{latest_date}}">Daily Summary</a>
+                <a class="navbar-item" id="dailysummarylink" href="{% url "stocks:dailyequitysummary" %}?date={{latest_date}}&wastradedtoday=1&sort=-valuetraded">Daily Summary</a>
 
-                {% get_today_date_iso_8601 as today_date %}
-                {% get_1_yr_ago_date_iso_8601 as 1_yr_ago_date %}
-                {% get_5_yr_ago_date_iso_8601 as 5_yr_ago_date %}
-                <a class="navbar-item" id="stockhistorylink" href="{% url "stocks:stockhistory" %}?stockcode=88&date__gte={{1_yr_ago_date}}&date__lte={{today_date}}&sort=date">Stock History</a>
-                <a class="navbar-item" id="dividendhistorylink" href="{% url "stocks:dividendhistory" %}?stockcode=89&date__gte={{5_yr_ago_date}}&date__lte={{today_date}}&sort=date">Dividend History</a>
-                <a class="navbar-item" id="dividendyieldlink" href="{% url "stocks:dividendyieldhistory" %}?stockcode=89&date__gte={{5_yr_ago_date}}&date__lte={{today_date}}&sort=date">Dividend Yield</a>
-                <a class="navbar-item" id="markethistorylink" href="{% url "stocks:marketindexhistory" %}?date__gte={{1_yr_ago_date}}&date__lte={{today_date}}&sort=date">Market Index History</a>
-                <a class="navbar-item" id="outstandingtradeslink" href="{% url "stocks:ostradeshistory" %}?stockcode=89&date__gte={{1_yr_ago_date}}&date__lte={{today_date}}&osparameter=osoffervol&sort=date"">Outstanding Trades</a>
+                {% get_session_end_date_or_today as end_date%}
+                {% get_session_start_date_or_1_yr_back as start_date%}
+                {% get_session_stockcode_or_default as stockcode%}
+                <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}?stockcode={{stockcode}}&date__gte={{start_date}}&date__lte={{end_date}}&sort=date'>Stock History</a>
+                <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}?stockcode={{stockcode}}&date__gte={{start_date}}&date__lte={{end_date}}&sort=date'>Dividend History</a>
+                <a class="navbar-item" id="dividendyieldlink" href='{% url "stocks:dividendyieldhistory" %}?stockcode={{stockcode}}&date__gte={{start_date}}&date__lte={{end_date}}&sort=date'>Dividend Yield</a>
+                <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}?indexname=Composite%20Totals&indexparameter=indexvalue&date__gte={{start_date}}&date__lte={{end_date}}&sort=date'>Market Index History</a>
+                <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}?stockcode={{stockcode}}&date__gte={{start_date}}&date__lte={{end_date}}&osparameter=osoffervol&sort=date'>Outstanding Trades</a>
             </div>
             <div class="navbar-end">
             </div>
@@ -147,9 +147,9 @@
     });
     </script>
     <!--Extra Javascript for certain pages only-->
-    <script>
     {% block morejs%}
-    {% endblock morejs%}
+    <script>
     </script>
+    {% endblock morejs%}
 </body>
 </html>
