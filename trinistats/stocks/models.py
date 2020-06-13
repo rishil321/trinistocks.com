@@ -2,6 +2,8 @@ from django.db import models
 
 # Create your models here.
 
+# These classes are created manually in the database for the output of the scraping script
+
 
 class ListedEquities(models.Model):
     stockcode = models.SmallAutoField(primary_key=True)
@@ -18,7 +20,7 @@ class ListedEquities(models.Model):
         db_table = 'listedequities'
 
 
-class DailyEquitySummary(models.Model):
+class DailyTradingSummary(models.Model):
     equitytradeid = models.AutoField(primary_key=True)
     date = models.DateField(unique=True)
     stockcode = models.ForeignKey(

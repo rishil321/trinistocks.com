@@ -27,7 +27,7 @@ class HistoricalDividendYieldTable(tables.Table):
         fields = ('date', 'yieldpercent')
 
 
-class DailyEquitySummaryTable(tables.Table):
+class DailyTradingSummaryTable(tables.Table):
 
     securityname = tables.Column(
         accessor="stockcode__securityname", verbose_name="Equity Name")
@@ -35,7 +35,7 @@ class DailyEquitySummaryTable(tables.Table):
         accessor="stockcode__symbol")
     volumetraded = tables.Column(verbose_name="Volume Traded")
     lastsaleprice = tables.Column(verbose_name="Sale Price ($)")
-    valuetraded = tables.Column(verbose_name="Value Traded ($)")
+    valuetraded = tables.Column(verbose_name="Dollar Volume ($)")
     low = tables.Column(verbose_name="Low ($)")
     high = tables.Column(verbose_name="High ($)")
     changedollars = tables.Column(verbose_name="Change ($)")
@@ -56,7 +56,7 @@ class HistoricalMarketSummaryTable(tables.Table):
 
 class OSTradesHistoryTable(tables.Table):
     class Meta:
-        model = models.DailyEquitySummary
+        model = models.DailyTradingSummary
         attrs = {"class": "djangotables"}
         fields = ('date', 'osbid', 'osbidvol', 'osoffer', 'osoffervol')
         export_formats = ['csv', 'xlsx']

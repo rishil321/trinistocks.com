@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load django_tables2 %}
+{% load static %}
+
+    {% block sidepanelcontents %}
+    <div class="panel-block">
+        <label class="panellabel" for="date">Trading date</label>
+        <input type="date" class="custom-date-selector" value="{{ selecteddateparsed }}" id="date" name="date">
+    </div>
+    <div class="panel-block">
+        <input type="hidden" value="1" name="wastradedtoday"></input>
+        <input type="hidden" value="-valuetraded" name="sort"></input>
+        <input type="submit" name="configure_button" class="custom-red-button" onclick="location.href='{% url 'stocks:dailytradingsummary' %}" value="Search"/>
+    <div>
+    {% endblock sidepanelcontents %}
+
+    {% block mainblock %}
+    <!-- Chart -->
+    <div>
+        <h2 style=""id="charttitle">Stocks Traded on the TTSE on {{ selecteddate }}</h2>
+        <canvas id="stockchart" width="4" height="1">
+            Stock Chart
+        </canvas>
+    </div>
+    <br>
+    <div class="buttons is-centered">
+        <a class="button export-csv-button" id="exportcsvbutton" href="{% export_url "csv" %}">Export as CSV</a>
+    </div>
+    <div class="is-clearfix clearfix"></div>    
+    <div class="tablediv">
+        {% render_table table %}
+    </div>
+    {% endblock mainblock %}
+
+    {% block chartjs %}
+    {{ graphvaluetraded|json_script:"graphvaluetraded" }}
+    {{ graphsymbols|json_script:"graphsymbols" }}
+    <script>
+    var ctx = document.getElementById('stockchart').getContext("2d");
+    var jssymbols = JSON.parse(document.getElementById('graphsymbols').textContent);
+    var valuetraded = JSON.parse(document.getElementById('graphvaluetraded').textContent);
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: jssymbols,
+            datasets: [
+                {
+                    backgroundColor: ["red","orange","yellow","lime","green","teal",
+                    "aquamarine","blue","gray","black","silver","darkblue","indigo",
+                    "grey"],
+                    data: valuetraded,
+                }
+            ]
+        },
+        options: {
+            legend: {
+            display: false
+         },
+         tooltips: {
+            enabled: true
+         },
+         scales: {
+                yAxes: [
+                    {
+                        ticks: {
+                            callback : function(value,index,array) 
+                            { if (value < 1000000) {
+                                return value/1000 + 'K'}
+                              else if (value>1000000) {
+                                return value/1000000 + 'M';
+                              } 
+                            }
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Dollar Volume (in TTD)'
+                        }
+                    }
+                ],
+                xAxes: [
+                    {
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Ticker Symbol'
+                        }
+                    }
+                ]
+            }
+        }
+    });
+    </script>
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#dailytradingsummarylink").toggleClass("has-background-red");
+    {% endblock %}

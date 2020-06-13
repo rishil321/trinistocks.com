@@ -6,36 +6,47 @@ from django import template
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from django.contrib.sessions.backends.db import SessionStore
+from django.conf import settings
+from importlib import import_module
 
 register = template.Library()
 
 
 @register.simple_tag
-def get_latest_date_dailyequitysummary():
-    return models.DailyEquitySummary.objects.latest('date').date.strftime("%Y-%m-%d")
+def get_latest_date_dailytradingsummary():
+    return models.DailyTradingSummary.objects.latest('date').date.strftime("%Y-%m-%d")
 
 
-@register.simple_tag
-def get_session_end_date_or_today():
-    session_data = SessionStore()
+@register.simple_tag(takes_context=True)
+def get_session_end_date_or_today(context):
+    session_data = context.request.session
     if 'enteredenddate' in session_data:
-        return session_data['enteredenddate'].strftime('%Y-%m-%d')
+        return session_data['enteredenddate']
     else:
         return datetime.now().strftime("%Y-%m-%d")
 
 
-@register.simple_tag
-def get_session_start_date_or_1_yr_back():
-    session_data = SessionStore()
+@register.simple_tag(takes_context=True)
+def get_session_start_date_or_1_yr_back(context):
+    session_data = context.request.session
     if 'enteredstartdate' in session_data:
-        return session_data['enteredstartdate'].strftime('%Y-%m-%d')
+        return session_data['enteredstartdate']
     else:
         return (datetime.now()+relativedelta(years=-1)).strftime('%Y-%m-%d')
 
 
-@register.simple_tag
-def get_session_stockcode_or_default():
-    session_data = SessionStore()
+@register.simple_tag(takes_context=True)
+def get_session_start_date_or_5_yr_back(context):
+    session_data = context.request.session
+    if 'enteredstartdate' in session_data:
+        return session_data['enteredstartdate']
+    else:
+        return (datetime.now()+relativedelta(years=-5)).strftime('%Y-%m-%d')
+
+
+@register.simple_tag(takes_context=True)
+def get_session_stockcode_or_default(context):
+    session_data = context.request.session
     if 'selectedstockcode' in session_data:
         return session_data['selectedstockcode']
     else:

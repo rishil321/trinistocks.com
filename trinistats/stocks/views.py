@@ -28,14 +28,78 @@ logger = logging.getLogger('root')
 # Class definitions
 
 
-class DailyEquitySummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
     """
     Set up the data for the Daily Equity Summary page
     """
-    template_name = 'stocks/base_dailyequitysummary.html'
-    model = models.DailyEquitySummary
-    table_class = tables.DailyEquitySummaryTable
-    filterset_class = filters.DailyEquitySummaryFilter
+    template_name = 'stocks/base_dailytradingsummary.html'
+    model = models.DailyTradingSummary
+    table_class = tables.DailyTradingSummaryTable
+    filterset_class = filters.DailyTradingSummaryFilter
+
+    def get_context_data(self, *args, **kwargs):
+        try:
+            errors = ""
+            logger.info("Daily trading summary page was called")
+            # get the current context
+            context = super().get_context_data(
+                *args, **kwargs)
+            # get the filters included in the URL. If the required filters are not present, raise an error
+            if self.request.GET.get('date'):
+                selecteddate = datetime.strptime(
+                    self.request.GET.get('date'), "%Y-%m-%d")
+            else:
+                raise ValueError(
+                    " Please ensure that you have set a date in the URL! For example: stocks/dailyequitysummary?date=2020-05-12 ")
+            # Now select the records corresponding to the selected date
+            # as well as their symbols, and order by the highest volume traded
+            dailytradingsummaryrecords = models.DailyTradingSummary.objects.exclude(wastradedtoday=0).filter(
+                date=selecteddate).select_related('stockcode').order_by('-valuetraded')
+            if not dailytradingsummaryrecords:
+                raise ValueError(
+                    "No data available for the date selected. Please press the back button and choose another date.")
+            # rename the symbol field properly and select only required fields
+            selectedrecords = dailytradingsummaryrecords.annotate(
+                symbol=F('stockcode__symbol')).values('symbol', 'valuetraded')
+            # check if an export request was received
+            # Set the graph
+            # get the top 10 records by value traded
+            graphsymbols = [record['symbol']
+                            for record in selectedrecords[:10]]
+            graphvaluetraded = [record['valuetraded']
+                                for record in selectedrecords[:10]]
+            # create a category for the sum of all other symbols (not in the top 10)
+            others = dict(symbol='Others', valuetraded=0)
+            for record in selectedrecords:
+                if (record['symbol'] not in graphsymbols) and record['valuetraded']:
+                    others['valuetraded'] += record['valuetraded']
+            # add the 'other' category to the graph
+            graphsymbols.append(others['symbol'])
+            graphvaluetraded.append(others['valuetraded'])
+            # get a human readable date
+            selecteddateparsed = selecteddate.strftime('%Y-%m-%d')
+            # Now add our context data and return a response
+            context['errors'] = errors
+            context['selecteddate'] = selecteddate.date()
+            context['selecteddateparsed'] = selecteddateparsed
+            context['graphsymbols'] = graphsymbols
+            context['graphvaluetraded'] = graphvaluetraded
+            logger.info("Successfully loaded page.")
+        except Exception as ex:
+            logger.exception(
+                "Sorry. Ran into a problem while attempting to load this page.")
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
+
+
+class TechnicalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+    """
+    Set up the data for the technical analysis summary page
+    """
+    template_name = 'stocks/base_technicalanalysissummary.html'
+    model = models.DailyTradingSummary
+    table_class = tables.DailyTradingSummaryTable
+    filterset_class = filters.DailyTradingSummaryFilter
 
     def get_context_data(self, *args, **kwargs):
         try:
@@ -53,10 +117,11 @@ class DailyEquitySummaryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                     " Please ensure that you have set a date in the URL! For example: stocks/dailyequitysummary?date=2020-05-12 ")
             # Now select the records corresponding to the selected date
             # as well as their symbols, and order by the highest volume traded
-            dailyequitysummaryrecords = models.DailyEquitySummary.objects.exclude(wastradedtoday=0).filter(
+            dailyequitysummaryrecords = models.DailyTradingSummary.objects.exclude(wastradedtoday=0).filter(
                 date=selecteddate).select_related('stockcode').order_by('-valuetraded')
             if not dailyequitysummaryrecords:
-                errors += "No data available for the date selected. Please press the back button and choose another date."
+                raise ValueError(
+                    "No data available for the date selected. Please press the back button and choose another date.")
             # rename the symbol field properly and select only required fields
             selectedrecords = dailyequitysummaryrecords.annotate(
                 symbol=F('stockcode__symbol')).values('symbol', 'valuetraded')
@@ -194,7 +259,7 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
             if self.os_parameter_needed:
                 if self.request.GET.get('osparameter'):
                     self.osparameter = self.request.GET.get('osparameter')
-                    self.os_parameter_string = models.DailyEquitySummary._meta.get_field(
+                    self.os_parameter_string = models.DailyTradingSummary._meta.get_field(
                         self.osparameter).verbose_name
             if self.index_name_needed:
                 if self.request.GET.get('indexname'):
@@ -336,7 +401,7 @@ class MarketIndexHistoryView(BasicLineChartAndTableView):
     def set_graph_dataset(self,):
         self.graph_dataset = []
         graphdict = dict(data=[float(obj[self.indexparameter]) for obj in self.historicalrecords.values()],
-                         borderColor='rgb(255, 0, 0)',
+                         borderColor='rgb(0, 0, 0)',
                          backgroundColor='rgb(255, 0, 0)',
                          label=self.indexname)
         self.graph_dataset.append(graphdict)
@@ -347,7 +412,7 @@ class OSTradesHistoryView(BasicLineChartAndTableView):
     Set up the data for the outstanding trades history page
     """
     template_name = 'stocks/base_ostradeshistory.html'
-    model = models.DailyEquitySummary
+    model = models.DailyTradingSummary
     table_class = tables.OSTradesHistoryTable
     filterset_class = filters.OSTradesHistoryFilter
 

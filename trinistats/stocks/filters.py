@@ -2,9 +2,9 @@ import django_filters
 from stocks import models
 
 
-class DailyEquitySummaryFilter(django_filters.FilterSet):
+class DailyTradingSummaryFilter(django_filters.FilterSet):
     class Meta:
-        model = models.DailyEquitySummary
+        model = models.DailyTradingSummary
         fields = {
             'date': ['exact', ],
             'wastradedtoday': ['exact', ],
@@ -52,7 +52,7 @@ class MarketIndexHistoryFilter(django_filters.FilterSet):
 
 class OSTradesHistoryFilter(django_filters.FilterSet):
     class Meta:
-        model = models.DailyEquitySummary
+        model = models.DailyTradingSummary
         fields = {
             'date': ['gte', 'lte', ],
             'stockcode': ['exact', ],

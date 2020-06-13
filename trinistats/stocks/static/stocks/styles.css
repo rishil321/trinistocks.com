@@ -93,7 +93,7 @@
 }
 
 .navbaricon {
-    width: 8rem;
+    width: 6rem;
     display: block;
     margin-top: auto;
     margin-bottom: auto;
@@ -154,4 +154,12 @@ td {
 .has-background-red {
     background-color: red;
     border-radius: 0.2em;
+}
+
+.has-background-black {
+    background-color: black;
+}
+
+.has-background-black a {
+    color:white;
 }

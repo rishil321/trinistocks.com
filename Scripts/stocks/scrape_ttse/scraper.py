@@ -26,7 +26,6 @@ import getopt
 import multiprocessing
 import time
 import tempfile
-import argparse
 
 # Imports from the cheese factory
 from pid import PidFile
@@ -99,9 +98,9 @@ class DatabaseConnect:
 
 def scrape_listed_equity_data():
     """Use the selenium module to open the Chrome browser and browse through
-    all listed equity securities at the URL 
+    all listed equity securities at the URL
     https://www.stockex.co.tt/controller.php?action=listed_companies
-    and scrape the useful output into a list of dictionaries  
+    and scrape the useful output into a list of dictionaries
     """
     try:
         logging.info(
@@ -225,10 +224,10 @@ def scrape_listed_equity_data():
 
 def scrape_dividend_data():
     """Use the Selenium module to open the Chrome browser and browse through
-    all listed equity securities at the URL 
+    all listed equity securities at the URL
     https://www.stockex.co.tt/controller.php?action=listed_companies
     For each listed security, press the corporate action button and get
-    all data from 2010 to the current date 
+    all data from 2010 to the current date
     """
     # Create a variable for our webdriver
     driver = None
@@ -372,6 +371,11 @@ def scrape_dividend_data():
                                                 'dividendamount': dividendamounts[index],
                                                 'currency': dividendcurrencies[index],
                                                 'symbol': symbol}
+                                # some symbols list multiple currencies, so we need to force them to a single one
+                                if dividenddata['symbol'] == 'GKC':
+                                    dividenddata['currency'] = 'JMD'
+                                else:
+                                    dividenddata['currency'] = dividendcurrencies[index]
                                 all_dividend_data_scraped.append(dividenddata)
                         except ValueError:
                             # If the parsing does throw an error, then we do not add the element
@@ -430,10 +434,10 @@ def scrape_dividend_data():
 
 def scrape_historical_data():
     """Use the Selenium module to open the Chrome browser and browse through
-    all listed equity securities at the URL 
+    all listed equity securities at the URL
     https://www.stockex.co.tt/controller.php?action=listed_companies
     For each listed security, press the history button and get
-    all data from 2010 to the current date 
+    all data from 2010 to the current date
     """
     try:
         # This list of dicts will contain all data to be written to the db
@@ -722,8 +726,10 @@ def update_dividend_yield():
         api_response_ttd = requests.get(
             url="https://fcsapi.com/api-v2/forex/base_latest?symbol=TTD&type=forex&access_key=o9zfwlibfXciHoFO4LQU2NfTwt2vEk70DAiOH1yb2ao4tBhNmm")
         if (api_response_ttd.status_code == 200):
+            # get the conversion rate from TTD to JMD
             ttd_jmd = Decimal(json.loads(
                 api_response_ttd.content.decode('utf-8'))['response']['JMD'])
+            # get the conversion rate from USD to TTD
             usd_ttd = Decimal(
                 1.00)/Decimal(json.loads(api_response_ttd.content.decode('utf-8'))['response']['USD'])
             # Calculate our dividend yields using our values
@@ -746,7 +752,7 @@ def update_dividend_yield():
                             if dividend_data['currency'] == "USD":
                                 conrate = usd_ttd
                             elif dividend_data['currency'] == "JMD":
-                                conrate = ttd_jmd
+                                conrate = 1/ttd_jmd
                             else:
                                 pass
                                 # Else our conrate should remain 1
@@ -787,7 +793,7 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
     https://stockex.co.tt/controller.php?action=view_quote&TradingDate=03/13/2020
     for the date range passed to the function.
     Gather the data into a dict, and write that dict to the DB
-    :param datestofetch: a list containing the dates that this process should parse 
+    :param datestofetch: a list containing the dates that this process should parse
     :param alllistedsymbols: a list containing all valid symbols in the DB
     :returns: 0 if successful
     :raises Exception if any issues are encountered
@@ -798,8 +804,8 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
         logging.info(
             "Now opening using pandas to fetch market summary data"+pidstring)
         # set up the field names for the tables
-        market_summary_data_keys = ['index_name', 'index_value', 'index_change', 'change_percent',
-                                    'volume_traded', 'value_traded', 'num_trades']
+        market_summary_data_keys = ['indexname', 'indexvalue', 'indexchange', 'changepercent',
+                                    'volumetraded', 'valuetraded', 'numtrades']
         daily_shares_data_keys = ['symbol', 'openprice', 'high', 'low', 'osbid', 'osbidvol', 'osoffer',
                                   'osoffervol', 'lastsaleprice', 'wastradedtoday', 'volumetraded', 'closeprice', 'changedollars']
         # set up the database connection to write data to the db
@@ -1006,6 +1012,8 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
                                  fetchdate+pidstring)
                     logging.info(
                         "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount)+pidstring)
+                else:
+                    logging.warning("No data found for "+fetchdate+pidstring)
             except KeyError as keyerr:
                 logging.warning(
                     "Could not find a required key on date "+fetchdate+pidstring+str(keyerr))
@@ -1031,7 +1039,7 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
 
 def update_equity_summary_data():
     """Use the selenium module to open the Chrome browser and browse through
-    every day of trading summaries listed at  
+    every day of trading summaries listed at
     https://stockex.co.tt/controller.php?action=view_quote&TradingDate=03/13/2020
     and scrape the useful output into a list of dictionaries for the DB
     """
@@ -1094,195 +1102,173 @@ def update_daily_trades():
     """
     Open the Chrome browser and browse through
     https://stockex.co.tt/controller.php?action=view_quote which shows trading for the last day
-    Gather the data into a dict, and write that dict to the DB 
+    Gather the data into a dict, and write that dict to the DB
     :returns: 0 if successful
     :raises Exception if any issues are encountered
     """
     try:
         db_connect = DatabaseConnect()
         logging.info("Successfully connected to database")
-        # Reflect the tables already created in our db
+        logging.info(
+            "Now opening using pandas to fetch latest daily shares data")
+        daily_shares_data_keys = ['symbol', 'openprice', 'high', 'low', 'osbid', 'osbidvol', 'osoffer',
+                                  'osoffervol', 'lastsaleprice', 'wastradedtoday', 'volumetraded', 'closeprice', 'changedollars']
+        # load the daily summary table
         dailyequitysummary_table = Table(
             'dailyequitysummary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        listedequities_table = Table(
-            'listedequities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        # Also get a list of all valid symbols from the db
-        alllistedsymbols = []
-        selectstmt = select([listedequities_table.c.symbol])
-        result = db_connect.dbcon.execute(selectstmt)
-        for row in result:
-            # We only have a single element in each row tuple, which is the symbol
-            alllistedsymbols.append(row[0])
-        # This list of dicts will contain all data to be written to the db
-        allequitytradingdata = []
-        # open the browser
-        logging.info("Now opening the Chrome browser")
-        options = Options()
-        options.headless = True
-        driver = webdriver.Chrome(options=options)
-        # set up a variable to retry page loads on Internet failures
-        webretries = 1
-        # check if the page was loaded or has failed enough times
-        pageloaded = False
-        failmaxtimes = 3
-        while not pageloaded and webretries <= failmaxtimes:
-            try:
-                # Then go the stockex.co.tt URL that lists all equities traded for today
-                todayequitysummaryurl = "https://stockex.co.tt/controller.php?action=view_quote"
-                logging.info("Navigating to "+todayequitysummaryurl)
-                driver.get(todayequitysummaryurl)
-                # first find the data of the info that we are fetching
-                tradingdate = driver.find_element_by_name(
-                    "TradingDate").get_attribute("value")
-                logging.info("Now parsing data for: "+tradingdate)
-                tablerows = driver.find_elements_by_tag_name("tr")
-                for row in tablerows:
-                    # for each row in the table, get the td elements
-                    rowcells = row.find_elements_by_tag_name("td")
-                    # If we have exactly 14 elements in the row, then this is a valid row
-                    if len(rowcells) == 14:
-                        # we need to get the symbol and the sale date to test/validate the row data
-                        testsymbol = rowcells[1].text
-                        testsaledate = rowcells[10].text
-                        # first check that the word in rowcells[1] is actually a valid symbol
-                        if testsymbol in alllistedsymbols and testsaledate != ' ':
-                            # if it is a valid symbol, check the last sale date
-                            lastsaledate = datetime.strptime(
-                                testsaledate, '%d/%m/%y')
-                            currentfetchdate = datetime.strptime(
-                                tradingdate, '%Y-%m-%d')
-                            # if the last sale date is the date that we have fetched
-                            if lastsaledate == currentfetchdate:
-                                # then create a dictionary to store data
-                                equitytradingdata = dict(date=tradingdate)
-                                # and start storing our useful data
-                                equitytradingdata['symbol'] = rowcells[1].text
-                                # for each value, check if a value is present
-                                openprice = rowcells[2].text
-                                if openprice != ' ':
-                                    equitytradingdata['openprice'] = float(
-                                        openprice.replace(",", ""))
-                                else:
-                                    equitytradingdata['openprice'] = None
-                                high = rowcells[3].text
-                                if high != ' ':
-                                    equitytradingdata['high'] = float(
-                                        high.replace(",", ""))
-                                else:
-                                    equitytradingdata['high'] = None
-                                low = rowcells[4].text
-                                if low != ' ':
-                                    equitytradingdata['low'] = float(
-                                        low.replace(",", ""))
-                                else:
-                                    equitytradingdata['low'] = None
-                                osbid = rowcells[5].text
-                                if osbid != ' ':
-                                    equitytradingdata['osbid'] = float(
-                                        osbid.replace(",", ""))
-                                else:
-                                    equitytradingdata['osbid'] = None
-                                osbidvol = rowcells[6].text
-                                if osbidvol != ' ':
-                                    equitytradingdata['osbidvol'] = int(
-                                        osbidvol.replace(",", ""))
-                                else:
-                                    equitytradingdata['osbidvol'] = None
-                                osoffer = rowcells[7].text
-                                if osoffer != ' ':
-                                    equitytradingdata['osoffer'] = float(
-                                        osoffer.replace(",", ""))
-                                else:
-                                    equitytradingdata['osoffer'] = None
-                                osoffervol = rowcells[8].text
-                                if osoffervol != ' ':
-                                    equitytradingdata['osoffervol'] = int(
-                                        osoffervol.replace(",", ""))
-                                else:
-                                    equitytradingdata['osoffervol'] = None
-                                saleprice = rowcells[9].text
-                                if saleprice != ' ':
-                                    equitytradingdata['saleprice'] = float(
-                                        saleprice.replace(",", ""))
-                                else:
-                                    equitytradingdata['saleprice'] = None
-                                volumetraded = rowcells[11].text
-                                if volumetraded != ' ':
-                                    equitytradingdata['volumetraded'] = int(
-                                        volumetraded.replace(",", ""))
-                                else:
-                                    equitytradingdata['volumetraded'] = None
-                                closeprice = rowcells[12].text
-                                if closeprice != ' ':
-                                    equitytradingdata['closeprice'] = float(
-                                        closeprice.replace(",", ""))
-                                else:
-                                    equitytradingdata['closeprice'] = None
-                                changedollars = rowcells[13].text
-                                if changedollars != ' ':
-                                    equitytradingdata['changedollars'] = float(
-                                        changedollars.replace(",", ""))
-                                else:
-                                    equitytradingdata['changedollars'] = None
-                                # now add our dictionary to our list
-                                allequitytradingdata.append(
-                                    equitytradingdata)
-                pageloaded = True
-            except WebDriverException as ex:
-                logging.error(
-                    "Problem found while fetching date at "+tradingdate+" : "+str(ex))
-                timewaitsecs = 30
-                time.sleep(timewaitsecs)
-                logging.error("Waited "+str(timewaitsecs)+" seconds. Now retrying " +
-                              tradingdate+" attempt ("+str(webretries)+"/"+str(failmaxtimes)+")")
-                webretries += 1
-        # Now write the data to the db
-        logging.info("Now writing scraped data to DB")
-        # convert symbols into stockcodes for the dailyequitysummary table
-        selectstmt = select(
-            [listedequities_table.c.symbol, listedequities_table.c.stockcode])
-        result = db_connect.dbcon.execute(selectstmt)
-        for row in result:
-            # The first element in our row tuple is the symbol, and the second is our stockcode
-            for equitytradingdata in allequitytradingdata:
-                # Map the symbol for each equity to an stockcode in our table
-                if equitytradingdata['symbol'] == row[0]:
-                    equitytradingdata['stockcode'] = row[1]
-        # Calculate the valuetraded for each row and remove our unneeded columns
-        for equitytradingdata in allequitytradingdata:
-            equitytradingdata['valuetraded'] = float(
-                equitytradingdata['saleprice']) * float(equitytradingdata['volumetraded'])
-            equitytradingdata.pop('symbol', None)
-        # insert data into dailyequitysummary table
-        insert_stmt = insert(dailyequitysummary_table).values(
-            allequitytradingdata)
-        on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
-            openprice=insert_stmt.inserted.openprice,
-            high=insert_stmt.inserted.high,
-            low=insert_stmt.inserted.low,
-            osbid=insert_stmt.inserted.osbid,
-            osbidvol=insert_stmt.inserted.osbidvol,
-            osoffer=insert_stmt.inserted.osoffer,
-            osoffervol=insert_stmt.inserted.osoffervol,
-            saleprice=insert_stmt.inserted.saleprice,
-            volumetraded=insert_stmt.inserted.volumetraded,
-            valuetraded=insert_stmt.inserted.valuetraded,
-            closeprice=insert_stmt.inserted.closeprice,
-            changedollars=insert_stmt.inserted.changedollars
-        )
-        result = db_connect.dbcon.execute(on_duplicate_key_stmt)
-        logging.info(
-            "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount))
+        # read the symbols and stockcodes from the listequities table into a dataframe
+        listedequities_mapping_dataframe = pd.io.sql.read_sql(
+            "SELECT stockcode,symbol FROM listedequities;", db_connect.dbengine)
+        listedequities_mapping_dataframe = listedequities_mapping_dataframe.set_index("symbol")[
+            "stockcode"]
+        urlsummarypage = "https://stockex.co.tt/controller.php?action=view_quote"
+        logging.info("Navigating to "+urlsummarypage)
+        http_get_req = requests.get(urlsummarypage, timeout=10)
+        if http_get_req.status_code != 200:
+            raise requests.exceptions.HTTPError(
+                "Could not load URL to update latest daily data "+urlsummarypage)
+        else:
+            logging.info("Successfully loaded webpage.")
+        # get a list of tables from the URL
+        dataframe_list = pd.read_html(http_get_req.text)
+        # if this is a valid trading day, extract the values we need from the tables
+        if dataframe_list[1][0][0].startswith("Daily Equity Summary for "):
+            # store the fetchdate for this data
+            fetchdate = datetime.strptime(
+                dataframe_list[1][0][0].split("for ")[1], '%A, %d %b, %Y')
+            # get the tables holding data for all the shares
+            market_summary_table = dataframe_list[3]
+            ordinary_shares_table = dataframe_list[4]
+            preference_shares_table = dataframe_list[5]
+            second_tier_shares_table = dataframe_list[6]
+            mutual_funds_shares_table = dataframe_list[7]
+            # some trading dates may not include the sme tables or the usd table
+            if len(dataframe_list[8].columns) == 14:
+                sme_shares_table = dataframe_list[8]
+            else:
+                sme_shares_table = pd.DataFrame()
+            if len(dataframe_list[9].columns) == 14:
+                usd_equity_shares_table = dataframe_list[9]
+            else:
+                # if the usd table is not included on the page, just create an empty dataframe
+                usd_equity_shares_table = pd.DataFrame()
+            # extract the values required from the tables
+            all_daily_shares_data = []
+            for shares_table in [ordinary_shares_table, preference_shares_table, second_tier_shares_table, mutual_funds_shares_table,
+                                 sme_shares_table, usd_equity_shares_table]:
+                if not shares_table.empty:
+                    # remove the column with the up and down symbols
+                    shares_table.drop(
+                        shares_table.columns[0], axis=1, inplace=True)
+                    # set the names of columns
+                    shares_table.columns = daily_shares_data_keys
+                    # remove the first two rows as they don't contain data
+                    shares_table.drop(
+                        shares_table.index[[0, 1]], inplace=True)
+                    # remove the unneeded characters from the symbols
+                    # note that these characters come after a space
+                    shares_table['symbol'] = shares_table['symbol'].str.split(
+                        " ", 1).str.get(0)
+                    # replace the last sale date with a boolean
+                    # if the last sale date is the current date being queried, return 1, else return 0
+                    shares_table['wastradedtoday'] = shares_table['wastradedtoday'].map(lambda x: 1 if (
+                        datetime.strptime(x, '%d/%m/%y').date() == fetchdate.date()) else 0, na_action='ignore')
+                    # fill all the nan values with 0s
+                    shares_table.fillna(0, inplace=True)
+                    # map the symbols to the stockcodes
+                    shares_table['symbol'] = shares_table['symbol'].map(
+                        listedequities_mapping_dataframe).fillna(0)
+                    # rename the column
+                    shares_table.rename(
+                        {'symbol': 'stockcode'}, axis=1, inplace=True)
+                    # set the datatype of the columns
+                    shares_table['stockcode'] = shares_table['stockcode'].astype(
+                        int)
+                    shares_table['openprice'] = shares_table['openprice'].astype(
+                        float)
+                    shares_table['high'] = shares_table['high'].astype(
+                        float)
+                    shares_table['low'] = shares_table['low'].astype(
+                        float)
+                    shares_table['osbid'] = shares_table['osbid'].astype(
+                        float)
+                    shares_table['osbidvol'] = shares_table['osbidvol'].astype(
+                        int)
+                    shares_table['lastsaleprice'] = shares_table['lastsaleprice'].astype(
+                        float)
+                    shares_table['volumetraded'] = shares_table['volumetraded'].astype(
+                        int)
+                    shares_table['closeprice'] = shares_table['closeprice'].astype(
+                        float)
+                    shares_table['changedollars'] = shares_table['changedollars'].astype(
+                        float)
+                    # drop the rows where the stockcode is 0 (these are delisted stocks)
+                    shares_table.drop(
+                        shares_table[shares_table.stockcode == 0].index, inplace=True)
+                    # create a series for the value traded
+                    value_traded_series = pd.Series(
+                        0, index=shares_table.index).astype(float)
+                    # set the name of the series
+                    value_traded_series.rename("valuetraded")
+                    # add the series to the dateframe
+                    shares_table = shares_table.assign(
+                        valuetraded=value_traded_series)
+                    # calculate the value traded for today
+                    shares_table['valuetraded'] = shares_table.apply(
+                        lambda x: x.volumetraded * x.lastsaleprice, axis=1)
+                    # create a series containing the date
+                    date_series = pd.Series(
+                        fetchdate, index=shares_table.index)
+                    # set the name of the series
+                    date_series.rename("date")
+                    # add the series to the dateframe
+                    shares_table = shares_table.assign(
+                        date=date_series)
+                    # add all values to the large list
+                    all_daily_shares_data += shares_table.to_dict(
+                        'records')
+            # now insert the data into the db
+            execute_completed_successfully = False
+            execute_failed_times = 0
+            while not execute_completed_successfully and execute_failed_times < 5:
+                try:
+                    daily_equity_summary_insert_stmt = insert(
+                        dailyequitysummary_table).values(all_daily_shares_data)
+                    daily_equity_summary_upsert_stmt = daily_equity_summary_insert_stmt.on_duplicate_key_update(
+                        {x.name: x for x in daily_equity_summary_insert_stmt.inserted})
+                    result = db_connect.dbcon.execute(
+                        daily_equity_summary_upsert_stmt)
+                    execute_completed_successfully = True
+                except sqlalchemy.exc.OperationalError as operr:
+                    logging.warning(str(operr))
+                    time.sleep(1)
+                    execute_failed_times += 1
+            logging.info(
+                "Successfully scraped and wrote to db equity/shares data for ")
+            logging.info(
+                "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount))
+        else:
+            logging.warning("No data found on page")
         return 0
+    except KeyError as keyerr:
+        logging.warning(
+            "Could not find a required key "+str(keyerr))
+    except IndexError as idxerr:
+        logging.warning(
+            "Could not locate index in a list. "+str(idxerr))
+    except requests.exceptions.Timeout as timeerr:
+        logging.error(
+            "Could not load URL in time. Maybe website is down? "+str(timeerr))
+    except requests.exceptions.HTTPError as httperr:
+        logging.error(str(httperr))
     except Exception:
         logging.exception("Could not complete daily trade update.")
         customlogging.flush_smtp_logger()
     finally:
-        if 'driver' in locals() and driver is not None:
-            # Always close the browser
-            driver.quit()
-            logging.info(
-                "Successfully closed web browser in daily trade update.")
+        # Always close the database connection
+        if 'db_connect' in locals() and db_connect is not None:
+            db_connect.close()
+            logging.info("Successfully closed database connection")
 
 
 def main():

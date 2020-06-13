@@ -9,8 +9,8 @@ from . import models
 app_name = 'stocks'
 
 urlpatterns = [
-    path('dailyequitysummary', views.DailyEquitySummaryView.as_view(),
-         name='dailyequitysummary'),
+    path('dailytradingsummary', views.DailyTradingSummaryView.as_view(),
+         name='dailytradingsummary'),
     path('marketindexhistory', views.MarketIndexHistoryView.as_view(),
          name='marketindexhistory'),
     path('stockhistory', views.StockHistoryView.as_view(), name='stockhistory'),
