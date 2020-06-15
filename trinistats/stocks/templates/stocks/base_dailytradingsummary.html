@@ -16,14 +16,14 @@
 
     {% block mainblock %}
     <!-- Chart -->
-    <div>
+    <div class="" style="">
         <h2 style=""id="charttitle">Stocks Traded on the TTSE on {{ selecteddate }}</h2>
         <canvas id="stockchart" width="4" height="1">
             Stock Chart
         </canvas>
     </div>
     <br>
-    <div class="buttons is-centered">
+    <div class="buttons is-centered ">
         <a class="button export-csv-button" id="exportcsvbutton" href="{% export_url "csv" %}">Export as CSV</a>
     </div>
     <div class="is-clearfix clearfix"></div>    

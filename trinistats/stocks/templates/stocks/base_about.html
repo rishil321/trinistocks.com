@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+    {% block sidepanelcontents %}
+    {% endblock sidepanelcontents %}
+
+    {% block mainblock %}
+    <div class="box">
+        <h2>About This Website</h2>
+    </div>
+    <div class="box">
+        <p>This site is being developed by <a href="https://www.linkedin.com/in/rishi-latchmepersad/">Rishi Latchmepersad</a>
+        to help fellow Trinbagonian investors understand the Trinidad and Tobago Stock Exchange (TTSE) a bit better.
+        I initially started this site just to develop my software development skills, but I've since realised its value in 
+        making charts/tables for TTSE data easily accessible to the public.  
+        </p>
+    </div>
+    <div class="box">
+        <p>If you like my work, feel free to support me through one of my Ebay ads (it costs you nothing extra to purchase through these links),
+        or click this Paypal button to donate to me directly.<br><br></p>
+        <form style="text-align:center;" action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+            <input type="hidden" name="cmd" value="_donations" />
+            <input type="hidden" name="business" value="CVJSJ47B4DVUC" />
+            <input type="hidden" name="item_name" value="Keeping the trinistats servers online! :)" />
+            <input type="hidden" name="currency_code" value="USD" />
+            <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+            <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+        </form>
+    </div>
+    <div class="box">
+        <p>
+        If you'd like to contact me, message me on <a href="https://www.linkedin.com/in/rishi-latchmepersad/">LinkedIn</a> or email me at latchmepersad@gmail.com
+        </p>
+    </div>
+    <div class="box">
+        <p>I'd also like to credit the follow persons below who are helping me continually refine/add to this site:</p>
+        <ul>
+            <li><a href="https://www.linkedin.com/in/rantsh/">Roderick Smith</a></li>
+            <li><a href="https://www.linkedin.com/in/david-mcken-9a2b5980/">David McKen</a></li>
+            <li><a href="https://www.linkedin.com/in/angeleena-reasat-aa4506151/">Angeleena Reasat</a></li>
+        </ul>
+    </div>
+    {% endblock mainblock %}
+
+    {% block chartjs %}
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#aboutlink").toggleClass("has-background-red");
+    {% endblock %}

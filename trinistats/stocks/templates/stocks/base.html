@@ -34,12 +34,17 @@
     <!--End Metadata-->
     <title>{% block title %}trinistats | Stocks{% endblock title %}</title>
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
+    <!--Font Awesome 4 icons-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!--Font Awesome 5 Icons-->
     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
+    <!--Ebay Ads-->
+    <script async src="https://epnt.ebay.com/static/epn-smart-tools.js"></script>
+    <!--CSS sheets-->
     <link rel="stylesheet" href="{% static 'stocks/bulma.css' %}">
     <link rel="stylesheet" href="{% static 'stocks/styles.css' %}">
     <!--Error Messages -->
-    {% if errors != "" %}
+    {% if errors %}
     <script type="text/javascript">
             alert('{{ errors }}');
             window.stop();
@@ -89,6 +94,7 @@
             </div>
             </div>
             <div class="navbar-end">
+            <a class="navbar-item" id="aboutlink" href='{% url "stocks:about" %}'>About</a>
             </div>
         </div>
     </nav>
@@ -107,8 +113,33 @@
     <div class="clearfix"></div>
 
     <!-- Main content-->
-    {% block mainblock %}
-    {% endblock mainblock %}
+    <div class="vertical-flex-container">
+        {% block ebayads%}
+        <div id="ebayadsdiv" class="" style="width:100%; height:14rem;">
+            <ins class="epn-placement" data-config-id="5ee75b455da29225ccf11ed6"></ins>
+            <div id="adlessdiv" class="horizontal-flex-container is-invisible">
+                <p style="margin-top:1em; margin-left:0.2em;flex-grow:3;" id="adlesstext">
+                    Looks like you're blocking ads on our site 😔
+                    <br>Please consider whitelisting our site on your adblocker.
+                    <br>We have minimal ads and you can easily help support this project through your regular Ebay purchases 😀
+                    <br>Or if you prefer, you can donate directly through Paypal to support the creator to keep adding new content here ➔
+                </p>
+                <form style="flex-grow:1;align-self:center;" action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                    <input type="hidden" name="cmd" value="_donations" />
+                    <input type="hidden" name="business" value="CVJSJ47B4DVUC" />
+                    <input type="hidden" name="item_name" value="Keeping the trinistats servers online! :)" />
+                    <input type="hidden" name="currency_code" value="USD" />
+                    <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+                    <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+                </form>
+            </div>
+        </div>
+        {% endblock ebayads%}
+        <div class="vertical-flex-container">
+            {% block mainblock %}
+            {% endblock mainblock %}
+        </div>
+    </div>
     <!-- END MAIN -->
     
     <!--Javascript-->
@@ -150,10 +181,20 @@
             $(".navbar-burger").toggleClass("is-active");
             $(".navbar-menu").toggleClass("is-active");
         });
+        //trigger the red background for the config button
         $("#configbutton").click(function() {
             $("#sidepanel").toggleClass("is-hidden");
             $("#configbutton").toggleClass("has-background-red");
         });
+        //display the guilt trip paragraph if adblock is enabled
+        $(function(){
+            setTimeout(function(){
+                if ($('.epn-placement').height() == 0) {
+                    $("#adlessdiv").toggleClass("is-invisible");
+                }
+            },5000);
+        });
+        //trigger the red background for the active page
         {% block activepagetoggle %}
         {% endblock %}
     });

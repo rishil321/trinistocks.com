@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DJANGO_DEBUG', False)
 
 ALLOWED_HOSTS = ["104.129.41.52", "104.129.41.55", "127.0.0.1",
-                 "[2607:ff48:aa81:1600:0:1:1e4:e27b]", "trinistats.com"]
+                 "[2607:ff48:aa81:1600:0:1:1e4:e27b]", "trinistats.com", "www.trinistats.com"]
 SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 
 # Application definition
@@ -151,11 +151,6 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(
     BASE_DIR, '/var/www/github_trinistats/trinistats/static')
 
-# A sample logging configuration. The only tangible logging
-# performed by this configuration is to send an email to
-# the site admins on every HTTP 500 error when DEBUG=False.
-# See http://docs.djangoproject.com/en/dev/topics/logging for
-# more details on how to customize your logging configuration.
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -204,7 +199,15 @@ LOGGING = {
         'root': {
             'handlers': ['file', 'console', 'mail_admins'],
             'level': 'DEBUG',
-            'propagate': False,
+            'propagate': True,
         },
     },
 }
+
+ADMINS = [('Rishi', 'latchmepersad@gmail.com'), ]
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 25
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+MANAGERS = ADMINS
+DEFAULT_FROM_EMAIL = 'django_server1@trinistats.com'

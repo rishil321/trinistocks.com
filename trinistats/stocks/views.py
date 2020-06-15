@@ -85,6 +85,10 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
             context['graphsymbols'] = graphsymbols
             context['graphvaluetraded'] = graphvaluetraded
             logger.info("Successfully loaded page.")
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            logger.warning(
+                "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
                 "Sorry. Ran into a problem while attempting to load this page.")
@@ -149,9 +153,13 @@ class TechnicalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Filt
             context['graphsymbols'] = graphsymbols
             context['graphvaluetraded'] = graphvaluetraded
             logger.info("Successfully loaded page.")
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            logger.warning(
+                "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load this page.")
+                "Sorry. Ran into a problem while attempting to load this page :(")
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -316,9 +324,13 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
             context['graphlabels'] = graphlabels
             context['graphdataset'] = self.graph_dataset
             logger.info("Successfully loaded page.")
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            logger.warning(
+                "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load this page.")
+                " Sorry. We ran into a serious problem while attempting to load this page :(")
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -427,6 +439,13 @@ class OSTradesHistoryView(BasicLineChartAndTableView):
                                    borderColor='rgb(0, 0, 0)',
                                    backgroundColor='rgb(255, 0, 0)',
                                    label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
+
+
+class AboutPageView(TemplateView):
+    """
+    Set up the data for the technical analysis summary page
+    """
+    template_name = 'stocks/base_about.html'
 
 
 # CONSTANTS
