@@ -1,7 +1,8 @@
 from django.urls import path
-
+from django.views.generic.base import RedirectView
 from . import views
-from . import models
+from .templatetags import stocks_template_tags
+import urllib.parse
 
 # Functions for URLS
 
@@ -9,6 +10,8 @@ from . import models
 app_name = 'stocks'
 
 urlpatterns = [
+    path('', RedirectView.as_view(
+        url=f'dailytradingsummary?date={stocks_template_tags.get_latest_date_dailytradingsummary()}&wastradedtoday=1&sort=-valuetraded', permanent=False), name="landingpage"),
     path('dailytradingsummary', views.DailyTradingSummaryView.as_view(),
          name='dailytradingsummary'),
     path('marketindexhistory', views.MarketIndexHistoryView.as_view(),

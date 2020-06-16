@@ -7129,7 +7129,7 @@ print {
   color: white;
 }
 
-@media screen and (min-width: 1024px) {
+
 
   .navbar.is-black .navbar-start>.navbar-item,
   .navbar.is-black .navbar-start .navbar-link,
@@ -7171,7 +7171,7 @@ print {
     background-color: #0a0a0a;
     color: white;
   }
-}
+
 
 .navbar.is-light {
   background-color: whitesmoke;
@@ -7806,7 +7806,6 @@ body.has-navbar-fixed-bottom {
   color: #4a4a4a;
   cursor: pointer;
   display: block;
-  height: 3.25rem;
   position: relative;
   width: 3.25rem;
   margin-left: auto;
@@ -7978,7 +7977,7 @@ a.navbar-item.is-active,
   }
 
   .navbar-menu {
-    background-color: white;
+    background-color: black;
     box-shadow: 0 8px 16px rgba(10, 10, 10, 0.1);
     padding: 0.5rem 0;
   }

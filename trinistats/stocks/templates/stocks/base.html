@@ -15,22 +15,22 @@
     </script>
     <!--Metadata-->
     <meta charset="utf-8">
-    <meta name="description" content="Statistics for the T&T stock exchange.">
+    <meta name="description" content="Statistics for the T&T Stock Exchange.">
     <meta name="author" content="Rishi Latchmepersad">
     <!-- Twitter Card data -->
     <meta name="twitter:card" content="Data from T&T's stock exchange.">
-    <meta name="twitter:title" content="Trinistats:Stock Exchange">
+    <meta name="twitter:title" content="trinistats:Stock Exchange">
     <meta name="twitter:description" content="Tabular/graphical data about T&T's stock exchange.">
     <meta name="twitter:creator" content="Rishi Latchmepersad">
     <!-- Twitter Summary card images must be at least 120x120px -->
     <meta name="twitter:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE">
     <!-- Open Graph data -->
-    <meta property="og:title" content="Trinistats:Stock Exchange" />
+    <meta property="og:title" content="trinistats:Stock Exchange" />
     <meta property="og:type" content="graph" />
     <meta property="og:url" content="http://www.trinistats.com/covid19" />
     <meta property="og:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE" />
     <meta property="og:description" content="Tabular/graphical data about T&T's stock exchange." />
-    <meta property="og:site_name" content="Trinistats:Stocks" />
+    <meta property="og:site_name" content="trinistats:Stocks" />
     <!--End Metadata-->
     <title>{% block title %}trinistats | Stocks{% endblock title %}</title>
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
@@ -91,10 +91,10 @@
                         <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}?stockcode={{stockcode}}&date__gte={{start_date_1_yr}}&date__lte={{end_date}}&osparameter=osoffervol&sort=date'>Outstanding Trades</a>
                     </div>
                 </div>
+                <a class="navbar-item" id="aboutlink" href='{% url "stocks:about" %}'>About</a>
             </div>
             </div>
             <div class="navbar-end">
-            <a class="navbar-item" id="aboutlink" href='{% url "stocks:about" %}'>About</a>
             </div>
         </div>
     </nav>

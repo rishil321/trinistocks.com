@@ -64,7 +64,7 @@
     </div>
     <div class="tile is-parent has-text-centered custom-tile-parent" >
       {% get_latest_date_dailytradingsummary as latest_date %}
-      <a class="tile is-child box" style="background-color:red;color:white;" href='{% url "stocks:dailytradingsummary" %}?date={{latest_date}}&wastradedtoday=1&sort=-valuetraded'>
+      <a class="tile is-child box" style="background-color:red;color:white;" href='{% url "stocks:landingpage" %}'>
         <p class="is-size-3">Stock Exchange</p>
         <i class="fas fa-chart-line fa-10x"></i>
         <p class="is-size-5">Data on equities listed on the local Stock Exchange</p>
