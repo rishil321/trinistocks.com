@@ -2,81 +2,168 @@
 {% load django_tables2 %}
 {% load static %}
 
-    {% block sidepanelcontents %}
-    <div class="panel-block">
-        <label class="panellabel" for="stockcode">Stock:</label>
-        <select id="stockcode" name="stockcode" class="custom-dropdown">
-            <!--Add options based on dictionary items returned-->
-            {% for listedstock in listedstocks %}
-                {% if listedstock.stockcode == selectedstockcode %}
-                    <option value="{{ listedstock.stockcode }}" selected>{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
-                {% else %}
-                    <option value="{{ listedstock.stockcode }}">{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
-                {% endif %}
-            {% endfor %}
-        </select>
-     </div>
-    <div class="panel-block">
-        <label class="panellabel" for="startdate">Start Date:</label>
-        <input type="date" class="custom-date-selector" value="{{ enteredstartdate }}" id="startdate" name="date__gte">
-    </div>
-    <div class="panel-block">    
-        <label class="panellabel" for="enddate">End Date:</label>
-        <input type="date" class="custom-date-selector" value="{{ enteredenddate }}" id="enddate" name="date__lte"/>
-    </div>
-    <div class="panel-block">  
-        <input type="hidden" value="date" name="sort"></input>
-        <input type="submit" name="configure_button" class="custom-red-button" onclick="location.href='{% url 'stocks:stockhistory' %}" value="Search"/>
-    </div>
-    {% endblock sidepanelcontents %}
+{% block sidepanelcontents %}
+<div class="panel-block">
+    <label class="panellabel" for="stockcode">Stock:</label>
+    <select id="stockcode" name="stockcode" class="custom-dropdown">
+        <!--Add options based on dictionary items returned-->
+        {% for listedstock in listedstocks %}
+        {% if listedstock.stockcode == selectedstockcode %}
+        <option value="{{ listedstock.stockcode }}" selected>{{listedstock.symbol}} ({{ listedstock.securityname }})
+        </option>
+        {% else %}
+        <option value="{{ listedstock.stockcode }}">{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
+        {% endif %}
+        {% endfor %}
+    </select>
+</div>
+<div class="panel-block">
+    <label class="panellabel" for="startdate">Start Date:</label>
+    <input type="date" class="custom-date-selector" value="{{ enteredstartdate }}" id="startdate" name="date__gte">
+</div>
+<div class="panel-block">
+    <label class="panellabel" for="enddate">End Date:</label>
+    <input type="date" class="custom-date-selector" value="{{ enteredenddate }}" id="enddate" name="date__lte" />
+</div>
+<div class="panel-block">
+    <label class="panellabel" for="charttype">Chart Type:</label>
+    <select id="charttype" name="charttype" class="custom-dropdown">
+        <option value="line">Line</option>
+        <option value="candlestick">Candlestick</option>
+    </select>
+</div>
+<div class="panel-block">
+    <input type="hidden" value="date" name="sort"></input>
+    <input type="submit" name="configure_button" class="custom-red-button"
+        onclick="location.href='{% url 'stocks:stockhistory' %}" value="Search" />
+</div>
+{% endblock sidepanelcontents %}
 
-    {% block mainblock %}
-        <h2 style="" id="charttitle">Stock Price History</h2>
-        <!-- Chart -->
-        <div>
-        <canvas id="stockchart" width="4" height="1">
-            Stock Chart
-        </canvas>
-        </div>
-        <br>
-        <div class="buttons is-centered">
-        <a class="button export-csv-button" id="exportcsvbutton" href="{% export_url "csv" %}">Export as CSV</a>
-        </div>
-        <div class="is-clearfix clearfix"></div>  
-        <div class="tablediv">
-            {% render_table table %}
-        </div>
-    {% endblock mainblock %}
+{% block mainblock %}
+<h2 style="" id="charttitle">{{selectedstockname}} ({{selectedstocksymbol}}) Stock Price History</h2>
+<!-- Chart -->
+<div id="chartdiv" style="width:100%;height:30rem;">
+    <canvas id="stockchart" width="4" height="1">
+        Stock Chart
+    </canvas>
+</div>
+<br>
+<div class="buttons is-centered">
+    <a class="button export-csv-button" id="exportcsvbutton" href="{% export_url "csv" %}">Export as CSV</a>
+</div>
+<div class="is-clearfix clearfix"></div>
+<div class="tablediv">
+    {% render_table table %}
+</div>
+{% endblock mainblock %}
 
-    {% block chartjs %}
-    {{ graphlabels|json_script:"graphlabels" }}
-    {{ graphdataset|json_script:"graphdataset" }}
-    <script>
-    var ctx = document.getElementById('stockchart').getContext("2d");
-    var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
-    var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
-    var myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: graphlabels,
-            datasets: graphdataset
-        },
-        options: {
-            scales: {
-                yAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Stock Closing Quote ($)'
-                    }
-                }]
+{% block chartjs %}
+{{ graphlabels|json_script:"graphlabels" }}
+{{ graphdataset|json_script:"graphdataset" }}
+<script>
+    // create a function to replace 0s with null
+    function returnNull(numval) {
+        if (numval == 0) {
+            return null;
+        } else return numval;
+    }
+    var chart_type = '{{chart_type}}';
+    // set the selected chart type
+    $("#charttype").val(chart_type).change();
+    if (chart_type == 'line') {
+        var ctx = document.getElementById('stockchart').getContext("2d");
+        var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
+        var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: graphlabels,
+                datasets: graphdataset
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Stock Closing Quote ($)'
+                        }
+                    }]
+                }
             }
-        }
-    });
-    </script>
-    {% endblock chartjs %}
-    <!-- END MAIN -->
-    
-    <!--Javascript-->
-    {% block activepagetoggle %}
-    $("#stockhistorylink").toggleClass("has-background-red");
-    {% endblock %}
+        });
+    } else if (chart_type == 'candlestick') {
+        // set up the arrays
+        var dataset1 = {
+
+            x: {{ dates|safe }},
+
+            close: {{ close_prices|safe }},
+
+            decreasing: {
+                line: {
+                    color: '#7F7F7F'
+                }
+            },
+
+            high: {{ highs|safe }},
+
+            increasing: {
+                line: {
+                    color: '#17BECF'
+                }
+            },
+
+            line: {
+                color: 'rgba(31,119,180,1)'
+            },
+
+            low: {{ lows|safe}},
+
+            open: {{ open_prices|safe }},
+
+            type: 'candlestick',
+            xaxis: 'x',
+            yaxis: 'y'
+        };
+
+        var data = [dataset1];
+
+        var layout = {
+            dragmode: 'zoom',
+            margin: {
+                r: 10,
+                t: 25,
+                b: 40,
+                l: 60
+            },
+            showlegend: false,
+            xaxis: {
+                autorange: true,
+                title: 'Date',
+                rangeslider: {
+                    visible:false
+                },
+                type: 'date'
+            },
+            yaxis: {
+                autorange: true,
+                title: 'Price ($TTD)',
+                type: 'linear'
+            }
+        };
+
+        Plotly.newPlot('chartdiv', data, layout);
+    }
+</script>
+{% endblock chartjs %}
+<!-- END MAIN -->
+
+<!--Javascript-->
+{% block activepagetoggle %}
+$("#stockhistorylink").toggleClass("has-background-red");
+{% endblock %}
+
+{% block morejs%}
+<script>
+</script>
+{% endblock morejs%}

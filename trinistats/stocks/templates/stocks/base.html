@@ -85,7 +85,7 @@
                         {% get_session_start_date_or_1_yr_back as start_date_1_yr%}
                         {% get_session_start_date_or_5_yr_back as start_date_5_yr%}
                         {% get_session_stockcode_or_default as stockcode%}
-                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}?stockcode={{stockcode}}&date__gte={{start_date_1_yr}}&date__lte={{end_date}}&sort=date'>Stock History</a>
+                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}?stockcode={{stockcode}}&date__gte={{start_date_1_yr}}&date__lte={{end_date}}&charttype=candlestick&sort=date'>Stock History</a>
                         <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}?stockcode={{stockcode}}&date__gte={{start_date_5_yr}}&date__lte={{end_date}}&sort=date'>Dividend History</a>
                         <a class="navbar-item" id="dividendyieldlink" href='{% url "stocks:dividendyieldhistory" %}?stockcode={{stockcode}}&date__gte={{start_date_5_yr}}&date__lte={{end_date}}&sort=date'>Dividend Yield</a>
                         <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}?indexname=Composite%20Totals&indexparameter=indexvalue&date__gte={{start_date_1_yr}}&date__lte={{end_date}}&sort=date'>Market Index History</a>
@@ -147,31 +147,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     {% block chartjs %}
-    <script>
-    var ctx = document.getElementById('stockchart').getContext("2d");
-    var jsdates = [];
-    var pythondates = {{ graphdates|safe }};
-    for (i=0; i<pythondates.length;i++){
-        jsdates.push(pythondates[i]);
-    }
-    var closingquotes = JSON.parse('{{ graphclosingquotes|safe }}');
-    var myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: jsdates,
-            datasets: [
-                {
-                    backgroundColor: 'rgb(255, 0, 0)',
-                    data: closingquotes,
-                    label: 'Closing Quote',
-                }
-            ]
-        },
-        options: {
-        }
-    });
-    </script>
     {% endblock chartjs %}
     <!--Base JavaScript for all templated pages-->
     <script>

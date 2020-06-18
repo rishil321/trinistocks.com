@@ -4,11 +4,18 @@ from django_tables2.export.views import ExportMixin
 
 
 class HistoricalStockInfoTable(tables.Table):
+    date = tables.Column(verbose_name="Date")
+    currency = tables.Column(
+        accessor="stockcode__currency", verbose_name="Currency")
+    openprice = tables.Column(verbose_name="Open Price ($)")
+    high = tables.Column(verbose_name="High ($)")
+    low = tables.Column(verbose_name="Low ($)")
+    closeprice = tables.Column(verbose_name="Close Price ($)")
+    volumetraded = tables.Column(verbose_name="Volume Traded (Shares)")
+    changedollars = tables.Column(verbose_name="Price Change ($)")
+
     class Meta:
-        model = models.HistoricalStockInfo
         attrs = {"class": "djangotables"}
-        fields = ('date', 'closingquote', 'changedollars',
-                  'currency', 'volumetraded')
         export_formats = ['csv', 'xlsx']
 
 
@@ -30,15 +37,17 @@ class HistoricalDividendYieldTable(tables.Table):
 class DailyTradingSummaryTable(tables.Table):
 
     securityname = tables.Column(
-        accessor="stockcode__securityname", verbose_name="Equity Name")
+        accessor="stockcode__securityname", verbose_name="Stock Name")
     symbol = tables.Column(
-        accessor="stockcode__symbol")
-    volumetraded = tables.Column(verbose_name="Volume Traded")
+        accessor="stockcode__symbol", verbose_name="Symbol")
+    volumetraded = tables.Column(verbose_name="Volume Traded (Shares)")
     lastsaleprice = tables.Column(verbose_name="Sale Price ($)")
+    currency = tables.Column(
+        accessor="stockcode__currency", verbose_name="Currency")
     valuetraded = tables.Column(verbose_name="Dollar Volume ($)")
     low = tables.Column(verbose_name="Low ($)")
     high = tables.Column(verbose_name="High ($)")
-    changedollars = tables.Column(verbose_name="Change ($)")
+    changedollars = tables.Column(verbose_name="Price Change ($)")
 
     class Meta:
         attrs = {"class": "djangotables"}

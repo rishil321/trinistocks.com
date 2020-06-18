@@ -311,7 +311,8 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
             context['listedstocks'] = listedstocks
             if self.stock_code_needed:
                 context['selectedstockcode'] = selectedstockcode
-                context['selectedstockname'] = self.selectedstock.securityname
+                context['selectedstockname'] = self.selectedstock.securityname.title()
+                context['selectedstocksymbol'] = self.selectedstock.symbol
             if self.index_name_needed:
                 context['indexparameter'] = self.indexparameter
                 context['index_parameter_string'] = self.index_parameter_string
@@ -340,19 +341,64 @@ class StockHistoryView(BasicLineChartAndTableView):
     The class for displaying the stock history view website
     """
     template_name = 'base_stockhistory.html'
-    model = models.HistoricalStockInfo  # models.something
+    model = models.DailyTradingSummary  # models.something
     table_class = tables.HistoricalStockInfoTable  # tables.something
     filterset_class = filters.StockHistoryFilter  # filters.something
     page_name = 'Stock History'  # a string representing the name of the page
+    selected_chart_type = 'candlestick'
+
+    def get_context_data(self, *args, **kwargs):
+        try:
+            errors = ""
+            # get the current context
+            context = super().get_context_data(
+                *args, **kwargs)
+            if self.request.GET.get("charttype"):
+                # check the chart type selected if the configure button was clicked
+                self.selected_chart_type = self.request.GET.get('charttype')
+                # store the session variable
+                self.request.session['charttype'] = self.selected_chart_type
+                # store the context variable
+                context['chart_type'] = self.selected_chart_type
+            context['dates'] = []
+            context['open_prices'] = []
+            context['close_prices'] = []
+            context['highs'] = []
+            context['lows'] = []
+            if self.selected_chart_type == 'candlestick':
+                # query and filter the records from the db
+                selected_records = models.DailyTradingSummary.objects.filter(
+                    stockcode=self.selectedstockcode).filter(date__gt=self.enteredstartdate)\
+                    .filter(date__lt=self.enteredenddate).order_by(self.orderby)
+                # store the required values for the chart
+                context['dates'] = [d.strftime('%Y-%m-%d') for d in selected_records.values_list(
+                    'date', flat=True)]
+                context['open_prices'] = [float(num) for num in selected_records.values_list(
+                    'openprice', flat=True)]
+                context['close_prices'] = [float(num) for num in selected_records.values_list(
+                    'closeprice', flat=True)]
+                context['lows'] = [float(num) for num in selected_records.values_list(
+                    'low', flat=True)]
+                context['highs'] = [float(num) for num in selected_records.values_list(
+                    'high', flat=True)]
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            logger.warning(
+                "Got a valueerror while loading this page"+str(verr))
+        except Exception as ex:
+            logger.exception(
+                " Sorry. We ran into a serious problem while attempting to load this page :(")
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
 
     def set_stock_code_needed(self, bool_input_arg):
         self.stock_code_needed = True
 
     def set_graph_dataset(self,):
-        self.graph_dataset = [dict(data=[float(obj.closingquote) for obj in self.historicalrecords],
+        self.graph_dataset = [dict(data=[float(obj.closeprice) for obj in self.historicalrecords],
                                    borderColor='rgb(0, 0, 0)',
                                    backgroundColor='rgb(255, 0, 0)',
-                                   label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
+                                   label=self.selectedstock.securityname.title()+'('+self.selectedstock.symbol+')')]
 
 
 class DividendHistoryView(BasicLineChartAndTableView):

@@ -137,8 +137,13 @@ def scrape_listed_equity_data():
             equity_data = {}
             # get the stock code from the URL
             parsed_url = urllib.parse.urlparse(equity_url)
-            equity_data['stockcode'] = urllib.parse.parse_qs(parsed_url.query)[
-                'StockCode'][0]
+            equity_data['stockcode'] = int(urllib.parse.parse_qs(parsed_url.query)[
+                'StockCode'][0])
+            # store the currency that the stock is listed in
+            if equity_data['stockcode'] in USD_STOCK_CODES:
+                equity_data['currency'] = 'USD'
+            else:
+                equity_data['currency'] = 'TTD'
             # Find all elements on this page with the <td> tag
             # All important values for the equity are wrapped in these tags
             important_elements = driver.find_elements_by_tag_name("td")
@@ -203,7 +208,8 @@ def scrape_listed_equity_data():
             status=insert_stmt.inserted.status,
             sector=insert_stmt.inserted.sector,
             issuedsharecapital=insert_stmt.inserted.issuedsharecapital,
-            marketcapitalization=insert_stmt.inserted.marketcapitalization
+            marketcapitalization=insert_stmt.inserted.marketcapitalization,
+            currency=insert_stmt.inserted.currency
         )
         result = db_connection.dbcon.execute(on_duplicate_key_stmt)
         db_connection.close()

@@ -13,7 +13,7 @@ class DailyTradingSummaryFilter(django_filters.FilterSet):
 
 class StockHistoryFilter(django_filters.FilterSet):
     class Meta:
-        model = models.HistoricalStockInfo
+        model = models.DailyTradingSummary
         fields = {
             'stockcode': ['exact', ],
             'date': ['gte', 'lte', ],

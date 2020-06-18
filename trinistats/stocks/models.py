@@ -14,6 +14,7 @@ class ListedEquities(models.Model):
     issuedsharecapital = models.BigIntegerField(blank=True, null=True)
     marketcapitalization = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True)
+    currency = models.CharField(max_length=3, blank=False, null=False)
 
     class Meta:
         managed = False
@@ -26,11 +27,11 @@ class DailyTradingSummary(models.Model):
     stockcode = models.ForeignKey(
         ListedEquities, models.CASCADE, db_column='stockcode')
     openprice = models.DecimalField(
-        max_digits=12, decimal_places=2, blank=True, null=True)
+        max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="Open Price ($)")
     high = models.DecimalField(
-        max_digits=12, decimal_places=2, blank=True, null=True)
+        max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="High ($)")
     low = models.DecimalField(
-        max_digits=12, decimal_places=2, blank=True, null=True)
+        max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="Low ($)")
     osbid = models.DecimalField(max_digits=12, decimal_places=2,
                                 blank=True, null=True, verbose_name="O/S Bid Price($)")
     osbidvol = models.PositiveIntegerField(
@@ -45,9 +46,9 @@ class DailyTradingSummary(models.Model):
         blank=True, null=True, verbose_name="Was Traded Today")
     volumetraded = models.PositiveIntegerField(blank=True, null=True)
     closeprice = models.DecimalField(
-        max_digits=12, decimal_places=2, blank=True, null=True)
+        max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="Close Price ($)")
     changedollars = models.DecimalField(
-        max_digits=7, decimal_places=2, blank=True, null=True)
+        max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="Daily Change ($)")
     valuetraded = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True)
 
