@@ -71,15 +71,15 @@
         <div class="navbar-menu" id="navbar_menu">
             <div class="navbar-start">
                 <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link">Summarized Data</a>
+                    <a class="navbar-link">Current</a>
                     <div class="navbar-dropdown has-background-black">
                         {% get_latest_date_dailytradingsummary as latest_date %}
                         <a class="navbar-item" id="dailytradingsummarylink" href="{% url "stocks:dailytradingsummary" %}?date={{latest_date}}&wastradedtoday=1&sort=-valuetraded">Daily Trading Summary</a>
-                        <!-- <hr class="dropdown-divider">-->
+                        <a class="navbar-item" id="listedstockslink" href="{% url "stocks:listedstocks" %}?sort=securityname">Listed Stocks</a>
                     </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link">Historical Data</a>
+                    <a class="navbar-link">Historical</a>
                     <div class="navbar-dropdown has-background-black">
                         {% get_session_end_date_or_today as end_date%}
                         {% get_session_start_date_or_1_yr_back as start_date_1_yr%}

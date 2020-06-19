@@ -11,6 +11,13 @@ class DailyTradingSummaryFilter(django_filters.FilterSet):
         }
 
 
+class ListedStocksFilter(django_filters.FilterSet):
+    class Meta:
+        model = models.ListedEquities
+        fields = {
+        }
+
+
 class StockHistoryFilter(django_filters.FilterSet):
     class Meta:
         model = models.DailyTradingSummary

@@ -14,6 +14,8 @@ urlpatterns = [
         url=f'dailytradingsummary?date={stocks_template_tags.get_latest_date_dailytradingsummary()}&wastradedtoday=1&sort=-valuetraded', permanent=False), name="landingpage"),
     path('dailytradingsummary', views.DailyTradingSummaryView.as_view(),
          name='dailytradingsummary'),
+    path('listedstocks', views.ListedStocksView.as_view(),
+         name='listedstocks'),
     path('marketindexhistory', views.MarketIndexHistoryView.as_view(),
          name='marketindexhistory'),
     path('stockhistory', views.StockHistoryView.as_view(), name='stockhistory'),

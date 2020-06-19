@@ -91,7 +91,36 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load this page.")
+                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
+
+
+class ListedStocksView(ExportMixin, tables2.MultiTableMixin, FilterView):
+    """
+    Set up the data for the Listed Stocks page
+    """
+    template_name = 'stocks/base_listedstocks.html'
+    model = models.ListedEquities
+    tables = [tables.ListedStocksTable]
+    table_pagination = False
+    filterset_class = filters.ListedStocksFilter
+
+    def get_context_data(self, *args, **kwargs):
+        try:
+            errors = ""
+            logger.info("Listed stocks page was called")
+            # get the current context
+            context = super().get_context_data(
+                *args, **kwargs)
+            logger.info("Successfully loaded page.")
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            logger.warning(
+                "Got a valueerror while loading this page"+str(verr))
+        except Exception as ex:
+            logger.exception(
+                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -159,7 +188,7 @@ class TechnicalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Filt
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load this page :(")
+                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -291,13 +320,13 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
                 self.selectedstock = models.ListedEquities.objects.get(
                     stockcode=self.selectedstockcode)
                 self.historicalrecords = self.model.objects.filter(
-                    stockcode=self.selectedstockcode).filter(date__gt=self.enteredstartdate).filter(date__lt=self.enteredenddate).order_by(self.orderby)
+                    stockcode=self.selectedstockcode).filter(date__gte=self.enteredstartdate).filter(date__lte=self.enteredenddate).order_by(self.orderby)
             elif self.index_name_needed:
                 self.historicalrecords = self.model.objects.filter(
-                    date__gt=self.enteredstartdate).filter(date__lt=self.enteredenddate).filter(indexname=self.indexname).order_by(self.orderby)
+                    date__gt=self.enteredstartdate).filter(date__lte=self.enteredenddate).filter(indexname=self.indexname).order_by(self.orderby)
             else:
                 self.historicalrecords = self.model.objects.filter(
-                    date__gt=self.enteredstartdate).filter(date__lt=self.enteredenddate).order_by(self.orderby)
+                    date__gt=self.enteredstartdate).filter(date__lte=self.enteredenddate).order_by(self.orderby)
             logger.debug(
                 "Finished parsing GET parameters. Now loading graph data.")
             # Set up our graph
@@ -331,7 +360,7 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                " Sorry. We ran into a serious problem while attempting to load this page :(")
+                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -368,8 +397,8 @@ class StockHistoryView(BasicLineChartAndTableView):
             if self.selected_chart_type == 'candlestick':
                 # query and filter the records from the db
                 selected_records = models.DailyTradingSummary.objects.filter(
-                    stockcode=self.selectedstockcode).filter(date__gt=self.enteredstartdate)\
-                    .filter(date__lt=self.enteredenddate).order_by(self.orderby)
+                    stockcode=self.selectedstockcode).filter(date__gte=self.enteredstartdate)\
+                    .filter(date__lte=self.enteredenddate).order_by(self.orderby)
                 # store the required values for the chart
                 context['dates'] = [d.strftime('%Y-%m-%d') for d in selected_records.values_list(
                     'date', flat=True)]
@@ -387,7 +416,7 @@ class StockHistoryView(BasicLineChartAndTableView):
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                " Sorry. We ran into a serious problem while attempting to load this page :(")
+                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 

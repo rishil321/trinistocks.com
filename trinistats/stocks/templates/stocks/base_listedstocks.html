@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load django_tables2 %}
+{% load static %}
+
+    {% block sidepanelcontents %}
+    {% endblock sidepanelcontents %}
+
+    {% block mainblock %}
+    <h2>Stocks Listed on the TTSE</h2>
+    <div class="tablediv">
+        {% render_table tables[0] %}
+    </div>
+    {% endblock mainblock %}
+
+    {% block chartjs %}
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#dailytradingsummarylink").toggleClass("has-background-red");
+    $('#configbutton').prop('disabled', false);
+    {% endblock %}

@@ -7,13 +7,16 @@ from django.db import models
 
 class ListedEquities(models.Model):
     stockcode = models.SmallAutoField(primary_key=True)
-    securityname = models.CharField(max_length=100)
-    symbol = models.CharField(unique=True, max_length=20)
+    securityname = models.CharField(
+        max_length=100, verbose_name="Security Name")
+    symbol = models.CharField(
+        unique=True, max_length=20, verbose_name="Symbol")
     status = models.CharField(max_length=20, blank=True, null=True)
     sector = models.CharField(max_length=100, blank=True, null=True)
-    issuedsharecapital = models.BigIntegerField(blank=True, null=True)
+    issuedsharecapital = models.BigIntegerField(
+        blank=True, null=True, verbose_name="Issues Share Capital (shares)")
     marketcapitalization = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True)
+        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Market Capitalization ($)")
     currency = models.CharField(max_length=3, blank=False, null=False)
 
     class Meta:

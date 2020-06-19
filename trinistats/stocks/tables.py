@@ -54,6 +54,22 @@ class DailyTradingSummaryTable(tables.Table):
         export_formats = ['csv', 'xlsx']
 
 
+class ListedStocksTable(tables.Table):
+    securityname = tables.Column()
+    symbol = tables.Column()
+    status = tables.Column()
+    sector = tables.Column()
+    issuedsharecapital = tables.Column()
+    marketcapitalization = tables.Column()
+    currency = tables.Column()
+
+    class Meta:
+        row_attrs = {
+            "class": lambda record: "has-background-lightred" if (record.status == 'SUSPENDED') else ""}
+        attrs = {"class": "djangotables"}
+        export_formats = ['csv', 'xlsx']
+
+
 class HistoricalMarketSummaryTable(tables.Table):
     class Meta:
         model = models.HistoricalMarketSummary

@@ -163,7 +163,11 @@ def scrape_listed_equity_data():
                         equity_data["status"] = securitystatus
                     if "Sector" in element.text:
                         securitysector = element.text[9:]
-                        equity_data["sector"] = securitysector
+                        # check if this is NGC
+                        if equity_data['symbol'] == 'NGL':
+                            equity_data['sector'] = 'Energy'
+                        else:
+                            equity_data["sector"] = securitysector
                     if "Issued Share Capital" in element.text:
                         # The value for this is not stored in the same column, but in
                         # the subsequent two columns
@@ -212,13 +216,12 @@ def scrape_listed_equity_data():
             currency=insert_stmt.inserted.currency
         )
         result = db_connection.dbcon.execute(on_duplicate_key_stmt)
-        db_connection.close()
         logging.info(
             "Database update successful. Number of rows affected was "+str(result.rowcount))
         return 0
-    except Exception:
-        logging.exception("Problem encountered in " +
-                          scrape_listed_equity_data.__name__)
+    except Exception as exc:
+        logging.exception(
+            "Problem encountered while updated listed equities."+str(exc))
         customlogging.flush_smtp_logger()
     finally:
         if 'driver' in locals() and driver is not None:
@@ -226,6 +229,48 @@ def scrape_listed_equity_data():
             driver.quit()
             logging.info("Successfully closed web browser in " +
                          scrape_listed_equity_data.__name__)
+        if 'db_connection' in locals() and db_connection is not None:
+            db_connection.close()
+
+
+def check_num_equities_in_sector():
+    try:
+        logging.info(
+            "Now computing number of equities in each sector.")
+        db_connection = DatabaseConnect()
+        # set up the tables from the db
+        listed_equities_table = Table(
+            'listedequities', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
+        listed_equities_per_sector_table = Table(
+            'listedequities_per_sector', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
+        # read the listedequities table into a dataframe
+        listedequities_df = pd.io.sql.read_sql(
+            "SELECT sector FROM listedequities;", db_connection.dbengine)
+        # create a copy of the dataframe and drop the duplicates to get all sectors
+        unique_listedequities_df = listedequities_df.copy().drop_duplicates()
+        # get the number of times the sector occurs in the df
+        listedequities_sector_counts_df = listedequities_df['sector'].value_counts(
+        )
+        # map the counts to the unique df
+        unique_listedequities_df['num_listed'] = unique_listedequities_df['sector'].map(
+            listedequities_sector_counts_df)
+        # update the table in the db
+        listedequities_per_sector_insert_stmt = insert(
+            listed_equities_per_sector_table).values(unique_listedequities_df.to_dict('records'))
+        listedequities_per_sector_upsert_stmt = listedequities_per_sector_insert_stmt.on_duplicate_key_update(
+            {x.name: x for x in listedequities_per_sector_insert_stmt.inserted})
+        result = db_connection.dbcon.execute(
+            listedequities_per_sector_upsert_stmt)
+        logging.info(
+            "Database update successful. Number of rows affected was "+str(result.rowcount))
+        return 0
+    except Exception as exc:
+        logging.exception(
+            "Problem encountered while calculating number of equities in each sector."+str(exc))
+        customlogging.flush_smtp_logger()
+    finally:
+        if 'db_connection' in locals() and db_connection is not None:
+            db_connection.close()
 
 
 def scrape_dividend_data():
@@ -1314,6 +1359,7 @@ def main():
                         update_daily_trades, ())
                 else:
                     multipool.apply_async(scrape_listed_equity_data, ())
+                    multipool.apply_async(check_num_equities_in_sector, ())
                     multipool.apply_async(scrape_dividend_data, ())
                     multipool.apply_async(scrape_historical_data, ())
                     multipool.apply_async(update_dividend_yield, ())
