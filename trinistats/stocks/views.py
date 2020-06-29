@@ -9,6 +9,7 @@ import dateutil
 import django_tables2 as tables2
 from django_tables2.export.views import ExportMixin
 from django_filters.views import FilterView
+from django.views.generic.base import RedirectView
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
@@ -19,13 +20,28 @@ from django.core import serializers
 from django.http.response import JsonResponse
 from django import forms
 from django.db.models import F
+from urllib.parse import urlencode
+from django.shortcuts import redirect
+from django.urls import reverse
 # Imports from local machine
-from stocks import models, tables, filters
+from stocks import models, filters
+from stocks import tables as stocks_tables
+from .templatetags import stocks_template_tags
 
 # Set up logging
 logger = logging.getLogger('root')
 
 # Class definitions
+
+
+class LandingPageView(RedirectView):
+
+    def get_redirect_url(self, *args, **kwargs):
+        base_url = reverse('stocks:dailytradingsummary', current_app="stocks")
+        query_string = urlencode({'date': stocks_template_tags.get_latest_date_dailytradingsummary(),
+                                  'wastradedtoday': 1, 'sort': '-valuetraded'})
+        url = '{}?{}'.format(base_url, query_string)
+        return url
 
 
 class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
@@ -34,7 +50,7 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
     """
     template_name = 'stocks/base_dailytradingsummary.html'
     model = models.DailyTradingSummary
-    table_class = tables.DailyTradingSummaryTable
+    table_class = stocks_tables.DailyTradingSummaryTable
     filterset_class = filters.DailyTradingSummaryFilter
 
     def get_context_data(self, *args, **kwargs):
@@ -91,7 +107,7 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -101,8 +117,12 @@ class ListedStocksView(ExportMixin, tables2.MultiTableMixin, FilterView):
     Set up the data for the Listed Stocks page
     """
     template_name = 'stocks/base_listedstocks.html'
-    model = models.ListedEquities
-    tables = [tables.ListedStocksTable]
+    model1 = models.ListedEquities
+    qs1 = model1.objects.all()
+    model2 = models.ListedEquitiesPerSector
+    qs2 = model2.objects.all()
+    tables = [stocks_tables.ListedStocksTable(
+        qs1), stocks_tables.ListedStocksPerSectorTable(qs2)]
     table_pagination = False
     filterset_class = filters.ListedStocksFilter
 
@@ -120,7 +140,7 @@ class ListedStocksView(ExportMixin, tables2.MultiTableMixin, FilterView):
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -130,57 +150,18 @@ class TechnicalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Filt
     Set up the data for the technical analysis summary page
     """
     template_name = 'stocks/base_technicalanalysissummary.html'
-    model = models.DailyTradingSummary
-    table_class = tables.DailyTradingSummaryTable
-    filterset_class = filters.DailyTradingSummaryFilter
+    model = models.TechnicalAnalysisSummary
+    table_class = stocks_tables.TechnicalAnalysisSummaryTable
+    table_pagination = False
+    filterset_class = filters.TechnicalAnalysisSummaryFilter
 
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
-            logger.info("Daily equity summary page was called")
+            logger.info("Technical Analysis Summary Page was called")
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            # get the filters included in the URL. If the required filters are not present, raise an error
-            if self.request.GET.get('date'):
-                selecteddate = datetime.strptime(
-                    self.request.GET.get('date'), "%Y-%m-%d")
-            else:
-                raise ValueError(
-                    " Please ensure that you have set a date in the URL! For example: stocks/dailyequitysummary?date=2020-05-12 ")
-            # Now select the records corresponding to the selected date
-            # as well as their symbols, and order by the highest volume traded
-            dailyequitysummaryrecords = models.DailyTradingSummary.objects.exclude(wastradedtoday=0).filter(
-                date=selecteddate).select_related('stockcode').order_by('-valuetraded')
-            if not dailyequitysummaryrecords:
-                raise ValueError(
-                    "No data available for the date selected. Please press the back button and choose another date.")
-            # rename the symbol field properly and select only required fields
-            selectedrecords = dailyequitysummaryrecords.annotate(
-                symbol=F('stockcode__symbol')).values('symbol', 'valuetraded')
-            # check if an export request was received
-            # Set the graph
-            # get the top 10 records by value traded
-            graphsymbols = [record['symbol']
-                            for record in selectedrecords[:10]]
-            graphvaluetraded = [record['valuetraded']
-                                for record in selectedrecords[:10]]
-            # create a category for the sum of all other symbols (not in the top 10)
-            others = dict(symbol='Others', valuetraded=0)
-            for record in selectedrecords:
-                if (record['symbol'] not in graphsymbols) and record['valuetraded']:
-                    others['valuetraded'] += record['valuetraded']
-            # add the 'other' category to the graph
-            graphsymbols.append(others['symbol'])
-            graphvaluetraded.append(others['valuetraded'])
-            # get a human readable date
-            selecteddateparsed = selecteddate.strftime('%Y-%m-%d')
-            # Now add our context data and return a response
-            context['errors'] = errors
-            context['selecteddate'] = selecteddate.date()
-            context['selecteddateparsed'] = selecteddateparsed
-            context['graphsymbols'] = graphsymbols
-            context['graphvaluetraded'] = graphvaluetraded
             logger.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
@@ -188,7 +169,7 @@ class TechnicalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Filt
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -360,7 +341,7 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -371,7 +352,7 @@ class StockHistoryView(BasicLineChartAndTableView):
     """
     template_name = 'base_stockhistory.html'
     model = models.DailyTradingSummary  # models.something
-    table_class = tables.HistoricalStockInfoTable  # tables.something
+    table_class = stocks_tables.HistoricalStockInfoTable  # tables.something
     filterset_class = filters.StockHistoryFilter  # filters.something
     page_name = 'Stock History'  # a string representing the name of the page
     selected_chart_type = 'candlestick'
@@ -416,7 +397,7 @@ class StockHistoryView(BasicLineChartAndTableView):
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             logger.exception(
-                "Sorry. Ran into a problem while attempting to load the page: "+template_name)
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
@@ -424,10 +405,8 @@ class StockHistoryView(BasicLineChartAndTableView):
         self.stock_code_needed = True
 
     def set_graph_dataset(self,):
-        self.graph_dataset = [dict(data=[float(obj.closeprice) for obj in self.historicalrecords],
-                                   borderColor='rgb(0, 0, 0)',
-                                   backgroundColor='rgb(255, 0, 0)',
-                                   label=self.selectedstock.securityname.title()+'('+self.selectedstock.symbol+')')]
+        self.graph_dataset = [float(obj.closeprice)
+                              for obj in self.historicalrecords]
 
 
 class DividendHistoryView(BasicLineChartAndTableView):
@@ -436,7 +415,7 @@ class DividendHistoryView(BasicLineChartAndTableView):
     """
     template_name = 'base_dividendhistory.html'
     model = models.HistoricalDividendInfo  # models.something
-    table_class = tables.HistoricalDividendInfoTable  # tables.something
+    table_class = stocks_tables.HistoricalDividendInfoTable  # tables.something
     filterset_class = filters.DividendHistoryFilter  # filters.something
     page_name = 'Dividend History'  # a string representing the name of the page
 
@@ -444,10 +423,8 @@ class DividendHistoryView(BasicLineChartAndTableView):
         self.stock_code_needed = True
 
     def set_graph_dataset(self,):
-        self.graph_dataset = [dict(data=[float(obj.dividendamount) for obj in self.historicalrecords],
-                                   borderColor='rgb(0, 0, 0)',
-                                   backgroundColor='rgb(255, 0, 0)',
-                                   label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
+        self.graph_dataset = [
+            float(obj.dividendamount) for obj in self.historicalrecords]
 
 
 class DividendYieldHistoryView(BasicLineChartAndTableView):
@@ -456,7 +433,7 @@ class DividendYieldHistoryView(BasicLineChartAndTableView):
     """
     template_name = 'base_dividendyieldhistory.html'
     model = models.DividendYield  # models.something
-    table_class = tables.HistoricalDividendYieldTable  # tables.something
+    table_class = stocks_tables.HistoricalDividendYieldTable  # tables.something
     filterset_class = filters.DividendYieldHistoryFilter  # filters.something
     # a string representing the name of the page
     page_name = 'Dividend Yield History'
@@ -465,10 +442,8 @@ class DividendYieldHistoryView(BasicLineChartAndTableView):
         self.stock_code_needed = True
 
     def set_graph_dataset(self,):
-        self.graph_dataset = [dict(data=[float(obj.yieldpercent) for obj in self.historicalrecords],
-                                   borderColor='rgb(0, 0, 0)',
-                                   backgroundColor='rgb(255, 0, 0)',
-                                   label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
+        self.graph_dataset = [float(obj.yieldpercent)
+                              for obj in self.historicalrecords]
 
 
 class MarketIndexHistoryView(BasicLineChartAndTableView):
@@ -477,7 +452,7 @@ class MarketIndexHistoryView(BasicLineChartAndTableView):
     """
     template_name = 'stocks/base_marketindexhistory.html'
     model = models.HistoricalMarketSummary
-    table_class = tables.HistoricalMarketSummaryTable
+    table_class = stocks_tables.HistoricalMarketSummaryTable
     filterset_class = filters.MarketIndexHistoryFilter
 
     def __init__(self):
@@ -486,12 +461,8 @@ class MarketIndexHistoryView(BasicLineChartAndTableView):
         self.index_name_needed = True
 
     def set_graph_dataset(self,):
-        self.graph_dataset = []
-        graphdict = dict(data=[float(obj[self.indexparameter]) for obj in self.historicalrecords.values()],
-                         borderColor='rgb(0, 0, 0)',
-                         backgroundColor='rgb(255, 0, 0)',
-                         label=self.indexname)
-        self.graph_dataset.append(graphdict)
+        self.graph_dataset = [float(obj[self.indexparameter])
+                              for obj in self.historicalrecords.values()]
 
 
 class OSTradesHistoryView(BasicLineChartAndTableView):
@@ -500,7 +471,7 @@ class OSTradesHistoryView(BasicLineChartAndTableView):
     """
     template_name = 'stocks/base_ostradeshistory.html'
     model = models.DailyTradingSummary
-    table_class = tables.OSTradesHistoryTable
+    table_class = stocks_tables.OSTradesHistoryTable
     filterset_class = filters.OSTradesHistoryFilter
 
     def __init__(self):
@@ -510,10 +481,8 @@ class OSTradesHistoryView(BasicLineChartAndTableView):
         self.os_parameter_needed = True
 
     def set_graph_dataset(self,):
-        self.graph_dataset = [dict(data=[obj[self.osparameter] for obj in self.historicalrecords.values()],
-                                   borderColor='rgb(0, 0, 0)',
-                                   backgroundColor='rgb(255, 0, 0)',
-                                   label=self.selectedstock.securityname+'('+self.selectedstock.symbol+')')]
+        self.graph_dataset = [obj[self.osparameter]
+                              for obj in self.historicalrecords.values()]
 
 
 class AboutPageView(TemplateView):

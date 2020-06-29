@@ -71,15 +71,16 @@
         <div class="navbar-menu" id="navbar_menu">
             <div class="navbar-start">
                 <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link">Current</a>
+                    <a class="navbar-link has-text-weight-bold">Current</a>
                     <div class="navbar-dropdown has-background-black">
                         {% get_latest_date_dailytradingsummary as latest_date %}
                         <a class="navbar-item" id="dailytradingsummarylink" href="{% url "stocks:dailytradingsummary" %}?date={{latest_date}}&wastradedtoday=1&sort=-valuetraded">Daily Trading Summary</a>
-                        <a class="navbar-item" id="listedstockslink" href="{% url "stocks:listedstocks" %}?sort=securityname">Listed Stocks</a>
+                        <a class="navbar-item" id="listedstockslink" href="{% url "stocks:listedstocks" %}?table_0-sort=sector&table_1-sort=-num_listed">Listed Stocks</a>
+                        <a class="navbar-item" id="technicalanalysislink" href="{% url "stocks:technicalanalysis" %}">Technical Analysis</a>
                     </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link">Historical</a>
+                    <a class="navbar-link has-text-weight-bold">Historical</a>
                     <div class="navbar-dropdown has-background-black">
                         {% get_session_end_date_or_today as end_date%}
                         {% get_session_start_date_or_1_yr_back as start_date_1_yr%}
@@ -102,7 +103,7 @@
     {% endblock %}
 
     <nav class="panel is-pulled-left is-hidden" id="sidepanel">
-        <p class="panel-heading">
+        <p class="has-text-centered has-text-weight-bold">
             Configuration
         </p>
         <form method="get">
@@ -116,7 +117,7 @@
     <!-- Main content-->
     <div class="vertical-flex-container">
         {% block ebayads%}
-        <div id="ebayadsdiv" class="" style="width:100%; height:14rem;">
+        <div id="ebayadsdiv" class="topbannerdiv" style="">
             <ins class="epn-placement" data-config-id="5ee75b455da29225ccf11ed6"></ins>
             <div id="adlessdiv" class="horizontal-flex-container is-invisible">
                 <p style="margin-top:1em; margin-left:0.2em;flex-grow:3;" id="adlesstext">
@@ -140,6 +141,7 @@
             {% block mainblock %}
             {% endblock mainblock %}
         </div>
+        <br><br>
     </div>
     <!-- END MAIN -->
     
@@ -169,11 +171,16 @@
             setTimeout(function(){
                 if ($('.epn-placement').height() == 0) {
                     $("#adlessdiv").toggleClass("is-invisible");
+                    $("#adlessdiv").height('14rem');
                 }
             },5000);
         });
         //trigger the red background for the active page
         {% block activepagetoggle %}
+        {% endblock %}
+        {% block changeconfigbutton %}
+        $('#configbutton').on('click');
+        $('configbutton').css('cursor', 'pointer'); // 'default' to revert
         {% endblock %}
     });
     </script>

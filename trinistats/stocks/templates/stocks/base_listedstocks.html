@@ -6,10 +6,17 @@
     {% endblock sidepanelcontents %}
 
     {% block mainblock %}
-    <h2>Stocks Listed on the TTSE</h2>
+    <h1>Stocks Listed on the TTSE</h1>
     <div class="tablediv">
-        {% render_table tables[0] %}
+        {% render_table tables.0 %}
     </div>
+    <hr style="height:2px;border-width:0;color:darkslategray;background-color:darkslategray">
+    <h1>Number of Listed Stocks Per Sector</h1>
+    <br>
+    <div class="">
+    {% render_table tables.1 %}
+    </div>
+    <br>
     {% endblock mainblock %}
 
     {% block chartjs %}
@@ -18,6 +25,9 @@
     
     <!--Javascript-->
     {% block activepagetoggle %}
-    $("#dailytradingsummarylink").toggleClass("has-background-red");
-    $('#configbutton').prop('disabled', false);
+    $("#listedstockslink").toggleClass("has-background-red");
+    {% endblock %}
+    {% block changeconfigbutton %}
+    $('#configbutton').off('click')
+    $('#configbutton').css('cursor', 'not-allowed'); // 'default' to revert
     {% endblock %}

@@ -14,7 +14,7 @@ class ListedEquities(models.Model):
     status = models.CharField(max_length=20, blank=True, null=True)
     sector = models.CharField(max_length=100, blank=True, null=True)
     issuedsharecapital = models.BigIntegerField(
-        blank=True, null=True, verbose_name="Issues Share Capital (shares)")
+        blank=True, null=True, verbose_name="Issued Share Capital (shares)")
     marketcapitalization = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Market Capitalization ($)")
     currency = models.CharField(max_length=3, blank=False, null=False)
@@ -22,6 +22,17 @@ class ListedEquities(models.Model):
     class Meta:
         managed = False
         db_table = 'listedequities'
+
+
+class ListedEquitiesPerSector(models.Model):
+    sector_id = models.SmallAutoField(primary_key=True)
+    sector = models.CharField(max_length=100, verbose_name="Sector Name")
+    num_listed = models.SmallIntegerField(
+        null=False, verbose_name="Number of Listed Stocks")
+
+    class Meta:
+        managed = False
+        db_table = 'listedequities_per_sector'
 
 
 class DailyTradingSummary(models.Model):
@@ -62,7 +73,7 @@ class DailyTradingSummary(models.Model):
 
 class HistoricalDividendInfo(models.Model):
     historicaldividendid = models.AutoField(primary_key=True)
-    date = models.DateField(verbose_name='Date')
+    date = models.DateField(verbose_name='Record Date')
     dividendamount = models.DecimalField(
         max_digits=14, decimal_places=2, verbose_name='Dividend ($/share)')
     stockcode = models.ForeignKey(
@@ -130,3 +141,33 @@ class HistoricalMarketSummary(models.Model):
     class Meta:
         managed = False
         db_table = 'historicalmarketsummary'
+
+
+class TechnicalAnalysisSummary(models.Model):
+    technicalanalysisid = models.AutoField(primary_key=True)
+    stockcode = models.ForeignKey(
+        'ListedEquities', models.CASCADE, db_column='stockcode')
+    lastcloseprice = models.DecimalField(
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Last Close Quote($)")
+    sma20 = models.DecimalField(
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SMA20($)")
+    sma200 = models.DecimalField(
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SMA200($)")
+    beta = models.DecimalField(
+        max_digits=4, decimal_places=2, blank=True, null=True, verbose_name="Beta(TTM)")
+    adtv = models.PositiveIntegerField(
+        blank=True, null=True, verbose_name="ADTV(shares)(Trailing 30d)")
+    high52w = models.DecimalField(
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="52W-high($)")
+    low52w = models.DecimalField(
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="52W-low($)")
+    wtd = models.DecimalField(
+        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="WTD(%)")
+    mtd = models.DecimalField(
+        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="MTD(%)")
+    ytd = models.DecimalField(
+        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="YTD(%)")
+
+    class Meta:
+        managed = False
+        db_table = 'technical_analysis_summary'

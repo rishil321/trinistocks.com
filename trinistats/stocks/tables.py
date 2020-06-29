@@ -35,9 +35,6 @@ class HistoricalDividendYieldTable(tables.Table):
 
 
 class DailyTradingSummaryTable(tables.Table):
-
-    securityname = tables.Column(
-        accessor="stockcode__securityname", verbose_name="Stock Name")
     symbol = tables.Column(
         accessor="stockcode__symbol", verbose_name="Symbol")
     volumetraded = tables.Column(verbose_name="Volume Traded (Shares)")
@@ -48,6 +45,20 @@ class DailyTradingSummaryTable(tables.Table):
     low = tables.Column(verbose_name="Low ($)")
     high = tables.Column(verbose_name="High ($)")
     changedollars = tables.Column(verbose_name="Price Change ($)")
+
+    # make the cells green if prices are up, and red if prices are down
+    def render_changedollars(self, value, column):
+        if value < 0:
+            column.attrs = {'td': {'bgcolor': '#ff9999'}}
+        elif value > 0:
+            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+        else:
+            column.attrs = {'td': {}}
+        return value
+
+    # freeze the first column of the table
+    def render_symbol(self, value, column):
+        return value
 
     class Meta:
         attrs = {"class": "djangotables"}
@@ -63,9 +74,23 @@ class ListedStocksTable(tables.Table):
     marketcapitalization = tables.Column()
     currency = tables.Column()
 
+    def render_status(self, value, column):
+        if value == 'SUSPENDED':
+            column.attrs = {'td': {'bgcolor': '#ff8080'}}
+        else:
+            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+        return value
+
     class Meta:
-        row_attrs = {
-            "class": lambda record: "has-background-lightred" if (record.status == 'SUSPENDED') else ""}
+        attrs = {"class": "djangotables"}
+        export_formats = ['csv', 'xlsx']
+
+
+class ListedStocksPerSectorTable(tables.Table):
+    sector = tables.Column()
+    num_listed = tables.Column()
+
+    class Meta:
         attrs = {"class": "djangotables"}
         export_formats = ['csv', 'xlsx']
 
@@ -84,4 +109,23 @@ class OSTradesHistoryTable(tables.Table):
         model = models.DailyTradingSummary
         attrs = {"class": "djangotables"}
         fields = ('date', 'osbid', 'osbidvol', 'osoffer', 'osoffervol')
+        export_formats = ['csv', 'xlsx']
+
+
+class TechnicalAnalysisSummaryTable(tables.Table):
+    symbol = tables.Column(
+        accessor="stockcode__symbol", verbose_name="Symbol")
+    sma200 = tables.Column()
+    sma20 = tables.Column()
+    lastcloseprice = tables.Column()
+    high52w = tables.Column()
+    low52w = tables.Column()
+    ytd = tables.Column()
+    mtd = tables.Column()
+    wtd = tables.Column()
+    beta = tables.Column()
+    adtv = tables.Column()
+
+    class Meta:
+        attrs = {'class': 'djangotables'}
         export_formats = ['csv', 'xlsx']

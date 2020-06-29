@@ -31,42 +31,59 @@
     {% endblock sidepanelcontents %}
 
     {% block mainblock %}
-        <h2 id="charttitle">Dividend History</h2>
+    <h1 id="charttitle">Dividend History</h1>
+    <br>
         <!-- Chart -->
-        <div>
-        <canvas id="stockchart" width="4" height="1">
-            Stock Chart
-        </canvas>
-        </div>
+    <div id="chartdiv" class="chart-div">
+    </div>
         <br>
+        <div class="is-clearfix clearfix"></div>
     <div class="tablediv">
         {% render_table table %}
+    </div>
     {% endblock mainblock %}
 
     {% block chartjs %}
     {{ graphlabels|json_script:"graphlabels" }}
     {{ graphdataset|json_script:"graphdataset" }}
     <script>
-    var ctx = document.getElementById('stockchart').getContext("2d");
     var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
     var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
-    var myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: graphlabels,
-            datasets: graphdataset
+    var trace1 = {
+            x: graphlabels,
+            y: graphdataset,
+            type: 'scatter'
+        };
+        var data = [trace1];
+        var layout = {
+        xaxis: {
+            title: 'Date',
+            titlefont: {
+            size: 20
+            },
+            showticklabels: true,
+            tickangle: 'auto',
+            tickfont: {
+            size: 16
+            },
+            exponentformat: 'SI',
+            showexponent: 'all'
         },
-        options: {
-            scales: {
-                yAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Dividend ($/share)'
-                    }
-                }]
-            }
+        yaxis: {
+            title: 'Dividends Paid ($/share)',
+            titlefont: {
+            size: 20
+            },
+            showticklabels: true,
+            tickangle: 45,
+            tickfont: {
+            size: 16
+            },
+            exponentformat: 'SI',
+            showexponent: 'all'
         }
-    });
+        };
+    Plotly.newPlot('chartdiv', data, layout);
     </script>
     {% endblock chartjs %}
     <!-- END MAIN -->

@@ -3,11 +3,11 @@
 {% load static %}
 
     {% block sidepanelcontents %}
-    <div class="panel-block">
+    <div class="panel-block is-size-1-touch">
         <label class="panellabel" for="date">Trading date</label>
         <input type="date" class="custom-date-selector" value="{{ selecteddateparsed }}" id="date" name="date">
     </div>
-    <div class="panel-block">
+    <div class="panel-block is-size-1-touch">
         <input type="hidden" value="1" name="wastradedtoday"></input>
         <input type="hidden" value="-valuetraded" name="sort"></input>
         <input type="submit" name="configure_button" class="custom-red-button" onclick="location.href='{% url 'stocks:dailytradingsummary' %}" value="Search"/>
@@ -15,12 +15,10 @@
     {% endblock sidepanelcontents %}
 
     {% block mainblock %}
+    <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selecteddate }}</h1>
     <!-- Chart -->
-    <div class="" style="">
-        <h2 style=""id="charttitle">Stocks Traded on the TTSE on {{ selecteddate }}</h2>
-        <canvas id="stockchart" width="4" height="1">
-            Stock Chart
-        </canvas>
+    <br>
+    <div id="chartdiv" class="chart-div" style="">
     </div>
     <br>
     <div class="buttons is-centered ">
@@ -36,58 +34,47 @@
     {{ graphvaluetraded|json_script:"graphvaluetraded" }}
     {{ graphsymbols|json_script:"graphsymbols" }}
     <script>
-    var ctx = document.getElementById('stockchart').getContext("2d");
     var jssymbols = JSON.parse(document.getElementById('graphsymbols').textContent);
     var valuetraded = JSON.parse(document.getElementById('graphvaluetraded').textContent);
-    var myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: jssymbols,
-            datasets: [
-                {
-                    backgroundColor: ["red","orange","yellow","lime","green","teal",
-                    "aquamarine","blue","gray","black","silver","darkblue","indigo",
-                    "grey"],
-                    data: valuetraded,
-                }
-            ]
-        },
-        options: {
-            legend: {
-            display: false
-         },
-         tooltips: {
-            enabled: true
-         },
-         scales: {
-                yAxes: [
-                    {
-                        ticks: {
-                            callback : function(value,index,array) 
-                            { if (value < 1000000) {
-                                return value/1000 + 'K'}
-                              else if (value>1000000) {
-                                return value/1000000 + 'M';
-                              } 
-                            }
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Dollar Volume ($)'
-                        }
-                    }
-                ],
-                xAxes: [
-                    {
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Ticker Symbol'
-                        }
-                    }
-                ]
-            }
+    var data = [
+        {
+            x: jssymbols,
+            y: valuetraded,
+            marker:{
+                color: ['#ff3300','#ff5410','#ff6c22','#ff8134','#ff9347','#ffa45b','#ffb470','#ffc387','#ffd29f','#ffd29f','#ffd499']
+            },
+            type: 'bar'
         }
-    });
+    ];
+    var layout = {
+        xaxis: {
+            title: 'Ticker',
+            titlefont: {
+            size: 20
+            },
+            showticklabels: true,
+            tickangle: 'auto',
+            tickfont: {
+            size: 16
+            },
+            exponentformat: 'SI',
+            showexponent: 'all'
+        },
+        yaxis: {
+            title: 'Dollar Volume Traded ($)',
+            titlefont: {
+            size: 20
+            },
+            showticklabels: true,
+            tickangle: 45,
+            tickfont: {
+            size: 16
+            },
+            exponentformat: 'SI',
+            showexponent: 'all'
+        }
+        };
+    Plotly.newPlot('chartdiv', data, layout);
     </script>
     {% endblock chartjs %}
     <!-- END MAIN -->

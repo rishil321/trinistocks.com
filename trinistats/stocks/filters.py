@@ -64,3 +64,9 @@ class OSTradesHistoryFilter(django_filters.FilterSet):
             'date': ['gte', 'lte', ],
             'stockcode': ['exact', ],
         }
+
+
+class TechnicalAnalysisSummaryFilter(django_filters.FilterSet):
+    class Meta:
+        model = models.TechnicalAnalysisSummary
+        fields = {}

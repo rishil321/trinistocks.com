@@ -40,12 +40,10 @@
 {% endblock sidepanelcontents %}
 
 {% block mainblock %}
-<h2 style="" id="charttitle">{{selectedstockname}} ({{selectedstocksymbol}}) Stock Price History</h2>
+<h1 style="" id="charttitle">{{selectedstockname}} ({{selectedstocksymbol}}) Stock Price History</h1>
 <!-- Chart -->
-<div id="chartdiv" style="width:100%;height:30rem;">
-    <canvas id="stockchart" width="4" height="1">
-        Stock Chart
-    </canvas>
+<br>
+<div id="chartdiv" class="chart-div" style="">
 </div>
 <br>
 <div class="buttons is-centered">
@@ -71,26 +69,45 @@
     // set the selected chart type
     $("#charttype").val(chart_type).change();
     if (chart_type == 'line') {
-        var ctx = document.getElementById('stockchart').getContext("2d");
         var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
         var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
-        var myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: graphlabels,
-                datasets: graphdataset
+        console.log(graphlabels);
+        console.log(graphdataset);
+        var trace1 = {
+            x: graphlabels,
+            y: graphdataset,
+            type: 'scatter'
+        };
+        var data = [trace1];
+        var layout = {
+        xaxis: {
+            title: 'Date',
+            titlefont: {
+            size: 20
             },
-            options: {
-                scales: {
-                    yAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Stock Closing Quote ($)'
-                        }
-                    }]
-                }
-            }
-        });
+            showticklabels: true,
+            tickangle: 'auto',
+            tickfont: {
+            size: 16
+            },
+            exponentformat: 'SI',
+            showexponent: 'all'
+        },
+        yaxis: {
+            title: 'Closing Price ($)',
+            titlefont: {
+            size: 20
+            },
+            showticklabels: true,
+            tickangle: 45,
+            tickfont: {
+            size: 16
+            },
+            exponentformat: 'SI',
+            showexponent: 'all'
+        }
+        };
+        Plotly.newPlot('chartdiv', data, layout);
     } else if (chart_type == 'candlestick') {
         // set up the arrays
         var dataset1 = {

@@ -7131,46 +7131,46 @@ print {
 
 
 
-  .navbar.is-black .navbar-start>.navbar-item,
-  .navbar.is-black .navbar-start .navbar-link,
-  .navbar.is-black .navbar-end>.navbar-item,
-  .navbar.is-black .navbar-end .navbar-link {
-    color: white;
-  }
+.navbar.is-black .navbar-start>.navbar-item,
+.navbar.is-black .navbar-start .navbar-link,
+.navbar.is-black .navbar-end>.navbar-item,
+.navbar.is-black .navbar-end .navbar-link {
+  color: white;
+}
 
-  .navbar.is-black .navbar-start>a.navbar-item:focus,
-  .navbar.is-black .navbar-start>a.navbar-item:hover,
-  .navbar.is-black .navbar-start>a.navbar-item.is-active,
-  .navbar.is-black .navbar-start .navbar-link:focus,
-  .navbar.is-black .navbar-start .navbar-link:hover,
-  .navbar.is-black .navbar-start .navbar-link.is-active,
-  .navbar.is-black .navbar-end>a.navbar-item:focus,
-  .navbar.is-black .navbar-end>a.navbar-item:hover,
-  .navbar.is-black .navbar-end>a.navbar-item.is-active,
-  .navbar.is-black .navbar-end .navbar-link:focus,
-  .navbar.is-black .navbar-end .navbar-link:hover,
-  .navbar.is-black .navbar-end .navbar-link.is-active {
-    background-color: grey;
-    color: white;
-    border-radius: 0.2em;
-  }
+.navbar.is-black .navbar-start>a.navbar-item:focus,
+.navbar.is-black .navbar-start>a.navbar-item:hover,
+.navbar.is-black .navbar-start>a.navbar-item.is-active,
+.navbar.is-black .navbar-start .navbar-link:focus,
+.navbar.is-black .navbar-start .navbar-link:hover,
+.navbar.is-black .navbar-start .navbar-link.is-active,
+.navbar.is-black .navbar-end>a.navbar-item:focus,
+.navbar.is-black .navbar-end>a.navbar-item:hover,
+.navbar.is-black .navbar-end>a.navbar-item.is-active,
+.navbar.is-black .navbar-end .navbar-link:focus,
+.navbar.is-black .navbar-end .navbar-link:hover,
+.navbar.is-black .navbar-end .navbar-link.is-active {
+  background-color: grey;
+  color: white;
+  border-radius: 0.2em;
+}
 
-  .navbar.is-black .navbar-start .navbar-link::after,
-  .navbar.is-black .navbar-end .navbar-link::after {
-    border-color: white;
-  }
+.navbar.is-black .navbar-start .navbar-link::after,
+.navbar.is-black .navbar-end .navbar-link::after {
+  border-color: white;
+}
 
-  .navbar.is-black .navbar-item.has-dropdown:focus .navbar-link,
-  .navbar.is-black .navbar-item.has-dropdown:hover .navbar-link,
-  .navbar.is-black .navbar-item.has-dropdown.is-active .navbar-link {
-    background-color: black;
-    color: white;
-  }
+.navbar.is-black .navbar-item.has-dropdown:focus .navbar-link,
+.navbar.is-black .navbar-item.has-dropdown:hover .navbar-link,
+.navbar.is-black .navbar-item.has-dropdown.is-active .navbar-link {
+  background-color: black;
+  color: white;
+}
 
-  .navbar.is-black .navbar-dropdown a.navbar-item.is-active {
-    background-color: #0a0a0a;
-    color: white;
-  }
+.navbar.is-black .navbar-dropdown a.navbar-item.is-active {
+  background-color: #0a0a0a;
+  color: white;
+}
 
 
 .navbar.is-light {
@@ -7943,7 +7943,6 @@ a.navbar-item.is-active,
 }
 
 .navbar-dropdown {
-  font-size: 0.875rem;
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
 }
@@ -8444,11 +8443,11 @@ print {
 
 .panel {
   -webkit-border-bottom-right-radius: 5px;
--webkit-border-bottom-left-radius: 5px;
--moz-border-radius-bottomright: 5px;
--moz-border-radius-bottomleft: 5px;
-border-bottom-right-radius: 5px;
-border-bottom-left-radius: 5px;
+  -webkit-border-bottom-left-radius: 5px;
+  -moz-border-radius-bottomright: 5px;
+  -moz-border-radius-bottomleft: 5px;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
   box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0px 0 1px rgba(10, 10, 10, 0.02);
   font-size: 1rem;
 }

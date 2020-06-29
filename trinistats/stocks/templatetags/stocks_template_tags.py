@@ -18,8 +18,6 @@ logger = logging.getLogger('root')
 def get_latest_date_dailytradingsummary():
     latest_date = models.DailyTradingSummary.objects.latest(
         'date').date.strftime("%Y-%m-%d")
-    logger.info(
-        "Latest date available for Daily Trading Summary is "+latest_date)
     return latest_date
 
 

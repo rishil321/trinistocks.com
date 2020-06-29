@@ -1322,6 +1322,144 @@ def update_daily_trades():
             logging.info("Successfully closed database connection")
 
 
+def update_technical_analysis_data():
+    """
+    Calculate/scrape the data needed for the technical_analysis_summary table
+    """
+    try:
+        db_connect = DatabaseConnect()
+        logging.info("Successfully connected to database")
+        logging.info(
+            "Now using pandas to fetch latest technical analysis data from https://stockex.co.tt/controller.php?action=view_stock_charts")
+        # load the daily summary table
+        dailyequitysummary_table = Table(
+            'dailyequitysummary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+        listedequities_table = Table(
+            'listedequities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+        technical_analysis_summary_table = Table(
+            'technical_analysis_summary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+        # get a list of stockcodes
+        selectstmt = select([listedequities_table.c.stockcode])
+        result = db_connect.dbcon.execute(selectstmt)
+        all_stock_codes = [r[0] for r in result]
+        # now go to the url for each stockcode that we have listed, and collect the data we need
+        # set up a list of dicts to hold our data
+        all_technical_data = []
+        for stock_code in all_stock_codes:
+            try:
+                stock_summary_page = f"https://stockex.co.tt/controller.php?action=view_stock_charts&StockCode={stock_code}"
+                logging.info("Navigating to "+stock_summary_page +
+                             " to fetch technical summary data.")
+                http_get_req = requests.get(stock_summary_page, timeout=10)
+                if http_get_req.status_code != 200:
+                    raise requests.exceptions.HTTPError(
+                        "Could not load URL "+stock_summary_page)
+                else:
+                    logging.info("Successfully loaded webpage.")
+                # get a list of tables from the URL
+                dataframe_list = pd.read_html(http_get_req.text)
+                # table 2 contains the data we need
+                technical_analysis_table = dataframe_list[2]
+                # create a dict to hold the data that we are interested in
+                stock_technical_data = dict(stockcode=stock_code)
+                # fill all the nan values with 0s
+                technical_analysis_table.fillna(0, inplace=True)
+                # get the values that we are interested in from the table
+                stock_technical_data['lastcloseprice'] = float(
+                    technical_analysis_table[1][1].replace('$', ''))
+                stock_technical_data['high52w'] = float(
+                    technical_analysis_table[2][7].replace('$', ''))
+                stock_technical_data['low52w'] = float(
+                    technical_analysis_table[3][7].replace('$', ''))
+                stock_technical_data['wtd'] = float(
+                    technical_analysis_table[0][10].replace('%', ''))
+                stock_technical_data['mtd'] = float(
+                    technical_analysis_table[1][10].replace('%', ''))
+                stock_technical_data['ytd'] = float(
+                    technical_analysis_table[3][10].replace('%', ''))
+                # calculate our other required values
+                # first calculate the SMAs
+                # calculate sma20
+                closing_quotes_last20d_df = pd.io.sql.read_sql(
+                    f"SELECT date,closingquote FROM historicalstockinfo WHERE stockcode={stock_code} order by date desc limit 20;", db_connect.dbengine)
+                sma20_df = closing_quotes_last20d_df.rolling(window=20).mean()
+                stock_technical_data['sma20'] = sma20_df['closingquote'].iloc[-1]
+                # calculate sma200
+                closing_quotes_last200d_df = pd.io.sql.read_sql(
+                    f"SELECT date,closingquote FROM historicalstockinfo WHERE stockcode={stock_code} order by date desc limit 200;", db_connect.dbengine)
+                sma200_df = closing_quotes_last200d_df.rolling(
+                    window=200).mean()
+                stock_technical_data['sma200'] = sma200_df['closingquote'].iloc[-1]
+                # calculate beta
+                # first get the closing prices and change dollars for this stock for the last year
+                stock_change_df = pd.io.sql.read_sql(
+                    f"SELECT closeprice,changedollars FROM dailyequitysummary WHERE stockcode={stock_code} order by date desc limit 365;", db_connect.dbengine)
+                # using apply function to create a new column for the stock percent change
+                stock_change_df['changepercent'] = (
+                    stock_change_df['changedollars'] * 100) / stock_change_df['closeprice']
+                # get the market percentage change
+                market_change_df = pd.io.sql.read_sql(
+                    f"SELECT changepercent FROM historicalmarketsummary WHERE indexname='Composite Totals' order by date desc limit 365;", db_connect.dbengine)
+                # now calculate the beta
+                stock_change_df['beta'] = (stock_change_df['changepercent'].rolling(window=365).cov(
+                    other=market_change_df['changepercent'])) / market_change_df['changepercent'].rolling(window=365).var()
+                # store the beta
+                stock_technical_data['beta'] = stock_change_df['beta'].iloc[-1]
+                # now calculate the adtv
+                volume_traded_df = pd.io.sql.read_sql(
+                    f"SELECT volumetraded FROM dailyequitysummary WHERE stockcode={stock_code} order by date desc limit 30;", db_connect.dbengine)
+                adtv_df = volume_traded_df.rolling(window=30).mean()
+                stock_technical_data['adtv'] = adtv_df['volumetraded'].iloc[-1]
+                # replace all nan with None in the dict
+                for key in stock_technical_data:
+                    if np.isnan(stock_technical_data[key]):
+                        stock_technical_data[key] = None
+                # add our dict for this stock to our large list
+                all_technical_data.append(stock_technical_data)
+            except KeyError as keyerr:
+                logging.warning(
+                    "Could not find a required key "+str(keyerr))
+            except IndexError as idxerr:
+                logging.warning(
+                    "Could not locate index in a list. "+str(idxerr))
+        # now insert the data into the db
+        execute_completed_successfully = False
+        execute_failed_times = 0
+        logging.info("Now trying to insert data into database.")
+        while not execute_completed_successfully and execute_failed_times < 5:
+            try:
+                technical_analysis_summary_insert_stmt = insert(
+                    technical_analysis_summary_table).values(all_technical_data)
+                technical_analysis_summary_upsert_stmt = technical_analysis_summary_insert_stmt.on_duplicate_key_update(
+                    {x.name: x for x in technical_analysis_summary_insert_stmt.inserted})
+                result = db_connect.dbcon.execute(
+                    technical_analysis_summary_upsert_stmt)
+                execute_completed_successfully = True
+            except sqlalchemy.exc.OperationalError as operr:
+                logging.warning(str(operr))
+                time.sleep(1)
+                execute_failed_times += 1
+            logging.info(
+                "Successfully scraped and wrote to db technical summary data.")
+            logging.info(
+                "Number of rows affected in the technical analysis summary table was "+str(result.rowcount))
+        return 0
+    except requests.exceptions.Timeout as timeerr:
+        logging.error(
+            "Could not load URL in time. Maybe website is down? "+str(timeerr))
+    except requests.exceptions.HTTPError as httperr:
+        logging.error(str(httperr))
+    except Exception:
+        logging.exception(
+            "Could not complete technical analysis summary data update.")
+        customlogging.flush_smtp_logger()
+    finally:
+        # Always close the database connection
+        if 'db_connect' in locals() and db_connect is not None:
+            db_connect.close()
+            logging.info("Successfully closed database connection")
+
+
 def main():
     """The main steps in coordinating the scraping"""
     try:
@@ -1358,18 +1496,19 @@ def main():
                     multipool.apply_async(
                         update_daily_trades, ())
                 else:
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(check_num_equities_in_sector, ())
-                    multipool.apply_async(scrape_dividend_data, ())
-                    multipool.apply_async(scrape_historical_data, ())
-                    multipool.apply_async(update_dividend_yield, ())
-                    # block on the next function to wait until the dates are ready
-                    dates_to_fetch_sublists, alllistedsymbols = multipool.apply(
-                        update_equity_summary_data, ())
-                    # now call the individual workers to fetch these dates
-                    for coredatelist in dates_to_fetch_sublists:
-                        multipool.apply_async(
-                            scrape_equity_summary_data, (coredatelist, alllistedsymbols))
+                    # multipool.apply_async(scrape_listed_equity_data, ())
+                    # multipool.apply_async(check_num_equities_in_sector, ())
+                    # multipool.apply_async(scrape_dividend_data, ())
+                    # multipool.apply_async(scrape_historical_data, ())
+                    # multipool.apply_async(update_dividend_yield, ())
+                    multipool.apply_async(update_technical_analysis_data, ())
+                    # # block on the next function to wait until the dates are ready
+                    # dates_to_fetch_sublists, alllistedsymbols = multipool.apply(
+                    #     update_equity_summary_data, ())
+                    # # now call the individual workers to fetch these dates
+                    # for coredatelist in dates_to_fetch_sublists:
+                    #     multipool.apply_async(
+                    #         scrape_equity_summary_data, (coredatelist, alllistedsymbols))
                 multipool.close()
                 multipool.join()
                 q_listener.stop()
