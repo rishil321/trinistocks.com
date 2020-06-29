@@ -4,10 +4,6 @@
     font-family: "Open Sans", sans-serif;
 }
 
-html {
-    font-size: 200%;
-}
-
 h1 {
     font-size: 2rem;
     text-align: center;
@@ -230,9 +226,6 @@ tr.odd {
 
 /* Desktop-Specific Override */
 @media only screen and (min-width: 1024px) {
-    html {
-        font-size: 100%;
-    }
 
     .chart-div {
         height: 40rem;
