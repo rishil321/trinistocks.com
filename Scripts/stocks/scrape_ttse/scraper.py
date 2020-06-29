@@ -1492,23 +1492,25 @@ def main():
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(os.cpu_count(), customlogging.logging_worker_init, [q]) as multipool:
                 logging.info("Now starting TTSE scraper.")
+                # check if this is the daily update (run inside the trading day)
                 if args.daily_update:
                     multipool.apply_async(
                         update_daily_trades, ())
                 else:
-                    # multipool.apply_async(scrape_listed_equity_data, ())
-                    # multipool.apply_async(check_num_equities_in_sector, ())
-                    # multipool.apply_async(scrape_dividend_data, ())
-                    # multipool.apply_async(scrape_historical_data, ())
-                    # multipool.apply_async(update_dividend_yield, ())
+                    # else this is a full update (run once a day)
+                    multipool.apply_async(scrape_listed_equity_data, ())
+                    multipool.apply_async(check_num_equities_in_sector, ())
+                    multipool.apply_async(scrape_dividend_data, ())
+                    multipool.apply_async(scrape_historical_data, ())
+                    multipool.apply_async(update_dividend_yield, ())
                     multipool.apply_async(update_technical_analysis_data, ())
-                    # # block on the next function to wait until the dates are ready
-                    # dates_to_fetch_sublists, alllistedsymbols = multipool.apply(
-                    #     update_equity_summary_data, ())
-                    # # now call the individual workers to fetch these dates
-                    # for coredatelist in dates_to_fetch_sublists:
-                    #     multipool.apply_async(
-                    #         scrape_equity_summary_data, (coredatelist, alllistedsymbols))
+                    # block on the next function to wait until the dates are ready
+                    dates_to_fetch_sublists, alllistedsymbols = multipool.apply(
+                        update_equity_summary_data, ())
+                    # now call the individual workers to fetch these dates
+                    for coredatelist in dates_to_fetch_sublists:
+                        multipool.apply_async(
+                            scrape_equity_summary_data, (coredatelist, alllistedsymbols))
                 multipool.close()
                 multipool.join()
                 q_listener.stop()
