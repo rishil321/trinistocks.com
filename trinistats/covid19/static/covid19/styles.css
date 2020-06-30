@@ -111,6 +111,10 @@ p {
     font-size: 1.25em;
 }
 
+.chart-div {
+    height: 25rem;
+}
+
 .a:link {
     color: blue;
 }
@@ -277,4 +281,16 @@ p {
 
 .topbar * {
     flex: 1;
+}
+
+/* Desktop-Specific Override */
+@media only screen and (min-width: 1024px) {
+
+    .chart-div {
+        height: 40rem;
+    }
+
+    .topbannerdiv {
+        height: 14em;
+    }
 }

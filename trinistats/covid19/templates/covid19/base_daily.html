@@ -50,10 +50,7 @@
             </div>
         </div>
         <!-- Chart -->
-        <div id="chartdiv" style="height:40rem;width:auto;" class="chartdiv">
-        <canvas id="covid19chart">
-            Covid19 Chart
-        </canvas>
+        <div id="chartdiv" style="" class="chartdiv">
         </div>
     {% endif %}
     {% endblock maindiv %}
@@ -65,51 +62,49 @@
     {{ graphlabels|json_script:"graphlabels" }}
     {{ graphdataset|json_script:"graphdataset" }}
     <script>
-    var ctx = document.getElementById('covid19chart').getContext("2d");
     //load in our graph date labels from the python context
     var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
     //load the actual dataset values 
     var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
-    var myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: graphlabels,
-            datasets: graphdataset
+    var data = [
+        {
+            x: graphlabels,
+            y: graphdataset,
+            type: 'bar'
+        }
+    ];
+    var layout = {
+        xaxis: {
+            automargin: true,
+            title: {text:'Date',
+            standoff: 20
+            },
+            titlefont: {
+            size: 20
+            },
+            showticklabels: true,
+            tickangle: 'auto',
+            tickfont: {
+            size: 16
+            },
+            exponentformat: 'SI',
+            showexponent: 'all'
         },
-        options: {
-            maintainAspectRatio: false,
-            scales: {
-                xAxes: [{
-                scaleLabel: {
-                    display: true,
-                    labelString: 'Date'},
-                type: 'time',
-                distribution: 'linear'
-					}],
-                yAxes: [{
-                    id:'A',
-                    scaleLabel: {
-                        display: true,
-                        labelString: '{{ selectedcasetypeverbose|escapejs }}'},
-                    type:'linear',
-                    position:'left',
-                },
-                ]            
+        yaxis: {
+            title: '{{ selectedcasetypeverbose|escapejs }}',
+            titlefont: {
+            size: 20
+            },
+            showticklabels: true,
+            tickangle: 45,
+            tickfont: {
+            size: 16
+            },
+            exponentformat: 'SI',
+            showexponent: 'all'
         }
-        }
-    });
-    //get the div holding the canvas
-    const chartdiv = document.getElementById("chartdiv");
-    //create a resize observer to resize our chart
-    const ro = new ResizeObserver( entries => {
-    for (let entry of entries) {
-        ctx.canvas.width = chartdiv.clientWidth;
-        myChart.resize();
-        myChart.update();
-    }
-    });
-    // Observe one or multiple elements
-    ro.observe(chartdiv);
+        };
+    Plotly.newPlot('chartdiv', data, layout);
     </script>
     {% endblock chartjs %}
 

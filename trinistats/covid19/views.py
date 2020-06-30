@@ -62,9 +62,7 @@ logger = logging.getLogger(__name__)
 def totals(request):
     try:
         errors = ""
-        logger.info("Totals page was called")
-        # check whether this is the first page load
-        recordedcases = models.Covid19Cases.objects.all()
+        logger.info("Covid19 totals page was called")
         # Validate all input fields
         try:
             # check whether each GET variable was submitted with the request
@@ -119,24 +117,14 @@ def totals(request):
             .values('date', 'total_tests', 'total_cases', 'total_deaths', 'total_recovered')\
             .order_by('date')
         # Set up our summary data
-        latestrecord = models.Covid19Cases.objects.latest('date')
+        latestrecord = models.Covid19_Worldometers_Reports.objects\
+            .filter(country_or_territory_name="Trinidad and Tobago")\
+            .latest('date')
         # Set up our graph
         graphlabels = [obj['date'] for obj in selectedrecords]
-        graphdataset = []
-        # Add data for the first dataset
-        graphdict = dict(data=[obj[selectedcasetypeleft] for obj in selectedrecords],
-                         yAxisID='A',
-                         borderColor='rgb(0, 0, 255)',
-                         backgroundColor='rgba(255, 255, 255,0)',
-                         label=selectedfieldleftverbosename)
-        graphdataset.append(graphdict)
+        graphdataset1 = [obj[selectedcasetypeleft] for obj in selectedrecords]
         # Add data for the second dataset
-        graphdict = dict(data=[obj[selectedcasetyperight] for obj in selectedrecords],
-                         yAxisID='B',
-                         borderColor='rgb(0, 255, 0)',
-                         backgroundColor='rgba(255, 255, 255,0)',
-                         label=selectedfieldrightverbosename)
-        graphdataset.append(graphdict)
+        graphdataset2 = [obj[selectedcasetyperight] for obj in selectedrecords]
         # Set up the case type options for the dropdown select
         validcasetypes = [models.Covid19_Worldometers_Reports._meta.get_field('total_tests'),
                           models.Covid19_Worldometers_Reports._meta.get_field(
@@ -159,7 +147,8 @@ def totals(request):
         'enteredstartdate': enteredstartdate,
         'enteredenddate': enteredenddate,
         'graphlabels': graphlabels,
-        'graphdataset': graphdataset,
+        'graphdataset1': graphdataset1,
+        'graphdataset2': graphdataset2,
         'latestrecord': latestrecord,
     }
     return render(request, "covid19/base_totals.html", context)
@@ -220,13 +209,7 @@ def daily(request):
             yesterdaydata = ['N/A']
         # Set up our graph
         graphlabels = [obj['date'] for obj in selectedrecords]
-        graphdataset = []
-        # Add data for the first dataset
-        graphdict = dict(
-            label=selectedfieldverbosename,
-            backgroundColor="rgb(255,0,0)",
-            data=[obj[selectedcasetype] for obj in selectedrecords],)
-        graphdataset.append(graphdict)
+        graphdataset = [obj[selectedcasetype] for obj in selectedrecords]
         # Set up the case type options for the dropdown select
         validcasetypes = [models.Covid19_Daily_Data._meta.get_field('daily_tests'),
                           models.Covid19_Daily_Data._meta.get_field(

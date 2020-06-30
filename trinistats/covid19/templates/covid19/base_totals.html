@@ -43,28 +43,25 @@
     </br>
     <div class="w3-cell-row">
         <div class="w3-container w3-blue w3-cell w3-mobile">
-            <p class="">{{ latestrecord.numtested }} testing samples submitted &ensp;
+            <p class="">{{ latestrecord.total_tests }} testing samples submitted &ensp;
             <i class="fas fa-microscope fa-2x"></i></p>
         </div>
         <div class="w3-container w3-yellow w3-cell w3-mobile">
-            <p>{{ latestrecord.numpositive }} persons tested positive &ensp; 
+            <p>{{ latestrecord.total_cases }} persons tested positive &ensp; 
             <i class="fas fa-procedures fa-2x"></i></p>
         </div>
         <div class="w3-container w3-green w3-cell w3-mobile">
-            <p>{{ latestrecord.numrecovered }} person(s) discharged &ensp; 
+            <p>{{ latestrecord.total_recovered }} person(s) discharged &ensp; 
             <i class="fas fa-virus-slash fa-2x"></i></p>
         </div>
         <div class="w3-container w3-red w3-cell w3-mobile">
-            <p>{{ latestrecord.numdeaths }} person(s) died &ensp; 
+            <p>{{ latestrecord.total_deaths }} person(s) died &ensp; 
             <i class=" far fa-heart fa-2x"></i></p>
         </div>
     </div>
     </br>
         <!-- Chart -->
-        <div style="height:40rem;width:auto;" id="chartdiv" class="chartdiv">
-            <canvas id="covid19chart">
-                Covid19 Chart
-            </canvas>
+        <div style="" id="chartdiv" class="chartdiv">
         </div>
     {% endif %}
     {% endblock maindiv %}
@@ -75,69 +72,72 @@
     
     {% block chartjs %}
     {{ graphlabels|json_script:"graphlabels" }}
-    {{ graphdataset|json_script:"graphdataset" }}
+    {{ graphdataset1|json_script:"graphdataset1" }}
+    {{ graphdataset2|json_script:"graphdataset2" }}
     <script>
-    var ctx = document.getElementById('covid19chart').getContext("2d");
     //load in our graph date labels from the python context
     var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
-    //convert the datetime into moments for Javascript
-    var i;
-    for (i=0;i<graphlabels.length;i++){
-        graphlabels[i] = new Date(graphlabels[i])
-    }
     //load the actual dataset values 
-    var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
-    //set the font size
-    Chart.defaults.global.defaultFontSize = 18;
-    var myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: graphlabels,
-            datasets: graphdataset
+    var graphdataset1 = JSON.parse(document.getElementById('graphdataset1').textContent);
+    var graphdataset2 = JSON.parse(document.getElementById('graphdataset2').textContent);
+    var trace1 = {
+        x: graphlabels,
+        y: graphdataset1,
+        name: '{{ selectedcasetypeleftverbose|escapejs }}',
+        type: 'scatter'
+    };
+    var trace2 = {
+    x: graphlabels,
+    y: graphdataset2,
+    name: '{{ selectedcasetyperightverbose|escapejs }}',
+    yaxis: 'y2',
+    type: 'scatter'
+    };
+    var data = [trace1,trace2];
+    var layout = {
+    xaxis: {
+        title: 'Date',
+        titlefont: {
+        size: 20
         },
-        options: {
-            responsive: false,
-            maintainAspectRatio: false,
-            scales: {
-                xAxes: [{
-                scaleLabel: {
-                    display: true,
-                    labelString: 'Date'},
-                type: 'time',
-                distribution: 'linear'
-					}],
-                yAxes: [{
-                    id:'A',
-                    scaleLabel: {
-                        display: true,
-                        labelString: '{{ selectedcasetypeleftverbose|escapejs }}'},
-                    type:'linear',
-                    position:'left',
-                },
-                {
-                    id:'B',
-                    scaleLabel: {
-                        display: true,
-                        labelString: '{{ selectedcasetyperightverbose|escapejs }}'},
-                    type:'linear',
-                    position:'right',
-                },
-                ]            
-        }
-        }
-    });
-    //get the div holding the canvas
-    const chartdiv = document.getElementById("chartdiv");
-    //create a resize observer to resize our chart
-    const ro = new ResizeObserver( entries => {
-    for (let entry of entries) {
-        ctx.canvas.width = chartdiv.clientWidth;
-        myChart.resize();
-        myChart.update();
+        showticklabels: true,
+        tickangle: 'auto',
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis: {
+        title: '{{ selectedcasetypeleftverbose|escapejs }}',
+        titlefont: {
+        size: 20
+        },
+        showticklabels: true,
+        tickangle: -45,
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis2: {
+        title: '{{ selectedcasetyperightverbose|escapejs }}',
+        titlefont: {
+        size: 20
+        },
+        showticklabels: true,
+        tickangle: -45,
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all',
+        overlaying:'y',
+        side:'right'
     }
-    });
-    // Observe one or multiple elements
-    ro.observe(chartdiv);
+    };
+    Plotly.newPlot('chartdiv', data, layout);
     </script>
     {% endblock chartjs %}
     

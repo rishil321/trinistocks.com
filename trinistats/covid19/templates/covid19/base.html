@@ -83,45 +83,10 @@
     <!-- END MAIN -->
 
     <!--Javascript-->
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     {% block chartjs %}
     <script>
-    var ctx = document.getElementById('covid19chart').getContext("2d");
-    var jsdates = [];
-    var pythondates = {{ graphdates|safe }};
-    for (i=0; i<pythondates.length;i++){
-        jsdates.push(pythondates[i]);
-    }
-    var closingquotes = JSON.parse('{{ graphclosingquotes|safe }}');
-    var myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: jsdates,
-            datasets: [
-                {
-                    backgroundColor: 'rgb(255, 0, 0)',
-                    data: closingquotes,
-                    label: 'Closing Quote',
-                }
-            ]
-        },
-        options: {
-        }
-    });
-     //get the div holding the canvas
-    const chartdiv = document.getElementById("chartdiv");
-    //create a resize observer to resize our chart
-    const ro = new ResizeObserver( entries => {
-    for (let entry of entries) {
-        ctx.canvas.width = chartdiv.clientWidth;
-        myChart.resize();
-        myChart.update();
-    }
-    });
-    // Observe one or multiple elements
-    ro.observe(chartdiv);
     </script>
     {% endblock chartjs %}
     <script>
