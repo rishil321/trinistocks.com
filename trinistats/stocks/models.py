@@ -1,4 +1,7 @@
 from django.db import models
+from django.urls import reverse
+from .templatetags import stocks_template_tags
+from urllib.parse import urlencode
 
 # Create your models here.
 
@@ -69,6 +72,14 @@ class DailyTradingSummary(models.Model):
     class Meta:
         managed = False
         db_table = 'dailyequitysummary'
+        ordering = ["-valuetraded"]
+
+    def get_absolute_url(self):
+        base_url = reverse('stocks:dailytradingsummary', current_app="stocks")
+        query_string = urlencode({'date': stocks_template_tags.get_latest_date_dailytradingsummary(),
+                                  'wastradedtoday': 1, 'sort': '-valuetraded'})
+        url = '{}?{}'.format(base_url, query_string)
+        return url
 
 
 class HistoricalDividendInfo(models.Model):

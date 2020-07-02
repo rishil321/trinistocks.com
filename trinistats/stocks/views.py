@@ -20,6 +20,7 @@ from django.core import serializers
 from django.http.response import JsonResponse
 from django import forms
 from django.db.models import F
+from django.utils.datastructures import MultiValueDictKeyError
 from urllib.parse import urlencode
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -53,6 +54,27 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
     table_class = stocks_tables.DailyTradingSummaryTable
     filterset_class = filters.DailyTradingSummaryFilter
 
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['date', 'wastradedtoday', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Daily trading summary page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:dailytradingsummary', current_app="stocks")
+                query_string = urlencode({'date': stocks_template_tags.get_latest_date_dailytradingsummary(),
+                                          'wastradedtoday': 1, 'sort': '-valuetraded'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(DailyTradingSummaryView, self).get(request)
+
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
@@ -60,13 +82,8 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            # get the filters included in the URL. If the required filters are not present, raise an error
-            if self.request.GET.get('date'):
-                selecteddate = datetime.strptime(
-                    self.request.GET.get('date'), "%Y-%m-%d")
-            else:
-                raise ValueError(
-                    " Please ensure that you have set a date in the URL! For example: stocks/dailyequitysummary?date=2020-05-12 ")
+            selecteddate = datetime.strptime(
+                self.request.GET.get('date'), "%Y-%m-%d")
             # Now select the records corresponding to the selected date
             # as well as their symbols, and order by the highest volume traded
             dailytradingsummaryrecords = models.DailyTradingSummary.objects.exclude(wastradedtoday=0).filter(
@@ -125,6 +142,27 @@ class ListedStocksView(ExportMixin, tables2.MultiTableMixin, FilterView):
         qs1), stocks_tables.ListedStocksPerSectorTable(qs2)]
     table_pagination = False
     filterset_class = filters.ListedStocksFilter
+
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['table_0-sort', 'table_1-sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Listed stocks page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:listedstocks', current_app="stocks")
+                query_string = urlencode(
+                    {'table_0-sort': 'sector', 'table_1-sort': '-num_listed'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(ListedStocksView, self).get(request)
 
     def get_context_data(self, *args, **kwargs):
         try:
@@ -357,19 +395,42 @@ class StockHistoryView(BasicLineChartAndTableView):
     page_name = 'Stock History'  # a string representing the name of the page
     selected_chart_type = 'candlestick'
 
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['stockcode', 'date__gte',
+                               'date__lte', 'charttype', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Stock history page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:stockhistory', current_app="stocks")
+                query_string = urlencode({'stockcode': stocks_template_tags.get_session_stockcode_or_default(self),
+                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
+                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'charttype': 'candlestick', 'sort': 'date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(StockHistoryView, self).get(request)
+
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            if self.request.GET.get("charttype"):
-                # check the chart type selected if the configure button was clicked
-                self.selected_chart_type = self.request.GET.get('charttype')
-                # store the session variable
-                self.request.session['charttype'] = self.selected_chart_type
-                # store the context variable
-                context['chart_type'] = self.selected_chart_type
+            # check the chart type selected if the configure button was clicked
+            self.selected_chart_type = self.request.GET.get('charttype')
+            # store the session variable
+            self.request.session['charttype'] = self.selected_chart_type
+            # store the context variable
+            context['chart_type'] = self.selected_chart_type
             context['dates'] = []
             context['open_prices'] = []
             context['close_prices'] = []
@@ -419,6 +480,30 @@ class DividendHistoryView(BasicLineChartAndTableView):
     filterset_class = filters.DividendHistoryFilter  # filters.something
     page_name = 'Dividend History'  # a string representing the name of the page
 
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['stockcode', 'date__gte',
+                               'date__lte', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Dividend history page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:dividendhistory', current_app="stocks")
+                query_string = urlencode({'stockcode': stocks_template_tags.get_session_stockcode_or_default(self),
+                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
+                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'sort': 'date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(DividendHistoryView, self).get(request)
+
     def set_stock_code_needed(self, bool_input_arg):
         self.stock_code_needed = True
 
@@ -437,6 +522,30 @@ class DividendYieldHistoryView(BasicLineChartAndTableView):
     filterset_class = filters.DividendYieldHistoryFilter  # filters.something
     # a string representing the name of the page
     page_name = 'Dividend Yield History'
+
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['stockcode', 'date__gte',
+                               'date__lte', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Dividend yield history page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:dividendyieldhistory', current_app="stocks")
+                query_string = urlencode({'stockcode': stocks_template_tags.get_session_stockcode_or_default(self),
+                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
+                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'sort': 'date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(DividendYieldHistoryView, self).get(request)
 
     def set_stock_code_needed(self, bool_input_arg):
         self.stock_code_needed = True
@@ -460,6 +569,30 @@ class MarketIndexHistoryView(BasicLineChartAndTableView):
         self.stock_code_needed = False
         self.index_name_needed = True
 
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['indexname', 'indexparameter', 'date__gte',
+                               'date__lte', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Market history page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:marketindexhistory', current_app="stocks")
+                query_string = urlencode({'indexname': 'Composite Totals', 'indexparameter': 'indexvalue',
+                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
+                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'sort': 'date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(MarketIndexHistoryView, self).get(request)
+
     def set_graph_dataset(self,):
         self.graph_dataset = [float(obj[self.indexparameter])
                               for obj in self.historicalrecords.values()]
@@ -479,6 +612,30 @@ class OSTradesHistoryView(BasicLineChartAndTableView):
         self.stock_code_needed = True
         self.index_name_needed = False
         self.os_parameter_needed = True
+
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['stockcode', 'date__gte',
+                               'date__lte', 'osparameter', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Dividend yield history page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:ostradeshistory', current_app="stocks")
+                query_string = urlencode({'stockcode': stocks_template_tags.get_session_stockcode_or_default(self),
+                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
+                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'osparameter': 'osoffervol', 'sort': 'date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(OSTradesHistoryView, self).get(request)
 
     def set_graph_dataset(self,):
         self.graph_dataset = [obj[self.osparameter]

@@ -75,8 +75,8 @@
                     <a class="navbar-link has-text-weight-bold">Current</a>
                     <div class="navbar-dropdown has-background-black">
                         {% get_latest_date_dailytradingsummary as latest_date %}
-                        <a class="navbar-item" id="dailytradingsummarylink" href="{% url "stocks:dailytradingsummary" %}?date={{latest_date}}&wastradedtoday=1&sort=-valuetraded">Daily Trading Summary</a>
-                        <a class="navbar-item" id="listedstockslink" href="{% url "stocks:listedstocks" %}?table_0-sort=sector&table_1-sort=-num_listed">Listed Stocks</a>
+                        <a class="navbar-item" id="dailytradingsummarylink" href="{% url "stocks:dailytradingsummary" %}">Daily Trading Summary</a>
+                        <a class="navbar-item" id="listedstockslink" href="{% url "stocks:listedstocks" %}">Listed Stocks</a>
                         <a class="navbar-item" id="technicalanalysislink" href="{% url "stocks:technicalanalysis" %}">Technical Analysis</a>
                     </div>
                 </div>
@@ -87,11 +87,11 @@
                         {% get_session_start_date_or_1_yr_back as start_date_1_yr%}
                         {% get_session_start_date_or_5_yr_back as start_date_5_yr%}
                         {% get_session_stockcode_or_default as stockcode%}
-                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}?stockcode={{stockcode}}&date__gte={{start_date_1_yr}}&date__lte={{end_date}}&charttype=candlestick&sort=date'>Stock History</a>
-                        <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}?stockcode={{stockcode}}&date__gte={{start_date_5_yr}}&date__lte={{end_date}}&sort=date'>Dividend History</a>
-                        <a class="navbar-item" id="dividendyieldlink" href='{% url "stocks:dividendyieldhistory" %}?stockcode={{stockcode}}&date__gte={{start_date_5_yr}}&date__lte={{end_date}}&sort=date'>Dividend Yield</a>
-                        <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}?indexname=Composite%20Totals&indexparameter=indexvalue&date__gte={{start_date_1_yr}}&date__lte={{end_date}}&sort=date'>Market Index History</a>
-                        <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}?stockcode={{stockcode}}&date__gte={{start_date_1_yr}}&date__lte={{end_date}}&osparameter=osoffervol&sort=date'>Outstanding Trades</a>
+                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock History</a>
+                        <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}'>Dividend History</a>
+                        <a class="navbar-item" id="dividendyieldlink" href='{% url "stocks:dividendyieldhistory" %}'>Dividend Yield</a>
+                        <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}'>Market Index History</a>
+                        <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}'>Outstanding Trades</a>
                     </div>
                 </div>
                 <a class="navbar-item" id="aboutlink" href='{% url "stocks:about" %}'>About</a>
@@ -172,7 +172,7 @@
                     $("#adlessdiv").toggleClass("is-invisible");
                     $("#adlessdiv").height('14rem');
                 }
-            },5000);
+            },10000);
         });
         //trigger the red background for the active page
         {% block activepagetoggle %}

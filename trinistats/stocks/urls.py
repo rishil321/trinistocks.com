@@ -1,12 +1,16 @@
 from django.urls import path
 from . import views
+from django.contrib.sitemaps.views import sitemap
+from . import sitemaps
 
+sitemaps = {
+    "static": sitemaps.StaticViewSitemap,
+}
 # Functions for URLS
-
-
 app_name = 'stocks'
 
 urlpatterns = [
+    path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     path('', views.LandingPageView.as_view(), name="landingpage"),
     path('dailytradingsummary', views.DailyTradingSummaryView.as_view(),
          name='dailytradingsummary'),
