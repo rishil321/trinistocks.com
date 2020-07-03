@@ -6,8 +6,6 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from . import views
-from django.contrib.sitemaps.views import sitemap
-from . import sitemaps
 
 app_name = 'covid19'
 
@@ -24,12 +22,7 @@ schema_view = get_schema_view(
     permission_classes=(permissions.IsAuthenticatedOrReadOnly,),
 )
 
-sitemaps = {
-    "static": sitemaps.StaticViewSitemap,
-}
-
 urlpatterns = [
-    path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     path('totals', views.totals, name='totals'),
     path('about', views.about, name='about'),
     path('daily', views.daily, name='daily'),
