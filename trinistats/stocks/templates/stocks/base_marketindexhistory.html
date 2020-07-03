@@ -2,6 +2,13 @@
 {% load render_table from django_tables2 %}
 {% load static %}
 
+    {% block description %}"Historical market index data for the Trinidad and Tobago Stock Exchange (TTSE),
+    displayed in a line chart and table."
+    {% endblock description %}
+
+    {% block title %}trinistats | Stocks | Market Index Historical Data for the Trinidad and Tobago Stock Exchange (TTSE)
+    {% endblock title %}
+
     {% block sidepanelcontents %}
     <div class="panel-block">
         <label class="panellabel" for="">Market Index Name</label>

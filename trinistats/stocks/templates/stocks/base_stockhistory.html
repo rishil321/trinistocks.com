@@ -2,6 +2,13 @@
 {% load django_tables2 %}
 {% load static %}
 
+    {% block description %}"Historical stock price data for all stocks listed on the Trinidad and Tobago Stock Exchange (TTSE),
+    displayed in a line/candlestick chart and table."
+    {% endblock description %}
+
+    {% block title %}trinistats | Stocks | Historical Stock Data for the Trinidad and Tobago Stock Exchange (TTSE)
+    {% endblock title %}
+
 {% block sidepanelcontents %}
 <div class="panel-block">
     <label class="panellabel" for="stockcode">Stock:</label>

@@ -32,7 +32,7 @@
     <meta property="og:description" content="Bringing more data to the people of Trinidad and Tobago." />
     <meta property="og:site_name" content="trinistats.com" />
     <!--End Metadata-->
-    {% block title %}<title>trinistats | Home</title>{% endblock title %}
+    {% block title %}<title>trinistats | Home | Data 'fuh d' average Trini</title>{% endblock title %}
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -48,7 +48,7 @@
       <div class="container has-text-centered">
         <img class="bannerimage" src="{%  static 'central/trinistats_logo.svg.png' %}"></img>
         <h2 class="subtitle">
-          Bringing more data to the people of Trinidad and Tobago.
+          Data 'fuh d' average Trini
         </h2>
       </div>
     </div>
@@ -58,7 +58,7 @@
     <div class="tile is-parent has-text-centered custom-tile-parent">
       <a class="tile is-child box" style="background-color:green;color:white;" class="" href={% url "covid19:totals" %}>
         <p class="is-size-3">COVID-19</p>
-        <i class="fas fa-virus fa-10x"></i>
+        <i class="fas fa-virus fa-10x" title="COVID-19 Data for Trinidad and Tobago"></i>
         <p class="is-size-5">Data on the tests and deaths within the country</p>
       </a>
     </div>
@@ -66,7 +66,7 @@
       {% get_latest_date_dailytradingsummary as latest_date %}
       <a class="tile is-child box" style="background-color:red;color:white;" href='{% url "stocks:landingpage" %}'>
         <p class="is-size-3">Stock Exchange</p>
-        <i class="fas fa-chart-line fa-10x"></i>
+        <i class="fas fa-chart-line fa-10x" title="Stock Data from the Trinidad and Tobago Stock Exchange (TTSE)"></i>
         <p class="is-size-5">Data on equities listed on the local Stock Exchange</p>
       </a>
     </div>

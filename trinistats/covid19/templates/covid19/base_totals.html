@@ -1,6 +1,10 @@
 {% extends "covid19/base.html" %}
 {% load static %}
 
+    {% block title %}
+    trinistats | COVID-19 | Cumulative/Total data for Trinidad and Tobago
+    {% endblock title %}
+
     {% block rightsidebarform %}
     <form action="{% url 'covid19:totals' %}" method="get">
         <label for="startdate" class="w3-bar-item">Start Date</label>
