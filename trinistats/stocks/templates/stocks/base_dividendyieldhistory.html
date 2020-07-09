@@ -44,7 +44,7 @@
         <div id="chartdiv" class="chart-div" style="">
         </div>
         <br>
-    <div class="tablediv">
+    <div class="tablediv_noscroll">
         {% render_table table %}
         </div>
     {% endblock mainblock %}
@@ -54,6 +54,7 @@
     {{ graphdataset|json_script:"graphdataset" }}
     <script>
     var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
+    console.log(graphlabels);
     var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
     var trace1 = {
             x: graphlabels,
@@ -63,14 +64,17 @@
         var data = [trace1];
         var layout = {
         xaxis: {
-            title: 'Date',
+            automargin: true,
+            title: {text:'Date',
+            standoff: 20
+            },
             titlefont: {
             size: 20
             },
             showticklabels: true,
-            tickangle: 'auto',
+            tickangle: 60,
             tickfont: {
-            size: 16
+            size: 14
             },
             exponentformat: 'SI',
             showexponent: 'all'
@@ -81,7 +85,7 @@
             size: 20
             },
             showticklabels: true,
-            tickangle: 45,
+            tickangle: 'auto',
             tickfont: {
             size: 16
             },

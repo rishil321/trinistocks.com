@@ -117,9 +117,15 @@
     <div class="clearfix"></div>
 
     <!-- Main content-->
+    <br>
     <div class="vertical-flex-container">
+        <div class="vertical-flex-container">
+            {% block mainblock %}
+            {% endblock mainblock %}
+        </div>
+        <br>
         {% block ebayads%}
-        <div id="ebayadsdiv" class="topbannerdiv" style="">
+        <div id="ebayadsdiv" class="ebaybannerdiv" style="">
             <ins class="epn-placement" data-config-id="5ee75b455da29225ccf11ed6"></ins>
             <div id="adlessdiv" class="vertical-flex-container is-invisible">
                 <p style="margin-top:1em;flex-grow:3;margin-left:0.5em;" id="adlesstext">
@@ -138,11 +144,6 @@
             </div>
         </div>
         {% endblock ebayads%}
-        <div class="vertical-flex-container">
-            {% block mainblock %}
-            {% endblock mainblock %}
-        </div>
-        <br><br>
     </div>
     <!-- END MAIN -->
     

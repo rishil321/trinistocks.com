@@ -4,7 +4,7 @@ from django_tables2.export.views import ExportMixin
 
 
 class HistoricalStockInfoTable(tables.Table):
-    date = tables.Column(verbose_name="Date")
+    date = tables.DateColumn(verbose_name="Date")
     currency = tables.Column(
         accessor="stockcode__currency", verbose_name="Currency")
     openprice = tables.Column(verbose_name="Open Price ($)")
@@ -36,7 +36,8 @@ class HistoricalDividendYieldTable(tables.Table):
 
 class DailyTradingSummaryTable(tables.Table):
     symbol = tables.Column(
-        accessor="stockcode__symbol", verbose_name="Symbol")
+        accessor="stockcode__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
+                                                                    "td": {"class": "headcol"}})
     volumetraded = tables.Column(verbose_name="Volume Traded (Shares)")
     lastsaleprice = tables.Column(verbose_name="Sale Price ($)")
     currency = tables.Column(
@@ -66,8 +67,9 @@ class DailyTradingSummaryTable(tables.Table):
 
 
 class ListedStocksTable(tables.Table):
+    symbol = tables.Column(attrs={"th": {"class": "headcol"},
+                                  "td": {"class": "headcol"}})
     securityname = tables.Column()
-    symbol = tables.Column()
     status = tables.Column()
     sector = tables.Column()
     issuedsharecapital = tables.Column()
@@ -114,7 +116,8 @@ class OSTradesHistoryTable(tables.Table):
 
 class TechnicalAnalysisSummaryTable(tables.Table):
     symbol = tables.Column(
-        accessor="stockcode__symbol", verbose_name="Symbol")
+        accessor="stockcode__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
+                                                                    "td": {"class": "headcol"}})
     sma200 = tables.Column()
     sma20 = tables.Column()
     lastcloseprice = tables.Column()

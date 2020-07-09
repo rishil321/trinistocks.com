@@ -349,7 +349,7 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
             logger.debug(
                 "Finished parsing GET parameters. Now loading graph data.")
             # Set up our graph
-            graphlabels = [obj.date.strftime('%Y-%m-%d')
+            graphlabels = [obj.date
                            for obj in self.historicalrecords]
             # Store the variables for the subclasses to calculate the required dict
             self.set_graph_dataset()
@@ -431,7 +431,7 @@ class StockHistoryView(BasicLineChartAndTableView):
             self.request.session['charttype'] = self.selected_chart_type
             # store the context variable
             context['chart_type'] = self.selected_chart_type
-            context['dates'] = []
+            context['chart_dates'] = []
             context['open_prices'] = []
             context['close_prices'] = []
             context['highs'] = []
@@ -442,7 +442,7 @@ class StockHistoryView(BasicLineChartAndTableView):
                     stockcode=self.selectedstockcode).filter(date__gte=self.enteredstartdate)\
                     .filter(date__lte=self.enteredenddate).order_by(self.orderby)
                 # store the required values for the chart
-                context['dates'] = [d.strftime('%Y-%m-%d') for d in selected_records.values_list(
+                context['chart_dates'] = [d.strftime('%Y-%m-%d') for d in selected_records.values_list(
                     'date', flat=True)]
                 context['open_prices'] = [float(num) for num in selected_records.values_list(
                     'openprice', flat=True)]

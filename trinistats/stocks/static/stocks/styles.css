@@ -108,24 +108,36 @@ h2 {
     font-size: x-large;
 }
 
-.tablediv {
-    margin: 0.5em;
+.tablediv_scroll {
+    margin-left: 5em;
+    overflow-x: scroll;
+}
+
+.tablediv_noscroll {
+    overflow-x: scroll;
+    margin: 0.2rem;
 }
 
 .djangotables {
     font-size: 1rem;
+    width: 100%;
 }
 
 table {
     border-collapse: collapse;
-    width: 100%;
     border-radius: 5px;
-    overflow: hidden;
 }
 
-th {
+.headcol {
+    position: absolute;
+    width: 5rem;
+    left: 0;
+}
+
+th,
+th.headcol {
     border: none;
-    background-color: darkslategrey;
+    background-color: black;
     color: white;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
@@ -136,8 +148,9 @@ td {
     padding-right: 0.5rem;
 }
 
-tr.odd {
-    background-color: #f2f2f2;
+tr.odd,
+tr.odd td.headcol {
+    background-color: lightgrey;
 }
 
 .pagination {
@@ -216,8 +229,8 @@ tr.odd {
     height: 25rem;
 }
 
-.topbannerdiv {
-    height: 15rem;
+.ebaybannerdiv {
+    height: 14rem;
 }
 
 #adlessdiv {
@@ -228,7 +241,7 @@ tr.odd {
 @media only screen and (min-width: 1024px) {
 
     .chart-div {
-        height: 40rem;
+        height: 40 rem;
     }
 
     .topbannerdiv {

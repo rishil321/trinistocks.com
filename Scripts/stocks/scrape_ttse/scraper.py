@@ -1018,6 +1018,11 @@ def scrape_equity_summary_data(datestofetch, alllistedsymbols):
                                 float)
                             shares_table['changedollars'] = shares_table['changedollars'].astype(
                                 float)
+                            # if the high and low columns are 0, replace them with the openprice
+                            shares_table['high'] = shares_table.apply(lambda x: x.openprice if (
+                                x.high == 0) else x.high, axis=1)
+                            shares_table['low'] = shares_table.apply(lambda x: x.openprice if (
+                                x.low == 0) else x.low, axis=1)
                             # drop the rows where the stockcode is 0 (these are delisted stocks)
                             shares_table.drop(
                                 shares_table[shares_table.stockcode == 0].index, inplace=True)
@@ -1498,12 +1503,12 @@ def main():
                         update_daily_trades, ())
                 else:
                     # else this is a full update (run once a day)
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(check_num_equities_in_sector, ())
-                    multipool.apply_async(scrape_dividend_data, ())
-                    multipool.apply_async(scrape_historical_data, ())
-                    multipool.apply_async(update_dividend_yield, ())
-                    multipool.apply_async(update_technical_analysis_data, ())
+                    # multipool.apply_async(scrape_listed_equity_data, ())
+                    # multipool.apply_async(check_num_equities_in_sector, ())
+                    # multipool.apply_async(scrape_dividend_data, ())
+                    # multipool.apply_async(scrape_historical_data, ())
+                    # multipool.apply_async(update_dividend_yield, ())
+                    # multipool.apply_async(update_technical_analysis_data, ())
                     # block on the next function to wait until the dates are ready
                     dates_to_fetch_sublists, alllistedsymbols = multipool.apply(
                         update_equity_summary_data, ())

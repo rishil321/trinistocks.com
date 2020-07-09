@@ -21,11 +21,11 @@
     {% endblock title %}
 
     {% block sidepanelcontents %}
-    <div class="panel-block is-size-1-touch">
+    <div class="panel-block">
         <label class="panellabel" for="date">Trading date</label>
         <input type="date" class="custom-date-selector" value="{{ selecteddateparsed }}" id="date" name="date">
     </div>
-    <div class="panel-block is-size-1-touch">
+    <div class="panel-block">
         <input type="hidden" value="1" name="wastradedtoday"></input>
         <input type="hidden" value="-valuetraded" name="sort"></input>
         <input type="submit" name="configure_button" class="custom-red-button" onclick="location.href='{% url 'stocks:dailytradingsummary' %}" value="Search"/>
@@ -35,7 +35,6 @@
     {% block mainblock %}
     <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selecteddate }}</h1>
     <!-- Chart -->
-    <br>
     <div id="chartdiv" class="chart-div" style="">
     </div>
     <br>
@@ -43,7 +42,7 @@
         <a class="button export-csv-button" id="exportcsvbutton" href="{% export_url "csv" %}">Export as CSV</a>
     </div>
     <div class="is-clearfix clearfix"></div>    
-    <div class="tablediv">
+    <div class="tablediv_scroll">
         {% render_table table %}
     </div>
     {% endblock mainblock %}
@@ -67,7 +66,7 @@
     var layout = {
         xaxis: {
             automargin: true,
-            title: {text:'Ticker',
+            title: {text:'Ticker Symbol',
             standoff: 20
             },
             titlefont: {
@@ -76,7 +75,7 @@
             showticklabels: true,
             tickangle: 'auto',
             tickfont: {
-            size: 16
+            size: 14
             },
             exponentformat: 'SI',
             showexponent: 'all'

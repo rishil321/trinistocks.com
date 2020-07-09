@@ -57,7 +57,7 @@
     <a class="button export-csv-button" id="exportcsvbutton" href="{% export_url "csv" %}">Export as CSV</a>
 </div>
 <div class="is-clearfix clearfix"></div>
-<div class="tablediv">
+<div class="tablediv_noscroll">
     {% render_table table %}
 </div>
 {% endblock mainblock %}
@@ -78,8 +78,6 @@
     if (chart_type == 'line') {
         var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
         var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
-        console.log(graphlabels);
-        console.log(graphdataset);
         var trace1 = {
             x: graphlabels,
             y: graphdataset,
@@ -88,7 +86,10 @@
         var data = [trace1];
         var layout = {
         xaxis: {
-            title: 'Date',
+            automargin: true,
+            title: {text:'Date',
+            standoff: 20
+            },
             titlefont: {
             size: 20
             },
@@ -119,7 +120,7 @@
         // set up the arrays
         var dataset1 = {
 
-            x: {{ dates|safe }},
+            x: {{ chart_dates|safe }},
 
             close: {{ close_prices|safe }},
 
