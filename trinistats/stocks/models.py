@@ -9,69 +9,71 @@ from urllib.parse import urlencode
 
 
 class ListedEquities(models.Model):
-    stockcode = models.SmallAutoField(primary_key=True)
-    securityname = models.CharField(
-        max_length=100, verbose_name="Security Name")
     symbol = models.CharField(
-        unique=True, max_length=20, verbose_name="Symbol")
+        primary_key=True, unique=True, max_length=20, verbose_name="Symbol")
+    security_name = models.CharField(
+        max_length=100, verbose_name="Security Name")
     status = models.CharField(max_length=20, blank=True, null=True)
     sector = models.CharField(max_length=100, blank=True, null=True)
-    issuedsharecapital = models.BigIntegerField(
+    issued_share_capital = models.BigIntegerField(
         blank=True, null=True, verbose_name="Issued Share Capital (shares)")
-    marketcapitalization = models.DecimalField(
+    market_capitalization = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Market Capitalization ($)")
     currency = models.CharField(max_length=3, blank=False, null=False)
+    financial_year_end = models.CharField(max_length=45, blank=True, null=True)
+    website_url = models.CharField(max_length=2083, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'listedequities'
+        db_table = 'listed_equities'
 
 
 class ListedEquitiesPerSector(models.Model):
     sector_id = models.SmallAutoField(primary_key=True)
-    sector = models.CharField(max_length=100, verbose_name="Sector Name")
+    sector = models.CharField(max_length=100, verbose_name="Sector")
     num_listed = models.SmallIntegerField(
         null=False, verbose_name="Number of Listed Stocks")
 
     class Meta:
         managed = False
-        db_table = 'listedequities_per_sector'
+        db_table = 'listed_equities_per_sector'
 
 
-class DailyTradingSummary(models.Model):
-    equitytradeid = models.AutoField(primary_key=True)
-    date = models.DateField(unique=True)
-    stockcode = models.ForeignKey(
-        ListedEquities, models.CASCADE, db_column='stockcode')
-    openprice = models.DecimalField(
+class DailyStockSummary(models.Model):
+    daily_share_id = models.AutoField(primary_key=True)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, db_column='symbol')
+    date = models.DateField()
+    open_price = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="Open Price ($)")
     high = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="High ($)")
     low = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="Low ($)")
-    osbid = models.DecimalField(max_digits=12, decimal_places=2,
-                                blank=True, null=True, verbose_name="O/S Bid Price($)")
-    osbidvol = models.PositiveIntegerField(
+    os_bid = models.DecimalField(max_digits=12, decimal_places=2,
+                                 blank=True, null=True, verbose_name="O/S Bid Price($)")
+    os_bid_vol = models.PositiveIntegerField(
         blank=True, null=True, verbose_name="O/S Bid Volume")
-    osoffer = models.DecimalField(
+    os_offer = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="O/S Offer Price($)")
-    osoffervol = models.PositiveIntegerField(
+    os_offer_vol = models.PositiveIntegerField(
         blank=True, null=True, verbose_name="O/S Offer Volume")
-    lastsaleprice = models.DecimalField(
+    last_sale_price = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="Last Sale Price($)")
-    wastradedtoday = models.SmallIntegerField(
+    was_traded_today = models.SmallIntegerField(
         blank=True, null=True, verbose_name="Was Traded Today")
-    volumetraded = models.PositiveIntegerField(blank=True, null=True)
-    closeprice = models.DecimalField(
+    volume_traded = models.PositiveIntegerField(blank=True, null=True)
+    close_price = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True, verbose_name="Close Price ($)")
-    changedollars = models.DecimalField(
+    change_dollars = models.DecimalField(
         max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="Daily Change ($)")
-    valuetraded = models.DecimalField(
+    value_traded = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'dailyequitysummary'
+        unique_together = (('date', 'symbol'),)
         ordering = ["-valuetraded"]
 
     def get_absolute_url(self):

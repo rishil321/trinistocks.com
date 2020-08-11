@@ -68,6 +68,7 @@ class BufferingSMTPHandler(logging.handlers.BufferingHandler):
 def setup_logging(logfilestandardname: 'str: Words to prepend the log files for easy identification' = 'log',
                   logdirparent: 'str: The parent dir where you want the log dir created: eg: str(os.path.dirname(os.path.realpath(__file__)))' = str(os.getcwd()),
                   filelogginglevel: 'A valid Python logging level eg. logging.INFO, logging.ERROR etc.' = logging.DEBUG,
+                  stdoutenabled: 'boolean: Whether to log to the console or not' = True,
                   stdoutlogginglevel: 'A valid Python logging level eg. logging.INFO, logging.ERROR etc.' = logging.DEBUG,
                   smtploggingenabled: 'boolean: Whether to log to an email address as well ' = False,
                   smtplogginglevel: 'A valid Python logging level eg. logging.INFO, logging.ERROR etc.' = logging.INFO,
@@ -112,6 +113,8 @@ def setup_logging(logfilestandardname: 'str: Words to prepend the log files for 
     stdouthandler.setFormatter(formatter)
     # Add the log handler for files
     mainlogger.addHandler(logfilehandler)
+    # Remove the log handler for stdout if we don't want it
+    mainlogger.removeHandler(stdouthandler)
     # Now set up the SMTP log handler
     if smtploggingenabled:
         smtploghandler = BufferingSMTPHandler(
@@ -139,8 +142,5 @@ def logging_worker_init(q):
     # all records from worker processes go to qh and then into q
     qh = logging.handlers.QueueHandler(q)
     logger = logging.getLogger()
-    global outlogginglevel
     logger.setLevel(outlogginglevel)
     logger.addHandler(qh)
-    # remove the default handler once we add this special queue handler
-    logging.getLogger().removeHandler(logging.getLogger().handlers[0])
