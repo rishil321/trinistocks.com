@@ -16,7 +16,7 @@ logger = logging.getLogger('root')
 
 @register.simple_tag
 def get_latest_date_dailytradingsummary():
-    latest_date = models.DailyTradingSummary.objects.latest(
+    latest_date = models.DailyStockSummary.objects.latest(
         'date').date.strftime("%Y-%m-%d")
     return latest_date
 

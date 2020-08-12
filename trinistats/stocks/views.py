@@ -50,7 +50,7 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
     Set up the data for the Daily Equity Summary page
     """
     template_name = 'stocks/base_dailytradingsummary.html'
-    model = models.DailyTradingSummary
+    model = models.DailyStockSummary
     table_class = stocks_tables.DailyTradingSummaryTable
     filterset_class = filters.DailyTradingSummaryFilter
 
@@ -389,7 +389,7 @@ class StockHistoryView(BasicLineChartAndTableView):
     The class for displaying the stock history view website
     """
     template_name = 'base_stockhistory.html'
-    model = models.DailyTradingSummary  # models.something
+    model = models.DailyStockSummary  # models.something
     table_class = stocks_tables.HistoricalStockInfoTable  # tables.something
     filterset_class = filters.StockHistoryFilter  # filters.something
     page_name = 'Stock History'  # a string representing the name of the page

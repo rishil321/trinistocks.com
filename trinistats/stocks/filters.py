@@ -4,10 +4,10 @@ from stocks import models
 
 class DailyTradingSummaryFilter(django_filters.FilterSet):
     class Meta:
-        model = models.DailyTradingSummary
+        model = models.DailyStockSummary
         fields = {
             'date': ['exact', ],
-            'wastradedtoday': ['exact', ],
+            'was_traded_today': ['exact', ],
         }
 
 
@@ -18,51 +18,42 @@ class ListedStocksFilter(django_filters.FilterSet):
         }
 
 
-class StockHistoryFilter(django_filters.FilterSet):
-    class Meta:
-        model = models.DailyTradingSummary
-        fields = {
-            'stockcode': ['exact', ],
-            'date': ['gte', 'lte', ],
-        }
-
-
 class DividendHistoryFilter(django_filters.FilterSet):
     class Meta:
         model = models.HistoricalDividendInfo
         fields = {
-            'stockcode': ['exact', ],
-            'date': ['gte', 'lte', ],
+            'symbol': ['exact', ],
+            'record_date': ['gte', 'lte', ],
         }
 
 
-class DividendYieldHistoryFilter(django_filters.FilterSet):
+class DividendYieldFilter(django_filters.FilterSet):
     class Meta:
         model = models.DividendYield
         fields = {
-            'stockcode': ['exact', ],
+            'symbol': ['exact', ],
             'date': ['gte', 'lte', ],
         }
 
 
 class MarketIndexHistoryFilter(django_filters.FilterSet):
     class Meta:
-        model = models.HistoricalMarketSummary
+        model = models.HistoricalIndicesInfo
         fields = {
             'date': ['gte', 'lte', ],
-            'indexname': ['exact', ],
-            'volumetraded': ['exact', ],
-            'valuetraded': ['exact', ],
-            'numtrades': ['exact', ],
+            'index_name': ['exact', ],
+            'volume_traded': ['exact', ],
+            'value_traded': ['exact', ],
+            'num_trades': ['exact', ],
         }
 
 
 class OSTradesHistoryFilter(django_filters.FilterSet):
     class Meta:
-        model = models.DailyTradingSummary
+        model = models.DailyStockSummary
         fields = {
             'date': ['gte', 'lte', ],
-            'stockcode': ['exact', ],
+            'symbol': ['exact', ],
         }
 
 

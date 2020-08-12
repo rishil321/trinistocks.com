@@ -31,21 +31,20 @@ class HistoricalDividendYieldTable(tables.Table):
     class Meta:
         model = models.DividendYield
         attrs = {"class": "djangotables"}
-        fields = ('date', 'yieldpercent')
+        fields = ('date', 'yield_percent')
 
 
 class DailyTradingSummaryTable(tables.Table):
-    symbol = tables.Column(
-        accessor="stockcode__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                    "td": {"class": "headcol"}})
-    volumetraded = tables.Column(verbose_name="Volume Traded (Shares)")
-    lastsaleprice = tables.Column(verbose_name="Sale Price ($)")
+    symbol = tables.Column(verbose_name="Symbol", attrs={"th": {"class": "headcol"},
+                                                         "td": {"class": "headcol"}})
+    volume_traded = tables.Column(verbose_name="Volume Traded (Shares)")
+    last_sale_price = tables.Column(verbose_name="Sale Price ($)")
     currency = tables.Column(
-        accessor="stockcode__currency", verbose_name="Currency")
-    valuetraded = tables.Column(verbose_name="Dollar Volume ($)")
+        accessor="symbol__currency", verbose_name="Currency")
+    value_traded = tables.Column(verbose_name="Dollar Volume ($)")
     low = tables.Column(verbose_name="Low ($)")
     high = tables.Column(verbose_name="High ($)")
-    changedollars = tables.Column(verbose_name="Price Change ($)")
+    change_dollars = tables.Column(verbose_name="Price Change ($)")
 
     # make the cells green if prices are up, and red if prices are down
     def render_changedollars(self, value, column):
@@ -69,11 +68,11 @@ class DailyTradingSummaryTable(tables.Table):
 class ListedStocksTable(tables.Table):
     symbol = tables.Column(attrs={"th": {"class": "headcol"},
                                   "td": {"class": "headcol"}})
-    securityname = tables.Column()
+    security_name = tables.Column()
     status = tables.Column()
     sector = tables.Column()
-    issuedsharecapital = tables.Column()
-    marketcapitalization = tables.Column()
+    issued_share_capital = tables.Column()
+    market_capitalization = tables.Column()
     currency = tables.Column()
 
     def render_status(self, value, column):
@@ -97,20 +96,20 @@ class ListedStocksPerSectorTable(tables.Table):
         export_formats = ['csv', 'xlsx']
 
 
-class HistoricalMarketSummaryTable(tables.Table):
+class HistoricalIndicesSummaryTable(tables.Table):
     class Meta:
-        model = models.HistoricalMarketSummary
+        model = models.HistoricalIndicesInfo
         attrs = {"class": "djangotables"}
-        fields = ('date', 'indexvalue', 'changepercent',
-                  'volumetraded', 'valuetraded', 'numtrades')
+        fields = ('date', 'index_value', 'change_percent',
+                  'volume_traded', 'value_traded', 'num_trades')
         export_formats = ['csv', 'xlsx']
 
 
 class OSTradesHistoryTable(tables.Table):
     class Meta:
-        model = models.DailyTradingSummary
+        model = models.DailyStockSummary
         attrs = {"class": "djangotables"}
-        fields = ('date', 'osbid', 'osbidvol', 'osoffer', 'osoffervol')
+        fields = ('date', 'os_bid', 'os_bid_vol', 'os_offer', 'os_offer_vol')
         export_formats = ['csv', 'xlsx']
 
 

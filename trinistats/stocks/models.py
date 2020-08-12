@@ -72,7 +72,7 @@ class DailyStockSummary(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'dailyequitysummary'
+        db_table = 'daily_stock_summary'
         unique_together = (('date', 'symbol'),)
         ordering = ["-valuetraded"]
 
@@ -85,75 +85,55 @@ class DailyStockSummary(models.Model):
 
 
 class HistoricalDividendInfo(models.Model):
-    historicaldividendid = models.AutoField(primary_key=True)
-    date = models.DateField(verbose_name='Record Date')
-    dividendamount = models.DecimalField(
-        max_digits=14, decimal_places=2, verbose_name='Dividend ($/share)')
-    stockcode = models.ForeignKey(
-        'Listedequities', models.CASCADE, db_column='stockcode')
+    dividend_id = models.AutoField(primary_key=True)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, db_column='symbol')
+    record_date = models.DateField(verbose_name='Record Date')
+    dividend_amount = models.DecimalField(
+        max_digits=20, decimal_places=5, verbose_name='Dividend ($/share)')
     currency = models.CharField(max_length=6, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'historicaldividendinfo'
-        unique_together = (('date', 'stockcode'),)
+        db_table = 'historical_dividend_info'
+        unique_together = (('date', 'symbol'),)
 
 
 class DividendYield(models.Model):
-    dividendyieldid = models.AutoField(primary_key=True)
+    dividend_yield_id = models.AutoField(primary_key=True)
     date = models.DateField(verbose_name='Date Yield Calculated')
-    yieldpercent = models.DecimalField(
+    yield_percent = models.DecimalField(
         max_digits=20, decimal_places=5, verbose_name='Yield %')
-    stockcode = models.ForeignKey(
-        'Listedequities', models.CASCADE, db_column='stockcode')
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, db_column='symbol')
 
     class Meta:
         managed = False
-        db_table = 'dividendyield'
-        unique_together = (('date', 'stockcode'),)
+        db_table = 'dividend_yield'
+        unique_together = (('date', 'symbol'),)
 
 
-class HistoricalStockInfo(models.Model):
-    historicalstockid = models.AutoField(primary_key=True)
-    date = models.DateField(verbose_name="Date Recorded")
-    stockcode = models.ForeignKey(
-        'Listedequities', models.CASCADE, db_column='stockcode')
-    closingquote = models.DecimalField(
-        max_digits=14, decimal_places=2, blank=True, null=True, verbose_name="Stock Closing Quote ($)")
-    changedollars = models.DecimalField(
-        max_digits=14, decimal_places=2, blank=True, null=True, verbose_name="Change ($)")
-    volumetraded = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="Volume Traded")
-    currency = models.CharField(
-        max_length=6, blank=True, null=True, verbose_name="Currency")
-
-    class Meta:
-        managed = False
-        db_table = 'historicalstockinfo'
-        unique_together = (('date', 'stockcode'),)
-
-
-class HistoricalMarketSummary(models.Model):
-    summaryid = models.AutoField(primary_key=True)
+class HistoricalIndicesInfo(models.Model):
+    summary_id = models.AutoField(primary_key=True)
     date = models.DateField(verbose_name="Date Recorded", unique=True)
-    indexname = models.CharField(
+    index_name = models.CharField(
         verbose_name="Market Index Name", null=False, blank=False, max_length=100)
-    indexvalue = models.DecimalField(
+    index_value = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Index Value")
-    indexchange = models.DecimalField(
+    index_change = models.DecimalField(
         max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Index Change")
-    changepercent = models.DecimalField(
+    change_percent = models.DecimalField(
         max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="Change (%)")
-    volumetraded = models.PositiveIntegerField(
+    volume_traded = models.PositiveIntegerField(
         blank=True, null=True, verbose_name="Volume Traded (Shares)")
-    valuetraded = models.DecimalField(
+    value_traded = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Value Traded ($)")
-    numtrades = models.PositiveIntegerField(
+    num_trades = models.PositiveIntegerField(
         blank=True, null=True, verbose_name="Number of Trades")
 
     class Meta:
         managed = False
-        db_table = 'historicalmarketsummary'
+        db_table = 'historical_indices_info'
 
 
 class TechnicalAnalysisSummary(models.Model):
