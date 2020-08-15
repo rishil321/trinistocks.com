@@ -87,7 +87,7 @@
                         {% get_session_end_date_or_today as end_date%}
                         {% get_session_start_date_or_1_yr_back as start_date_1_yr%}
                         {% get_session_start_date_or_5_yr_back as start_date_5_yr%}
-                        {% get_session_stockcode_or_default as stockcode%}
+                        {% get_session_symbol_or_default as symbol%}
                         <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock History</a>
                         <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}'>Dividend History</a>
                         <a class="navbar-item" id="dividendyieldlink" href='{% url "stocks:dividendyieldhistory" %}'>Dividend Yield</a>

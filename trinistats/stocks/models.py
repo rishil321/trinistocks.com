@@ -74,7 +74,7 @@ class DailyStockSummary(models.Model):
         managed = False
         db_table = 'daily_stock_summary'
         unique_together = (('date', 'symbol'),)
-        ordering = ["-valuetraded"]
+        ordering = ["-value_traded"]
 
     def get_absolute_url(self):
         base_url = reverse('stocks:dailytradingsummary', current_app="stocks")
@@ -96,7 +96,7 @@ class HistoricalDividendInfo(models.Model):
     class Meta:
         managed = False
         db_table = 'historical_dividend_info'
-        unique_together = (('date', 'symbol'),)
+        unique_together = (('record_date', 'symbol'),)
 
 
 class DividendYield(models.Model):

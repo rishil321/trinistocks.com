@@ -24,8 +24,8 @@ def get_latest_date_dailytradingsummary():
 @register.simple_tag(takes_context=True)
 def get_session_end_date_or_today(context):
     session_data = context.request.session
-    if 'enteredenddate' in session_data:
-        return session_data['enteredenddate']
+    if 'entered_end_date' in session_data:
+        return session_data['entered_end_date']
     else:
         return datetime.now().strftime("%Y-%m-%d")
 
@@ -33,8 +33,8 @@ def get_session_end_date_or_today(context):
 @register.simple_tag(takes_context=True)
 def get_session_start_date_or_1_yr_back(context):
     session_data = context.request.session
-    if 'enteredstartdate' in session_data:
-        return session_data['enteredstartdate']
+    if 'entered_start_date' in session_data:
+        return session_data['entered_start_date']
     else:
         return (datetime.now()+relativedelta(years=-1)).strftime('%Y-%m-%d')
 
@@ -42,16 +42,16 @@ def get_session_start_date_or_1_yr_back(context):
 @register.simple_tag(takes_context=True)
 def get_session_start_date_or_5_yr_back(context):
     session_data = context.request.session
-    if 'enteredstartdate' in session_data:
-        return session_data['enteredstartdate']
+    if 'entered_start_date' in session_data:
+        return session_data['entered_start_date']
     else:
         return (datetime.now()+relativedelta(years=-5)).strftime('%Y-%m-%d')
 
 
 @register.simple_tag(takes_context=True)
-def get_session_stockcode_or_default(context):
+def get_session_symbol_or_default(context):
     session_data = context.request.session
-    if 'selectedstockcode' in session_data:
-        return session_data['selectedstockcode']
+    if 'selected_symbol' in session_data:
+        return session_data['selected_symbol']
     else:
-        return 89
+        return 'AGL'

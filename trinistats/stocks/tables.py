@@ -6,13 +6,13 @@ from django_tables2.export.views import ExportMixin
 class HistoricalStockInfoTable(tables.Table):
     date = tables.DateColumn(verbose_name="Date")
     currency = tables.Column(
-        accessor="stockcode__currency", verbose_name="Currency")
-    openprice = tables.Column(verbose_name="Open Price ($)")
+        accessor="symbol__currency", verbose_name="Currency")
+    open_price = tables.Column(verbose_name="Open Price ($)")
     high = tables.Column(verbose_name="High ($)")
     low = tables.Column(verbose_name="Low ($)")
-    closeprice = tables.Column(verbose_name="Close Price ($)")
-    volumetraded = tables.Column(verbose_name="Volume Traded (Shares)")
-    changedollars = tables.Column(verbose_name="Price Change ($)")
+    close_price = tables.Column(verbose_name="Close Price ($)")
+    volume_traded = tables.Column(verbose_name="Volume Traded (Shares)")
+    change_dollars = tables.Column(verbose_name="Price Change ($)")
 
     class Meta:
         attrs = {"class": "djangotables"}
@@ -23,7 +23,7 @@ class HistoricalDividendInfoTable(tables.Table):
     class Meta:
         model = models.HistoricalDividendInfo
         attrs = {"class": "djangotables"}
-        fields = ('date', 'dividendamount', 'currency')
+        fields = ('record_date', 'dividend_amount', 'currency')
         export_formats = ['csv', 'xlsx']
 
 
@@ -35,10 +35,10 @@ class HistoricalDividendYieldTable(tables.Table):
 
 
 class DailyTradingSummaryTable(tables.Table):
-    symbol = tables.Column(verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                         "td": {"class": "headcol"}})
+    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
+                                                                                    "td": {"class": "headcol"}})
     volume_traded = tables.Column(verbose_name="Volume Traded (Shares)")
-    last_sale_price = tables.Column(verbose_name="Sale Price ($)")
+    last_sale_price = tables.Column(verbose_name="Last Sale Price ($)")
     currency = tables.Column(
         accessor="symbol__currency", verbose_name="Currency")
     value_traded = tables.Column(verbose_name="Dollar Volume ($)")
@@ -47,7 +47,7 @@ class DailyTradingSummaryTable(tables.Table):
     change_dollars = tables.Column(verbose_name="Price Change ($)")
 
     # make the cells green if prices are up, and red if prices are down
-    def render_changedollars(self, value, column):
+    def render_change_dollars(self, value, column):
         if value < 0:
             column.attrs = {'td': {'bgcolor': '#ff9999'}}
         elif value > 0:
@@ -76,7 +76,7 @@ class ListedStocksTable(tables.Table):
     currency = tables.Column()
 
     def render_status(self, value, column):
-        if value == 'SUSPENDED':
+        if value == 'Suspended':
             column.attrs = {'td': {'bgcolor': '#ff8080'}}
         else:
             column.attrs = {'td': {'bgcolor': '#80ff80'}}
@@ -115,8 +115,8 @@ class OSTradesHistoryTable(tables.Table):
 
 class TechnicalAnalysisSummaryTable(tables.Table):
     symbol = tables.Column(
-        accessor="stockcode__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                    "td": {"class": "headcol"}})
+        accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
+                                                                 "td": {"class": "headcol"}})
     sma200 = tables.Column()
     sma20 = tables.Column()
     lastcloseprice = tables.Column()

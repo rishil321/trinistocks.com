@@ -11,6 +11,15 @@ class DailyTradingSummaryFilter(django_filters.FilterSet):
         }
 
 
+class StockHistoryFilter(django_filters.FilterSet):
+    class Meta:
+        model = models.DailyStockSummary
+        fields = {
+            'date': ['gte', 'lte', ],
+            'symbol': ['exact', ],
+        }
+
+
 class ListedStocksFilter(django_filters.FilterSet):
     class Meta:
         model = models.ListedEquities

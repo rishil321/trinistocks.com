@@ -23,17 +23,17 @@
     {% block sidepanelcontents %}
     <div class="panel-block">
         <label class="panellabel" for="date">Trading date</label>
-        <input type="date" class="custom-date-selector" value="{{ selecteddateparsed }}" id="date" name="date">
+        <input type="date" class="custom-date-selector" value="{{ selected_date_parsed }}" id="date" name="date">
     </div>
     <div class="panel-block">
-        <input type="hidden" value="1" name="wastradedtoday"></input>
-        <input type="hidden" value="-valuetraded" name="sort"></input>
+        <input type="hidden" value="1" name="was_traded_today"></input>
+        <input type="hidden" value="-value_traded" name="sort"></input>
         <input type="submit" name="configure_button" class="custom-red-button" onclick="location.href='{% url 'stocks:dailytradingsummary' %}" value="Search"/>
     <div>
     {% endblock sidepanelcontents %}
 
     {% block mainblock %}
-    <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selecteddate }}</h1>
+    <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selected_date }}</h1>
     <!-- Chart -->
     <div id="chartdiv" class="chart-div" style="">
     </div>
@@ -48,15 +48,15 @@
     {% endblock mainblock %}
 
     {% block chartjs %}
-    {{ graphvaluetraded|json_script:"graphvaluetraded" }}
-    {{ graphsymbols|json_script:"graphsymbols" }}
+    {{ graph_value_traded|json_script:"graph_value_traded" }}
+    {{ graph_symbols|json_script:"graph_symbols" }}
     <script>
-    var jssymbols = JSON.parse(document.getElementById('graphsymbols').textContent);
-    var valuetraded = JSON.parse(document.getElementById('graphvaluetraded').textContent);
+    var js_symbols = JSON.parse(document.getElementById('graph_symbols').textContent);
+    var value_traded = JSON.parse(document.getElementById('graph_value_traded').textContent);
     var data = [
         {
-            x: jssymbols,
-            y: valuetraded,
+            x: js_symbols,
+            y: value_traded,
             marker:{
                 color: ['#ff3300','#ff5410','#ff6c22','#ff8134','#ff9347','#ffa45b','#ffb470','#ffc387','#ffd29f','#ffd29f','#ffd499']
             },

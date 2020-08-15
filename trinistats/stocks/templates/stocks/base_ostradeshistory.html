@@ -11,34 +11,34 @@
 
     {% block sidepanelcontents %}
     <div class="panel-block">
-        <label class="panellabel" for="stockcode">Stock:</label>
-        <select class="custom-date-selector" id="stockcode" name="stockcode">
+        <label class="panellabel" for="symbol">Stock:</label>
+        <select class="custom-date-selector" id="symbol" name="symbol">
             <!--Add options based on dictionary items returned-->
-            {% for listedstock in listedstocks %}
-                {% if listedstock.stockcode == selectedstockcode %}
-                    <option value="{{ listedstock.stockcode }}" selected>{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
+            {% for listed_stock in listed_stocks %}
+                {% if listed_stock.symbol == selected_symbol %}
+                    <option value="{{ listed_stock.symbol }}" selected>{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
                 {% else %}
-                    <option value="{{ listedstock.stockcode }}">{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
+                    <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
                 {% endif %}
             {% endfor %}
         </select>
     </div>
     <div class="panel-block">
         <label class="panellabel" for="">O/S Parameter:</label>
-        <select class="custom-date-selector" id="osparameter" name="osparameter">
-            <option value="osoffervol" selected>O/S Offer Volume</option>
-            <option value="osbid">O/S Bid Price($)</option>
-            <option value="osbidvol">O/S Bid Volume</option>
-            <option value="osoffer">O/S Offer Price($)</option>
+        <select class="custom-date-selector" id="os_parameter" name="os_parameter">
+            <option value="os_offer_vol" selected>O/S Offer Volume</option>
+            <option value="os_bid">O/S Bid Price($)</option>
+            <option value="os_bid_vol">O/S Bid Volume</option>
+            <option value="os_offer">O/S Offer Price($)</option>
         </select>
     </div>
     <div class="panel-block">
         <label class="panellabel" for="startdate">Start Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ enteredstartdate }}" id="startdate" name="date__gte" >
+        <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte" >
     </div>
     <div class="panel-block">    
         <label class="panellabel" for="enddate">End Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ enteredenddate }}" id="enddate" name="date__lte"/>
+        <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
     </div>
     <div class="panel-block">
         <input type="hidden" value="date" name="sort"></input>    
@@ -47,7 +47,7 @@
     {% endblock sidepanelcontents %}
 
     {% block mainblock %}
-        <h1 style="text-align:center" id="charttitle">Outstanding Trade History for {{selectedstockname}} ({{selectedstocksymbol}})</h1>
+        <h1 style="text-align:center" id="charttitle">Outstanding Trade History for {{selected_stock_name}} ({{selected_stock_symbol}})</h1>
         <!-- Chart -->
         <div id="chartdiv" class="chart-div" style="">
         </div>
@@ -58,14 +58,14 @@
     {% endblock mainblock %}
 
     {% block chartjs %}
-    {{ graphlabels|json_script:"graphlabels" }}
-    {{ graphdataset|json_script:"graphdataset" }}
+    {{ graph_labels|json_script:"graph_labels" }}
+    {{ graph_dataset|json_script:"graph_dataset" }}
     <script>
-    var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
-    var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+    var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
+    var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
     var trace1 = {
-        x: graphlabels,
-        y: graphdataset,
+        x: graph_labels,
+        y: graph_dataset,
         type: 'scatter'
     };
     var data = [trace1];

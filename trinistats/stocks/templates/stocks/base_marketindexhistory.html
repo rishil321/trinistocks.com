@@ -54,15 +54,15 @@
     {% endblock mainblock %}
 
     {% block chartjs %}
-    {{ graphlabels|json_script:"graphlabels" }}
-    {{ graphdataset|json_script:"graphdataset" }}
+    {{ graph_labels|json_script:"graph_labels" }}
+    {{ graph_dataset|json_script:"graph_dataset" }}
     <script>
-    var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
-    var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+    var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
+    var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
     var index_parameter_string = '{{ index_parameter_string }}';
     var trace1 = {
-        x: graphlabels,
-        y: graphdataset,
+        x: graph_labels,
+        y: graph_dataset,
         type: 'scatter'
     };
     var data = [trace1];

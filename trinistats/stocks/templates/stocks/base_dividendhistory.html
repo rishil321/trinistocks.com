@@ -37,7 +37,7 @@
     {% endblock sidepanelcontents %}
 
     {% block mainblock %}
-    <h1 id="charttitle">Dividend History for {{selectedstockname}} ({{selectedstocksymbol}})</h1>
+    <h1 id="charttitle">Dividend History for {{selected_stock_name}} ({{selected_stock_symbol}})</h1>
     <br>
         <!-- Chart -->
     <div id="chartdiv" class="chart-div">
@@ -50,14 +50,14 @@
     {% endblock mainblock %}
 
     {% block chartjs %}
-    {{ graphlabels|json_script:"graphlabels" }}
-    {{ graphdataset|json_script:"graphdataset" }}
+    {{ graph_labels|json_script:"graph_labels" }}
+    {{ graph_dataset|json_script:"graph_dataset" }}
     <script>
-    var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
-    var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+    var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
+    var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
     var trace1 = {
-            x: graphlabels,
-            y: graphdataset,
+            x: graph_labels,
+            y: graph_dataset,
             type: 'scatter'
         };
         var data = [trace1];

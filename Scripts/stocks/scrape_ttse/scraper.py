@@ -826,9 +826,6 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                         market_indices_table.columns[0], axis=1, inplace=True)
                     # set the names of columns
                     market_indices_table.columns = market_summary_data_keys
-                    # remove the first row as they dont contain data
-                    market_indices_table.drop(
-                        market_indices_table.index[[0]], inplace=True)
                     # remove all the '-' in the dataframe
                     market_indices_table.replace('–', None, inplace=True)
                     # set the datatype of the columns
@@ -904,6 +901,10 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                                 shares_table['os_bid'], errors='coerce')
                             shares_table['os_bid_vol'] = pd.to_numeric(
                                 shares_table['os_bid_vol'], errors='coerce')
+                            shares_table['os_offer'] = pd.to_numeric(
+                                shares_table['os_offer'], errors='coerce')
+                            shares_table['os_offer_vol'] = pd.to_numeric(
+                                shares_table['os_offer_vol'], errors='coerce')
                             shares_table['last_sale_price'] = pd.to_numeric(
                                 shares_table['last_sale_price'], errors='coerce')
                             shares_table['volume_traded'] = pd.to_numeric(
@@ -917,6 +918,15 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                                 pd.isna(x.high)) else x.high, axis=1)
                             shares_table['low'] = shares_table.apply(lambda x: x.open_price if (
                                 pd.isna(x.low)) else x.low, axis=1)
+                            # replace certain column null values with 0
+                            shares_table['change_dollars'].fillna(
+                                0, inplace=True)
+                            shares_table['volume_traded'].fillna(
+                                0, inplace=True)
+                            shares_table['os_bid_vol'].fillna(
+                                0, inplace=True)
+                            shares_table['os_offer_vol'].fillna(
+                                0, inplace=True)
                             # create a series for the value traded
                             value_traded_series = pd.Series(
                                 0, index=shares_table.index).astype(float)
