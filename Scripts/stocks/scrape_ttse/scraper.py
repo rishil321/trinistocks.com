@@ -1067,21 +1067,17 @@ def update_daily_trades():
     :raises Exception if any issues are encountered
     """
     try:
+        today_date = datetime.now().strftime('%Y-%m-%d')
         db_connect = DatabaseConnect()
         logging.info("Successfully connected to database")
         logging.info(
-            "Now opening using pandas to fetch latest daily shares data")
-        daily_shares_data_keys = ['symbol', 'openprice', 'high', 'low', 'osbid', 'osbidvol', 'osoffer',
-                                  'osoffervol', 'lastsaleprice', 'wastradedtoday', 'volumetraded', 'closeprice', 'changedollars']
+            f"Now opening using pandas to fetch daily shares data for today ({today_date})")
+        daily_shares_data_keys = ['symbol', 'open_price', 'high', 'low', 'os_bid', 'os_bid_vol', 'os_offer',
+                                  'os_offer_vol', 'last_sale_price', 'was_traded_today', 'volume_traded', 'close_price', 'change_dollars']
         # load the daily summary table
-        dailyequitysummary_table = Table(
-            'dailyequitysummary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        # read the symbols and stockcodes from the listequities table into a dataframe
-        listedequities_mapping_dataframe = pd.io.sql.read_sql(
-            "SELECT stockcode,symbol FROM listedequities;", db_connect.dbengine)
-        listedequities_mapping_dataframe = listedequities_mapping_dataframe.set_index("symbol")[
-            "stockcode"]
-        urlsummarypage = "https://stockex.co.tt/controller.php?action=view_quote"
+        daily_stock_summary_table = Table(
+            'daily_stock_summary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+        urlsummarypage = f"https://www.stockex.co.tt/market-quote/?TradeDate={today_date}"
         logging.info("Navigating to "+urlsummarypage)
         http_get_req = requests.get(urlsummarypage, timeout=10)
         if http_get_req.status_code != 200:
@@ -1089,141 +1085,125 @@ def update_daily_trades():
                 "Could not load URL to update latest daily data "+urlsummarypage)
         else:
             logging.info("Successfully loaded webpage.")
-        # get a list of tables from the URL
+         # get a list of tables from the URL
         dataframe_list = pd.read_html(http_get_req.text)
         # if this is a valid trading day, extract the values we need from the tables
-        if dataframe_list[1][0][0].startswith("Daily Equity Summary for "):
-            # store the fetchdate for this data
-            fetchdate = datetime.strptime(
-                dataframe_list[1][0][0].split("for ")[1], '%A, %d %b, %Y')
-            # get the tables holding data for all the shares
-            market_indices_table = dataframe_list[3]
-            ordinary_shares_table = dataframe_list[4]
-            preference_shares_table = dataframe_list[5]
-            second_tier_shares_table = dataframe_list[6]
-            mutual_funds_shares_table = dataframe_list[7]
-            # some trading dates may not include the sme tables or the usd table
-            if len(dataframe_list[8].columns) == 14:
-                sme_shares_table = dataframe_list[8]
-            else:
-                sme_shares_table = pd.DataFrame()
-            if len(dataframe_list[9].columns) == 14:
-                usd_equity_shares_table = dataframe_list[9]
-            else:
-                # if the usd table is not included on the page, just create an empty dataframe
-                usd_equity_shares_table = pd.DataFrame()
+        if len(dataframe_list[00].index) == 8:
+            # get the tables holding useful data
+            market_indices_table = dataframe_list[0]
+            ordinary_shares_table = dataframe_list[1]
+            preference_shares_table = dataframe_list[2]
+            second_tier_shares_table = dataframe_list[3]
+            sme_shares_table = dataframe_list[4]
+            mutual_funds_shares_table = dataframe_list[5]
+            usd_equity_shares_table = dataframe_list[6]
             # extract the values required from the tables
-            all_daily_shares_data = []
+            # lets try to wrangle the daily data for stocks
+            all_daily_stock_data = []
             for shares_table in [ordinary_shares_table, preference_shares_table, second_tier_shares_table, mutual_funds_shares_table,
                                  sme_shares_table, usd_equity_shares_table]:
+                # remove the first row from each table since its a header row
+                shares_table.drop(shares_table.index[0])
                 if not shares_table.empty:
                     # remove the column with the up and down symbols
                     shares_table.drop(
                         shares_table.columns[0], axis=1, inplace=True)
                     # set the names of columns
                     shares_table.columns = daily_shares_data_keys
-                    # remove the first two rows as they don't contain data
-                    shares_table.drop(
-                        shares_table.index[[0, 1]], inplace=True)
                     # remove the unneeded characters from the symbols
                     # note that these characters come after a space
                     shares_table['symbol'] = shares_table['symbol'].str.split(
                         " ", 1).str.get(0)
                     # replace the last sale date with a boolean
                     # if the last sale date is the current date being queried, return 1, else return 0
-                    shares_table['wastradedtoday'] = shares_table['wastradedtoday'].map(lambda x: 1 if (
-                        datetime.strptime(x, '%d/%m/%y').date() == fetchdate.date()) else 0, na_action='ignore')
-                    # fill all the nan values with 0s
-                    shares_table.fillna(0, inplace=True)
-                    # map the symbols to the stockcodes
-                    shares_table['symbol'] = shares_table['symbol'].map(
-                        listedequities_mapping_dataframe).fillna(0)
-                    # rename the column
-                    shares_table.rename(
-                        {'symbol': 'stockcode'}, axis=1, inplace=True)
+                    shares_table['was_traded_today'] = shares_table['was_traded_today'].map(lambda x: 1 if (
+                        datetime.strptime(x, '%d-%m-%Y') == datetime.strptime(today_date, '%Y-%m-%d')) else 0, na_action='ignore')
                     # set the datatype of the columns
-                    shares_table['stockcode'] = shares_table['stockcode'].astype(
-                        int)
-                    shares_table['openprice'] = shares_table['openprice'].astype(
-                        float)
-                    shares_table['high'] = shares_table['high'].astype(
-                        float)
-                    shares_table['low'] = shares_table['low'].astype(
-                        float)
-                    shares_table['osbid'] = shares_table['osbid'].astype(
-                        float)
-                    shares_table['osbidvol'] = shares_table['osbidvol'].astype(
-                        int)
-                    shares_table['lastsaleprice'] = shares_table['lastsaleprice'].astype(
-                        float)
-                    shares_table['volumetraded'] = shares_table['volumetraded'].astype(
-                        int)
-                    shares_table['closeprice'] = shares_table['closeprice'].astype(
-                        float)
-                    shares_table['changedollars'] = shares_table['changedollars'].astype(
-                        float)
-                    # drop the rows where the stockcode is 0 (these are delisted stocks)
-                    shares_table.drop(
-                        shares_table[shares_table.stockcode == 0].index, inplace=True)
+                    shares_table['open_price'] = pd.to_numeric(
+                        shares_table['open_price'], errors='coerce')
+                    shares_table['high'] = pd.to_numeric(
+                        shares_table['high'], errors='coerce')
+                    shares_table['low'] = pd.to_numeric(
+                        shares_table['low'], errors='coerce')
+                    shares_table['os_bid'] = pd.to_numeric(
+                        shares_table['os_bid'], errors='coerce')
+                    shares_table['os_bid_vol'] = pd.to_numeric(
+                        shares_table['os_bid_vol'], errors='coerce')
+                    shares_table['os_offer'] = pd.to_numeric(
+                        shares_table['os_offer'], errors='coerce')
+                    shares_table['os_offer_vol'] = pd.to_numeric(
+                        shares_table['os_offer_vol'], errors='coerce')
+                    shares_table['last_sale_price'] = pd.to_numeric(
+                        shares_table['last_sale_price'], errors='coerce')
+                    shares_table['volume_traded'] = pd.to_numeric(
+                        shares_table['volume_traded'], errors='coerce')
+                    shares_table['close_price'] = pd.to_numeric(
+                        shares_table['close_price'], errors='coerce')
+                    shares_table['change_dollars'] = pd.to_numeric(
+                        shares_table['change_dollars'], errors='coerce')
+                    # if the high and low columns are 0, replace them with the open price
+                    shares_table['high'] = shares_table.apply(lambda x: x.open_price if (
+                        pd.isna(x.high)) else x.high, axis=1)
+                    shares_table['low'] = shares_table.apply(lambda x: x.open_price if (
+                        pd.isna(x.low)) else x.low, axis=1)
+                    # replace certain column null values with 0
+                    shares_table['change_dollars'].fillna(
+                        0, inplace=True)
+                    shares_table['volume_traded'].fillna(
+                        0, inplace=True)
+                    shares_table['os_bid_vol'].fillna(
+                        0, inplace=True)
+                    shares_table['os_offer_vol'].fillna(
+                        0, inplace=True)
                     # create a series for the value traded
                     value_traded_series = pd.Series(
                         0, index=shares_table.index).astype(float)
                     # set the name of the series
-                    value_traded_series.rename("valuetraded")
+                    value_traded_series.rename("value_traded")
                     # add the series to the dateframe
                     shares_table = shares_table.assign(
-                        valuetraded=value_traded_series)
+                        value_traded=value_traded_series)
                     # calculate the value traded for today
-                    shares_table['valuetraded'] = shares_table.apply(
-                        lambda x: x.volumetraded * x.lastsaleprice, axis=1)
+                    shares_table['value_traded'] = shares_table.apply(
+                        lambda x: x.volume_traded * x.last_sale_price, axis=1)
                     # create a series containing the date
                     date_series = pd.Series(
-                        fetchdate, index=shares_table.index)
+                        datetime.strptime(today_date, '%Y-%m-%d'), index=shares_table.index)
                     # set the name of the series
                     date_series.rename("date")
                     # add the series to the dateframe
                     shares_table = shares_table.assign(
                         date=date_series)
+                    # replace the nan with None
+                    shares_table = shares_table.replace({np.nan: None})
                     # add all values to the large list
-                    all_daily_shares_data += shares_table.to_dict(
+                    all_daily_stock_data += shares_table.to_dict(
                         'records')
             # now insert the data into the db
             execute_completed_successfully = False
             execute_failed_times = 0
             while not execute_completed_successfully and execute_failed_times < 5:
                 try:
-                    daily_equity_summary_insert_stmt = insert(
-                        dailyequitysummary_table).values(all_daily_shares_data)
-                    daily_equity_summary_upsert_stmt = daily_equity_summary_insert_stmt.on_duplicate_key_update(
-                        {x.name: x for x in daily_equity_summary_insert_stmt.inserted})
+                    insert_stmt = insert(
+                        daily_stock_summary_table).values(all_daily_stock_data)
+                    upsert_stmt = insert_stmt.on_duplicate_key_update(
+                        {x.name: x for x in insert_stmt.inserted})
                     result = db_connect.dbcon.execute(
-                        daily_equity_summary_upsert_stmt)
+                        upsert_stmt)
                     execute_completed_successfully = True
                 except sqlalchemy.exc.OperationalError as operr:
                     logging.warning(str(operr))
-                    time.sleep(1)
+                    time.sleep(2)
                     execute_failed_times += 1
             logging.info(
-                "Successfully scraped and wrote to db equity/shares data for ")
+                "Successfully scraped and wrote to db daily equity/shares data for ")
             logging.info(
-                "Number of rows affected in the dailyequitysummary table was "+str(result.rowcount))
+                "Number of rows affected in the daily_stock_summary table was "+str(result.rowcount))
         else:
-            logging.warning("No data found on page")
+            logging.warning("No data found for today.")
         return 0
-    except KeyError as keyerr:
-        logging.warning(
-            "Could not find a required key "+str(keyerr))
-    except IndexError as idxerr:
-        logging.warning(
-            "Could not locate index in a list. "+str(idxerr))
-    except requests.exceptions.Timeout as timeerr:
-        logging.error(
-            "Could not load URL in time. Maybe website is down? "+str(timeerr))
-    except requests.exceptions.HTTPError as httperr:
-        logging.error(str(httperr))
     except Exception:
-        logging.exception("Could not complete daily trade update.")
-        customlogging.flush_smtp_logger()
+        logging.exception("Could not load daily data for today!")
     finally:
         # Always close the database connection
         if 'db_connect' in locals() and db_connect is not None:
