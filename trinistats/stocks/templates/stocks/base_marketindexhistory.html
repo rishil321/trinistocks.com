@@ -12,28 +12,28 @@
     {% block sidepanelcontents %}
     <div class="panel-block">
         <label class="panellabel" for="">Market Index Name</label>
-        <select class="custom-date-selector" id="indexname" name="indexname">
+        <select class="custom-date-selector" id="index_name" name="index_name">
             <option value="Composite Totals">Composite Totals</option>
             <option value="All T&T Totals">All T&T Totals</option>
-            <option value="Cross Listed Totals">Cross-Listed Totals</option>
+            <option value="Cross-Listed Totals">Cross-Listed Totals</option>
         </select>
     </div>
     <div class="panel-block">
     <label class="panellabel" for="">Market Parameter</label>
-    <select class="custom-date-selector" id="indexparameter" name="indexparameter">
-        <option value="indexvalue">Index Value</option>
-        <option value="volumetraded">Volume Traded</option>
-        <option value="valuetraded">Value Traded</option>
-        <option value="numtrades">No. of Trades</option>
+    <select class="custom-date-selector" id="index_parameter" name="index_parameter">
+        <option value="index_value">Index Value</option>
+        <option value="volume_traded">Volume Traded</option>
+        <option value="value_traded">Value Traded</option>
+        <option value="num_trades">No. of Trades</option>
     </select>
     </div>
     <div class="panel-block">
         <label class="panellabel"for="startdate">Start Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ enteredstartdate }}" id="startdate" name="date__gte">
+        <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte">
     </div>
     <div class="panel-block">    
         <label class="panellabel" for="enddate">End Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ enteredenddate }}" id="enddate" name="date__lte"/>
+        <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
     </div>
     <div class="panel-block">   
         <input type="hidden" value="date" name="sort"></input>
@@ -42,7 +42,7 @@
     {% endblock sidepanelcontents %}
 
     {% block mainblock %}
-        <h1 style="" id="charttitle">Market Index History</h1>
+        <h1 style="" id="charttitle">{{index_name}} Index History</h1>
         <br>
         <!-- Chart -->
         <div id="chartdiv" class="chart-div" style="">
@@ -106,8 +106,8 @@
     {% block activepagetoggle %}
     $("#markethistorylink").toggleClass("has-background-red");
     // set the selected value for the configurations
-    $("#indexname").val("{{ indexname|safe }}").change();
-    $("#indexparameter").val("{{ indexparameter|safe }}").change();
+    $("#index_name").val("{{ index_name|safe }}").change();
+    $("#index_parameter").val("{{ index_parameter|safe }}").change();
     {% endblock %}
 
      {% block morejs%}

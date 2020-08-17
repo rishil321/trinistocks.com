@@ -10,28 +10,28 @@
 
     {% block sidepanelcontents %}
     <div class="panel-block">
-        <label class="panellabel" for="stockcode">Stock:</label>
-        <select class="custom-dropdown" id="stockcode" name="stockcode">
+        <label class="panellabel" for="symbol">Stock:</label>
+        <select class="custom-dropdown" id="symbol" name="symbol">
             <!--Add options based on dictionary items returned-->
-            {% for listedstock in listedstocks %}
-                {% if listedstock.stockcode == selectedstockcode %}
-                    <option value="{{ listedstock.stockcode }}" selected>{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
+            {% for listed_stock in listed_stocks %}
+                {% if listed_stock.symbol == selected_stock_symbol %}
+                    <option value="{{ listed_stock.symbol }}" selected>{{ listed_stock.symbol }} ({{ listed_stock.security_name }})</option>
                 {% else %}
-                    <option value="{{ listedstock.stockcode }}">{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
+                    <option value="{{ listed_stock.symbol }}">{{ listed_stock.symbol }} ({{ listed_stock.security_name }})</option>
                 {% endif %}
             {% endfor %}
         </select>
     </div>
     <div class="panel-block">
         <label class="panellabel" for="startdate">Start Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ enteredstartdate }}" id="startdate" name="date__gte">
+        <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="record_date__gte">
     </div>
     <div class="panel-block">    
         <label for="enddate" class="panellabel">End Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ enteredenddate }}" id="enddate" name="date__lte"/>
+        <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="record_date__lte"/>
     </div>
     <div class="panel-block">
-        <input type="hidden" value="date" name="sort"></input>
+        <input type="hidden" value="record_date" name="sort"></input>
         <input name="configure_button"  class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:dividendhistory' %}" value="Search"/>
     </div>
     {% endblock sidepanelcontents %}

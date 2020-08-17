@@ -11,30 +11,30 @@
 
 {% block sidepanelcontents %}
 <div class="panel-block">
-    <label class="panellabel" for="stockcode">Stock:</label>
-    <select id="stockcode" name="stockcode" class="custom-dropdown">
+    <label class="panellabel" for="symbol">Stock:</label>
+    <select id="symbol" name="symbol" class="custom-dropdown">
         <!--Add options based on dictionary items returned-->
-        {% for listedstock in listedstocks %}
-        {% if listedstock.stockcode == selectedstockcode %}
-        <option value="{{ listedstock.stockcode }}" selected>{{listedstock.symbol}} ({{ listedstock.securityname }})
-        </option>
-        {% else %}
-        <option value="{{ listedstock.stockcode }}">{{listedstock.symbol}} ({{ listedstock.securityname }})</option>
-        {% endif %}
+        {% for listed_stock in listed_stocks %}
+            {% if listed_stock.symbol == selected_symbol %}
+            <option value="{{ listed_stock.symbol }}" selected>{{listed_stock.symbol}} ({{ listed_stock.security_name }})
+            </option>
+            {% else %}
+            <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+            {% endif %}
         {% endfor %}
     </select>
 </div>
 <div class="panel-block">
     <label class="panellabel" for="startdate">Start Date:</label>
-    <input type="date" class="custom-date-selector" value="{{ enteredstartdate }}" id="startdate" name="date__gte">
+    <input type="date" class="custom-date-selector" value="{{ entered_start_date }}" id="startdate" name="date__gte">
 </div>
 <div class="panel-block">
     <label class="panellabel" for="enddate">End Date:</label>
-    <input type="date" class="custom-date-selector" value="{{ enteredenddate }}" id="enddate" name="date__lte" />
+    <input type="date" class="custom-date-selector" value="{{ entered_end_date }}" id="enddate" name="date__lte" />
 </div>
 <div class="panel-block">
-    <label class="panellabel" for="charttype">Chart Type:</label>
-    <select id="charttype" name="charttype" class="custom-dropdown">
+    <label class="panellabel" for="chart_type">Chart Type:</label>
+    <select id="chart_type" name="chart_type" class="custom-dropdown">
         <option value="line">Line</option>
         <option value="candlestick">Candlestick</option>
     </select>
@@ -42,7 +42,7 @@
 <div class="panel-block">
     <input type="hidden" value="date" name="sort"></input>
     <input type="submit" name="configure_button" class="custom-red-button"
-        onclick="location.href='{% url 'stocks:stockhistory' %}" value="Search" />
+        onclick="location.href='{% url 'stocks:stockhistory' %}" value="Search"></input>
 </div>
 {% endblock sidepanelcontents %}
 
@@ -63,8 +63,8 @@
 {% endblock mainblock %}
 
 {% block chartjs %}
-{{ graphlabels|json_script:"graphlabels" }}
-{{ graphdataset|json_script:"graphdataset" }}
+{{ graph_labels|json_script:"graph_labels" }}
+{{ graph_dataset|json_script:"graph_dataset" }}
 <script>
     // create a function to replace 0s with null
     function returnNull(numval) {
@@ -74,13 +74,13 @@
     }
     var chart_type = '{{chart_type}}';
     // set the selected chart type
-    $("#charttype").val(chart_type).change();
+    $("#chart_type").val(chart_type).change();
     if (chart_type == 'line') {
-        var graphlabels = JSON.parse(document.getElementById('graphlabels').textContent);
-        var graphdataset = JSON.parse(document.getElementById('graphdataset').textContent);
+        var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
+        var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
         var trace1 = {
-            x: graphlabels,
-            y: graphdataset,
+            x: graph_labels,
+            y: graph_dataset,
             type: 'scatter'
         };
         var data = [trace1];

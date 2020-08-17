@@ -258,7 +258,7 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
             # check if the configuration button was clicked
             logger.debug(
                 "Checking which GET parameters were included in the request.")
-            if self.request.GET.get("configure_button"):
+            if self.request.GET.get('configure_button'):
                 entered_start_date = datetime.strptime(
                     self.request.GET.get('date__gte'), "%Y-%m-%d")
                 # store the date as a session variable to be reused
@@ -395,6 +395,7 @@ class StockHistoryView(BasicLineChartAndTableView):
     filterset_class = filters.StockHistoryFilter  # filters.something
     page_name = 'Stock History'  # a string representing the name of the page
     selected_chart_type = 'candlestick'
+    request = None
 
     def get(self, request, *args, **kwargs):
         # get the filters included in the URL.
