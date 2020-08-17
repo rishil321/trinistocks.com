@@ -363,6 +363,11 @@ def scrape_dividend_data():
                         symbol, index=dividend_table.index)
                     logging.info(
                         "Successfully fetched dividend data for "+symbol)
+                    # check if currency is missing from column
+                    if dividend_table['currency'].isnull().values.any():
+                        logging.warning(f"Currency seems to be missing from the dividend table for {symbol}. We will autofill with TTD, but this may be incorrect.")
+                        dividend_table['currency'].fillna(
+                                'TTD', inplace=True)
                     # now write the dataframe to the db
                     logging.info(
                         f"Now writing dividend data for {symbol} to db.")
