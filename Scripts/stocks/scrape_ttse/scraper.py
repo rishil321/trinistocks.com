@@ -365,9 +365,10 @@ def scrape_dividend_data():
                         "Successfully fetched dividend data for "+symbol)
                     # check if currency is missing from column
                     if dividend_table['currency'].isnull().values.any():
-                        logging.warning(f"Currency seems to be missing from the dividend table for {symbol}. We will autofill with TTD, but this may be incorrect.")
+                        logging.warning(
+                            f"Currency seems to be missing from the dividend table for {symbol}. We will autofill with TTD, but this may be incorrect.")
                         dividend_table['currency'].fillna(
-                                'TTD', inplace=True)
+                            'TTD', inplace=True)
                     # now write the dataframe to the db
                     logging.info(
                         f"Now writing dividend data for {symbol} to db.")
@@ -804,7 +805,7 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                 # for each date, we need to navigate to this summary page for that day
                 url_summary_page = f"https://www.stockex.co.tt/market-quote/?TradeDate={fetch_date}"
                 logging.info(
-                    f"Navigating to {url_summary_page} in {pid_string}")
+                    f"Navigating to {url_summary_page} {pid_string}")
                 http_get_req = requests.get(
                     url_summary_page, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
                 if http_get_req.status_code != 200:
@@ -815,7 +816,8 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                 # get a list of tables from the URL
                 dataframe_list = pd.read_html(http_get_req.text)
                 # if this is a valid trading day, extract the values we need from the tables
-                if len(dataframe_list[00].index) == 8:
+                if len(dataframe_list[00].index) > 4:
+                    logging.info("This is a valid trading day.")
                     # get the tables holding useful data
                     market_indices_table = dataframe_list[0]
                     ordinary_shares_table = dataframe_list[1]
@@ -851,6 +853,7 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                     # add a series containing the date
                     market_indices_table['date'] = pd.Series(
                         fetch_date_db, index=market_indices_table.index)
+                    market_indices_table.fillna(0, inplace=True)
                     # now write the dataframe to the db
                     logging.info(
                         "Finished wrangling market indices data. Now writing to db.")
@@ -871,7 +874,7 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                             logging.warning(str(operr))
                             time.sleep(2)
                             execute_failed_times += 1
-                    logging.info("Successfully scraped market indices data for " +
+                    logging.info("Successfully scraped and wrote to db market indices data for " +
                                  fetch_date+pid_string)
                     logging.info(
                         "Number of rows affected in the historical_indices_summary table was "+str(result.rowcount)+pid_string)
@@ -879,9 +882,9 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                     all_daily_stock_data = []
                     for shares_table in [ordinary_shares_table, preference_shares_table, second_tier_shares_table, mutual_funds_shares_table,
                                          sme_shares_table, usd_equity_shares_table]:
-                        # remove the first row from each table since its a header row
-                        shares_table.drop(shares_table.index[0])
                         if not shares_table.empty:
+                            # remove the first row from each table since its a header row
+                            shares_table.drop(shares_table.index[0])
                             # remove the column with the up and down symbols
                             shares_table.drop(
                                 shares_table.columns[0], axis=1, inplace=True)
@@ -977,7 +980,8 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                     logging.info(
                         "Number of rows affected in the daily_stock_summary table was "+str(result.rowcount)+pid_string)
                 else:
-                    logging.warning("No data found for "+fetch_date+pid_string)
+                    logging.warning(
+                        "This date is not a valid trading date: "+fetch_date+pid_string)
             except KeyError as keyerr:
                 logging.warning(
                     "Could not find a required key on date "+fetch_date+pid_string+str(keyerr))
@@ -1423,7 +1427,7 @@ def main():
             args = parser.parse_args()
             # set the start date based on the the full history option
             if args.full_history:
-                start_date = '2010-01-01'
+                start_date = '2017-01-01'
             else:
                 start_date = (datetime.now() +
                               relativedelta(months=-1)).strftime('%Y-%m-%d')
