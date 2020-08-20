@@ -7,32 +7,65 @@
 
     {% block rightsidebarform %}
     <form action="{% url 'covid19:totals' %}" method="get">
-        <label for="startdate" class="w3-bar-item">Start Date</label>
-        <input class="w3-bar-item w3-theme-l5" type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate">
-        <label for="enddate" class="w3-bar-item">End Date</label>
-        <input class="w3-bar-item w3-theme-l5" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate">
-        <label for="selectedcasetypeleft" class="w3-bar-item">Left Axis</label>
-        <select class="w3-bar-item w3-theme-l5 w3-button-2" id="selectedcasetypeleft" name="selectedcasetypeleft">
-        {% for casetype in validcasetypes %}
-            {% if casetype.attname == selectedcasetypeleftstr %}
-                <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
-            {% else %}
-                <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
-            {% endif %}
-        {% endfor %}
-        </select>
-        <label for="selectedcasetyperight" class="w3-bar-item">Right Axis</label>
-        <select class="w3-bar-item w3-theme-l5 w3-button-2" id="selectedcasetyperight" name="selectedcasetyperight">
-        {% for casetype in validcasetypes %}
-            {% if casetype.attname == selectedcasetyperightstr %}
-                <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
-            {% else %}
-                <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
-            {% endif %}
-        {% endfor %}
-        </select>
-        </br>
-        <button style="" class="w3-bar-item w3-theme-l2 w3-button-2 w3-hover-theme w3-center" type="submit">Run Query &nbsp<i class="fa fa-database"></i></button>
+    <div class="panel-block">
+        <div class="columns">
+            <div class="column">
+                <label for="startdate" class="ml-1">Start Date</label>
+            </div>
+            <div class="column">
+                <input class="" type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate">
+            </div>
+        </div>
+    </div>
+    <div class="panel-block">
+        <div class="columns">
+            <div class="column">
+                <label for="enddate" class="ml-1">End Date</label>
+            </div>
+            <div class="column">
+                <input class="ml-2" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate">
+            </div>
+        </div>
+    </div>
+    <div class="panel-block">
+        <div class="columns">
+            <div class="column">
+                <label for="selectedcasetypeleft" class="ml-1">Left Axis</label>
+            </div>
+            <div class="column">
+                <select class="ml-2" id="selectedcasetypeleft" name="selectedcasetypeleft"></li>
+                {% for casetype in validcasetypes %}
+                    {% if casetype.attname == selectedcasetypeleftstr %}
+                        <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
+                    {% else %}
+                        <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
+                    {% endif %}
+                {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="panel-block">
+        <div class="columns">
+            <div class="column">
+                <label for="selectedcasetyperight" class="ml-1">Right Axis</label>
+            </div>
+            <div class="column">
+                <select class="" id="selectedcasetyperight" name="selectedcasetyperight">
+                {% for casetype in validcasetypes %}
+                    {% if casetype.attname == selectedcasetyperightstr %}
+                        <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
+                    {% else %}
+                        <option value="{{ casetype.attname }}">{{casetype.verbose_name}}</option>
+                    {% endif %}
+                {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="panel-block">
+        <button class="button is-link is-outlined is-fullwidth is-success" type="submit">Run Query &nbsp<i class="fa fa-database"></i></button>
+    </div>
     </form>
     {% endblock rightsidebarform %}
 
@@ -41,24 +74,24 @@
         <p>{{errors}}</p>
     {% else %}
     {% block pagetitle %}
-        <h2 class="w3-center" style="" id="charttitle">
-        T&T Covid-19 Cumulative Data</h2>
+        <h1 class="has-text-centered is-size-2" style="" id="charttitle">
+        T&T COVID-19 Cumulative Data</h1>
     {% endblock pagetitle %}
     </br>
-    <div class="w3-cell-row">
-        <div class="w3-container w3-blue w3-cell w3-mobile">
-            <p class="">{{ latestrecord.total_tests }} testing samples submitted &ensp;
+    <div class="columns">
+        <div class="column has-text-centered has-background-warning has-text-black has-rounded-border mr-1">
+            <p class="">{{ latestrecord.total_tests }} test samples submitted &ensp;
             <i class="fas fa-microscope fa-2x"></i></p>
         </div>
-        <div class="w3-container w3-yellow w3-cell w3-mobile">
+        <div class="column has-text-centered has-background-danger has-text-white has-rounded-border mr-1">
             <p>{{ latestrecord.total_cases }} persons tested positive &ensp; 
             <i class="fas fa-procedures fa-2x"></i></p>
         </div>
-        <div class="w3-container w3-green w3-cell w3-mobile">
+        <div class="column has-text-centered has-background-success has-text-white has-rounded-border mr-1">
             <p>{{ latestrecord.total_recovered }} person(s) discharged &ensp; 
             <i class="fas fa-virus-slash fa-2x"></i></p>
         </div>
-        <div class="w3-container w3-red w3-cell w3-mobile">
+        <div class="column has-text-centered has-text-white has-background-info has-rounded-border">
             <p>{{ latestrecord.total_deaths }} person(s) died &ensp; 
             <i class=" far fa-heart fa-2x"></i></p>
         </div>
