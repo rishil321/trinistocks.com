@@ -55,13 +55,13 @@
             <img src="{%  static 'central/trinistats_logo.svg.png' %}" width="auto" height="100">
             &nbsp;&nbsp;<i class="fas fa-home fa-1x"></i>
             </a>
-            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbar_menu">
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             </a>
         </div>
-        <div id="navbarBasicExample" class="navbar-menu">
+        <div id="navbar_menu" class="navbar-menu">
             <div class="navbar-start">
                 <a id="cumulativelink" class="navbar-item" href="{% url "covid19:totals" %}">Cumulative</a>
                 <a id="dailylink" class="navbar-item" href="{% url "covid19:daily" %}">Daily</a>
@@ -69,13 +69,13 @@
             </div>
             <div class="navbar-end ">
                 <a id="configurebutton" class="navbar-item " id="config-menu-button" onclick="toggle_sidebar()">
-                <i class="fas fa-wrench"></i>
+                Configure&nbsp<i class="fas fa-wrench"></i>
                 </a>
             </div>
         </div>
     </nav>
     <!--Right side menu-->
-    <nav style="display:none;"id="configmenu" class="panel">
+    <nav style="display:none; position:absolute;right:0;"id="configmenu" class="panel has-background-white">
     <p class="panel-heading">Configuration Options</p>
         {% block rightsidebarform %}
         {% endblock rightsidebarform %}
@@ -112,6 +112,14 @@
         $(configmenu).toggle();
         $(configurebutton).toggleClass("has-background-warning");
     }
+    $(document).ready(function() {
+        // Check for click events on the navbar burger icon
+        $(".navbar-burger").click(function() {
+        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+        $(".navbar-burger").toggleClass("is-active");
+        $(".navbar-menu").toggleClass("is-active");
+        });
+    });
     </script>
     {% block morejs%}
     {% endblock morejs%}

@@ -10,7 +10,7 @@
     <div class="panel-block">
         <div class="columns">
             <div class="column">
-                <label for="startdate" class="ml-1">Start Date</label>
+                <label for="startdate" class="">Start Date</label>
             </div>
             <div class="column">
                 <input class="" type="date" value="{{ enteredstartdate }}" id="startdate" name="startdate">
@@ -20,20 +20,20 @@
     <div class="panel-block">
         <div class="columns">
             <div class="column">
-                <label for="enddate" class="ml-1">End Date</label>
+                <label for="enddate" class="">End Date</label>
             </div>
             <div class="column">
-                <input class="ml-2" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate">
+                <input class="" type="date" value="{{ enteredenddate }}" id="enddate" name="enddate">
             </div>
         </div>
     </div>
     <div class="panel-block">
         <div class="columns">
             <div class="column">
-                <label for="selectedcasetypeleft" class="ml-1">Left Axis</label>
+                <label for="selectedcasetypeleft" class="">Left Axis</label>
             </div>
             <div class="column">
-                <select class="ml-2" id="selectedcasetypeleft" name="selectedcasetypeleft"></li>
+                <select class="" id="selectedcasetypeleft" name="selectedcasetypeleft"></li>
                 {% for casetype in validcasetypes %}
                     {% if casetype.attname == selectedcasetypeleftstr %}
                         <option value="{{ casetype.attname }}" selected>{{casetype.verbose_name}}</option>
@@ -77,17 +77,16 @@
         <h1 class="has-text-centered is-size-2" style="" id="charttitle">
         T&T COVID-19 Cumulative Data</h1>
     {% endblock pagetitle %}
-    </br>
     <div class="columns">
-        <div class="column has-text-centered has-background-warning has-text-black has-rounded-border mr-1">
+        <div class="column has-text-centered has-background-warning has-text-black has-rounded-border">
             <p class="">{{ latestrecord.total_tests }} test samples submitted &ensp;
             <i class="fas fa-microscope fa-2x"></i></p>
         </div>
-        <div class="column has-text-centered has-background-danger has-text-white has-rounded-border mr-1">
+        <div class="column has-text-centered has-background-danger has-text-white has-rounded-border">
             <p>{{ latestrecord.total_cases }} persons tested positive &ensp; 
             <i class="fas fa-procedures fa-2x"></i></p>
         </div>
-        <div class="column has-text-centered has-background-success has-text-white has-rounded-border mr-1">
+        <div class="column has-text-centered has-background-success has-text-white has-rounded-border">
             <p>{{ latestrecord.total_recovered }} person(s) discharged &ensp; 
             <i class="fas fa-virus-slash fa-2x"></i></p>
         </div>
@@ -96,6 +95,7 @@
             <i class=" far fa-heart fa-2x"></i></p>
         </div>
     </div>
+    </br>
     </br>
         <!-- Chart -->
         <div style="" id="chartdiv" class="chartdiv">
