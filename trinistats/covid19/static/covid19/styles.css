@@ -41,6 +41,11 @@ th {
     border-radius: 0.5rem;
 }
 
+.has-margin {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+}
+
 @media only screen and (max-width: 760px),
 (min-device-width: 768px) and (max-device-width: 1024px) {
 
