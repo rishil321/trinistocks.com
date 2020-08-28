@@ -398,7 +398,7 @@ def scrape_dividend_data():
                         f"No dividend data found for {symbol}. Skipping.")
             except Exception as e:
                 logging.error(
-                    f"Unable to scrape dividend data for {symbol}: {str(e)}")
+                    f"Unable to scrape dividend data for {symbol}", exc_info=e)
         return 0
     except Exception as ex:
         logging.exception("Error encountered while scraping dividend data.")
@@ -990,9 +990,9 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                     "Could not locate index in a list. "+fetch_date+pid_string+str(idxerr))
             except requests.exceptions.Timeout as timeerr:
                 logging.error(
-                    "Could not load URL in time. Maybe website is down? "+fetch_date+pid_string+str(timeerr))
+                    "Could not load URL in time. Maybe website is down? "+fetch_date+pid_string, exc_info=timeerr)
             except requests.exceptions.HTTPError as httperr:
-                logging.error(str(httperr))
+                logging.error("HTTP Error!", exc_info=httperr)
         return 0
     except Exception:
         logging.exception(
@@ -1448,11 +1448,13 @@ def main():
                     dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
                         update_equity_summary_data, (start_date,))
                     # now call the individual workers to fetch these dates
+                    async_results = []
                     for core_date_list in dates_to_fetch_sublists:
-                        multipool.apply_async(
+                        async_results += multipool.apply_async(
                             scrape_equity_summary_data, (core_date_list, all_listed_symbols))
                     # wait until all workers finish fetching data before continuing
-                    multipool.join()
+                    for result in async_results:
+                        result.wait()
                     # now run functions that depend on this raw data
                     multipool.apply_async(update_dividend_yield, ())
                     multipool.apply_async(update_technical_analysis_data, ())
@@ -1468,8 +1470,9 @@ def main():
                 q_listener.stop()
     except Exception as exc:
         logging.error(
-            f"Error in script {os.path.basename(__file__)}: {str(exc)}")
+            f"Error in script {os.path.basename(__file__)}", exc_info=exc)
         customlogging.flush_smtp_logger()
+
 
         # If this script is being run from the command-line, then run the main() function
 if __name__ == "__main__":
