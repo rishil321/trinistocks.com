@@ -114,18 +114,45 @@ class OSTradesHistoryTable(tables.Table):
 
 
 class TechnicalAnalysisSummaryTable(tables.Table):
-    symbol = tables.Column(verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                         "td": {"class": "headcol"}})
-    sma200 = tables.Column()
-    sma20 = tables.Column()
-    lastcloseprice = tables.Column()
-    high52w = tables.Column()
-    low52w = tables.Column()
+    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
+                                                                                    "td": {"class": "headcol"}})
+    sma_200 = tables.Column()
+    sma_20 = tables.Column()
+    last_close_price = tables.Column()
+    high_52w = tables.Column()
+    low_52w = tables.Column()
     ytd = tables.Column()
     mtd = tables.Column()
     wtd = tables.Column()
     beta = tables.Column()
     adtv = tables.Column()
+
+    def render_ytd(self, value, column):
+        if value < 0:
+            column.attrs = {'td': {'bgcolor': '#ff8080'}}
+        elif value > 0:
+            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+        else:
+            column.attrs = {'td': {}}
+        return value
+
+    def render_mtd(self, value, column):
+        if value < 0:
+            column.attrs = {'td': {'bgcolor': '#ff8080'}}
+        elif value > 0:
+            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+        else:
+            column.attrs = {'td': {}}
+        return value
+
+    def render_wtd(self, value, column):
+        if value < 0:
+            column.attrs = {'td': {'bgcolor': '#ff8080'}}
+        elif value > 0:
+            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+        else:
+            column.attrs = {'td': {}}
+        return value
 
     class Meta:
         attrs = {'class': 'djangotables'}
