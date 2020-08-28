@@ -1450,8 +1450,8 @@ def main():
                     # now call the individual workers to fetch these dates
                     async_results = []
                     for core_date_list in dates_to_fetch_sublists:
-                        async_results += multipool.apply_async(
-                            scrape_equity_summary_data, (core_date_list, all_listed_symbols))
+                        async_results.append(multipool.apply_async(
+                            scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
                     # wait until all workers finish fetching data before continuing
                     for result in async_results:
                         result.wait()
