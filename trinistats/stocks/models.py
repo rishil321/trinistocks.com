@@ -137,22 +137,22 @@ class HistoricalIndicesInfo(models.Model):
 
 
 class TechnicalAnalysisSummary(models.Model):
-    technicalanalysisid = models.AutoField(primary_key=True)
-    stockcode = models.ForeignKey(
-        'ListedEquities', models.CASCADE, db_column='stockcode')
-    lastcloseprice = models.DecimalField(
+    technical_analysis_id = models.AutoField(primary_key=True)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, db_column='symbol')
+    last_close_price = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Last Close Quote($)")
-    sma20 = models.DecimalField(
+    sma_20 = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SMA20($)")
-    sma200 = models.DecimalField(
+    sma_200 = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SMA200($)")
     beta = models.DecimalField(
         max_digits=4, decimal_places=2, blank=True, null=True, verbose_name="Beta(TTM)")
     adtv = models.PositiveIntegerField(
         blank=True, null=True, verbose_name="ADTV(shares)(Trailing 30d)")
-    high52w = models.DecimalField(
+    high_52w = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="52W-high($)")
-    low52w = models.DecimalField(
+    low_52w = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="52W-low($)")
     wtd = models.DecimalField(
         max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="WTD(%)")

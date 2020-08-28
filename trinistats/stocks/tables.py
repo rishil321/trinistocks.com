@@ -114,9 +114,8 @@ class OSTradesHistoryTable(tables.Table):
 
 
 class TechnicalAnalysisSummaryTable(tables.Table):
-    symbol = tables.Column(
-        accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                 "td": {"class": "headcol"}})
+    symbol = tables.Column(verbose_name="Symbol", attrs={"th": {"class": "headcol"},
+                                                         "td": {"class": "headcol"}})
     sma200 = tables.Column()
     sma20 = tables.Column()
     lastcloseprice = tables.Column()

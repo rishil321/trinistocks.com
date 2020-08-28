@@ -42,8 +42,7 @@ th {
 }
 
 .has-margin {
-    margin-left: 0.25rem;
-    margin-right: 0.25rem;
+    margin: 0.25em;
 }
 
 @media only screen and (max-width: 760px),

@@ -1228,27 +1228,26 @@ def update_technical_analysis_data():
         db_connect = DatabaseConnect()
         logging.info("Successfully connected to database")
         logging.info(
-            "Now using pandas to fetch latest technical analysis data from https://stockex.co.tt/controller.php?action=view_stock_charts")
-        # load the daily summary table
-        dailyequitysummary_table = Table(
-            'dailyequitysummary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        listedequities_table = Table(
-            'listedequities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+            "Now using pandas to fetch latest technical analysis data from https://www.stockex.co.tt/manage-stock/")
+        # load the tables that we require
+        listed_equities_table = Table(
+            'listed_equities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
         technical_analysis_summary_table = Table(
             'technical_analysis_summary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        # get a list of stockcodes
-        selectstmt = select([listedequities_table.c.stockcode])
+        # get a list of stored symbols
+        selectstmt = select([listed_equities_table.c.symbol])
         result = db_connect.dbcon.execute(selectstmt)
-        all_stock_codes = [r[0] for r in result]
-        # now go to the url for each stockcode that we have listed, and collect the data we need
+        all_symbols = [r[0] for r in result]
+        # now go to the url for each symbol that we have listed, and collect the data we need
         # set up a list of dicts to hold our data
         all_technical_data = []
-        for stock_code in all_stock_codes:
+        for symbol in all_symbols:
             try:
-                stock_summary_page = f"https://stockex.co.tt/controller.php?action=view_stock_charts&StockCode={stock_code}"
+                stock_summary_page = f"https://www.stockex.co.tt/manage-stock/{symbol}"
                 logging.info("Navigating to "+stock_summary_page +
                              " to fetch technical summary data.")
-                http_get_req = requests.get(stock_summary_page, timeout=10)
+                http_get_req = requests.get(
+                    stock_summary_page, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
                 if http_get_req.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL "+stock_summary_page)
@@ -1257,60 +1256,62 @@ def update_technical_analysis_data():
                 # get a list of tables from the URL
                 dataframe_list = pd.read_html(http_get_req.text)
                 # table 2 contains the data we need
-                technical_analysis_table = dataframe_list[2]
+                technical_analysis_table = dataframe_list[0]
                 # create a dict to hold the data that we are interested in
-                stock_technical_data = dict(stockcode=stock_code)
+                stock_technical_data = dict(symbol=symbol)
                 # fill all the nan values with 0s
                 technical_analysis_table.fillna(0, inplace=True)
                 # get the values that we are interested in from the table
-                stock_technical_data['lastcloseprice'] = float(
-                    technical_analysis_table[1][1].replace('$', ''))
-                stock_technical_data['high52w'] = float(
-                    technical_analysis_table[2][7].replace('$', ''))
-                stock_technical_data['low52w'] = float(
-                    technical_analysis_table[3][7].replace('$', ''))
+                stock_technical_data['last_close_price'] = float(
+                    technical_analysis_table['Closing Price'][0].replace('$', ''))
+                stock_technical_data['high_52w'] = float(
+                    technical_analysis_table['Change'][4].replace('$', ''))
+                stock_technical_data['low_52w'] = float(
+                    technical_analysis_table['Change%'][4].replace('$', ''))
                 stock_technical_data['wtd'] = float(
-                    technical_analysis_table[0][10].replace('%', ''))
+                    technical_analysis_table['Opening Price'][6].replace('%', ''))
                 stock_technical_data['mtd'] = float(
-                    technical_analysis_table[1][10].replace('%', ''))
+                    technical_analysis_table['Closing Price'][6].replace('%', ''))
                 stock_technical_data['ytd'] = float(
-                    technical_analysis_table[3][10].replace('%', ''))
+                    technical_analysis_table['Change%'][6].replace('%', ''))
                 # calculate our other required values
                 # first calculate the SMAs
                 # calculate sma20
-                closing_quotes_last20d_df = pd.io.sql.read_sql(
-                    f"SELECT date,closingquote FROM historicalstockinfo WHERE stockcode={stock_code} order by date desc limit 20;", db_connect.dbengine)
-                sma20_df = closing_quotes_last20d_df.rolling(window=20).mean()
-                stock_technical_data['sma20'] = sma20_df['closingquote'].iloc[-1]
+                closing_quotes_last_20d_df = pd.io.sql.read_sql(
+                    f"SELECT date,close_price FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 20;", db_connect.dbengine)
+                sma20_df = closing_quotes_last_20d_df.rolling(window=20).mean()
+                # get the last row value
+                stock_technical_data['sma_20'] = sma20_df['close_price'].iloc[-1]
                 # calculate sma200
                 closing_quotes_last200d_df = pd.io.sql.read_sql(
-                    f"SELECT date,closingquote FROM historicalstockinfo WHERE stockcode={stock_code} order by date desc limit 200;", db_connect.dbengine)
+                    f"SELECT date,close_price FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 200;", db_connect.dbengine)
                 sma200_df = closing_quotes_last200d_df.rolling(
                     window=200).mean()
-                stock_technical_data['sma200'] = sma200_df['closingquote'].iloc[-1]
+                # get the last row value
+                stock_technical_data['sma_200'] = sma200_df['close_price'].iloc[-1]
                 # calculate beta
                 # first get the closing prices and change dollars for this stock for the last year
                 stock_change_df = pd.io.sql.read_sql(
-                    f"SELECT closeprice,changedollars FROM dailyequitysummary WHERE stockcode={stock_code} order by date desc limit 365;", db_connect.dbengine)
+                    f"SELECT close_price,change_dollars FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 365;", db_connect.dbengine)
                 # using apply function to create a new column for the stock percent change
-                stock_change_df['changepercent'] = (
-                    stock_change_df['changedollars'] * 100) / stock_change_df['closeprice']
+                stock_change_df['change_percent'] = (
+                    stock_change_df['change_dollars'] * 100) / stock_change_df['close_price']
                 # get the market percentage change
                 market_change_df = pd.io.sql.read_sql(
-                    f"SELECT changepercent FROM historicalmarketsummary WHERE indexname='Composite Totals' order by date desc limit 365;", db_connect.dbengine)
+                    f"SELECT change_percent FROM historical_indices_info WHERE index_name='Composite Totals' order by date desc limit 365;", db_connect.dbengine)
                 # now calculate the beta
-                stock_change_df['beta'] = (stock_change_df['changepercent'].rolling(window=365).cov(
-                    other=market_change_df['changepercent'])) / market_change_df['changepercent'].rolling(window=365).var()
+                stock_change_df['beta'] = (stock_change_df['change_percent'].rolling(window=365).cov(
+                    other=market_change_df['change_percent'])) / market_change_df['change_percent'].rolling(window=365).var()
                 # store the beta
                 stock_technical_data['beta'] = stock_change_df['beta'].iloc[-1]
                 # now calculate the adtv
                 volume_traded_df = pd.io.sql.read_sql(
-                    f"SELECT volumetraded FROM dailyequitysummary WHERE stockcode={stock_code} order by date desc limit 30;", db_connect.dbengine)
+                    f"SELECT volume_traded FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 30;", db_connect.dbengine)
                 adtv_df = volume_traded_df.rolling(window=30).mean()
-                stock_technical_data['adtv'] = adtv_df['volumetraded'].iloc[-1]
-                # replace all nan with None in the dict
+                stock_technical_data['adtv'] = adtv_df['volume_traded'].iloc[-1]
+                # filter out nan from this dict
                 for key in stock_technical_data:
-                    if np.isnan(stock_technical_data[key]):
+                    if pd.isna(stock_technical_data[key]):
                         stock_technical_data[key] = None
                 # add our dict for this stock to our large list
                 all_technical_data.append(stock_technical_data)
@@ -1451,9 +1452,10 @@ def main():
                     for core_date_list in dates_to_fetch_sublists:
                         multipool.apply_async(
                             scrape_equity_summary_data, (core_date_list, all_listed_symbols))
+                    multipool.apply_async(update_technical_analysis_data, ())
+                    ###### Not updated #############
                     # multipool.apply_async(scrape_historical_indices_data, ())
                     # multipool.apply_async(scrape_historical_data, ())
-                    # multipool.apply_async(update_technical_analysis_data, ())
                     # multipool.apply_async(
                     #     calculate_fundamental_analysis_ratios, ())
                 multipool.close()
