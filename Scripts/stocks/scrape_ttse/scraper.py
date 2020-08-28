@@ -1448,10 +1448,12 @@ def main():
                     dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
                         update_equity_summary_data, (start_date,))
                     # now call the individual workers to fetch these dates
-                    # also block on this function to ensure that all data is scraped
                     for core_date_list in dates_to_fetch_sublists:
-                        multipool.apply(
+                        multipool.apply_async(
                             scrape_equity_summary_data, (core_date_list, all_listed_symbols))
+                    # wait until all workers finish fetching data before continuing
+                    multipool.join()
+                    # now run functions that depend on this raw data
                     multipool.apply_async(update_dividend_yield, ())
                     multipool.apply_async(update_technical_analysis_data, ())
                     ###### Not updated #############
