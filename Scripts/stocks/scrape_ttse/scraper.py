@@ -348,7 +348,7 @@ def scrape_dividend_data():
                     logging.info(f"Dividend data present for {symbol}")
                     # remove the columns we don't need
                     dividend_table.drop(
-                        dividend_table.columns[[2, 3]], axis=1, inplace=True)
+                        dividend_table.columns[[0, 2]], axis=1, inplace=True)
                     # set the column names
                     dividend_table.rename(
                         {'Record Date': 'record_date', 'Dividend Amount': 'dividend_amount', 'Currency': 'currency'}, axis=1, inplace=True)
@@ -1441,8 +1441,8 @@ def main():
                         update_daily_trades, ())
                 else:
                     # else this is a full update (run once a day)
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(check_num_equities_in_sector, ())
+                    # multipool.apply_async(scrape_listed_equity_data, ())
+                    # multipool.apply_async(check_num_equities_in_sector, ())
                     multipool.apply_async(scrape_dividend_data, ())
                     multipool.apply_async(update_dividend_yield, ())
                     # block on the next function to wait until the dates are ready
