@@ -1441,17 +1441,18 @@ def main():
                         update_daily_trades, ())
                 else:
                     # else this is a full update (run once a day)
-                    # multipool.apply_async(scrape_listed_equity_data, ())
-                    # multipool.apply_async(check_num_equities_in_sector, ())
+                    multipool.apply_async(scrape_listed_equity_data, ())
+                    multipool.apply_async(check_num_equities_in_sector, ())
                     multipool.apply_async(scrape_dividend_data, ())
-                    multipool.apply_async(update_dividend_yield, ())
                     # block on the next function to wait until the dates are ready
                     dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
                         update_equity_summary_data, (start_date,))
                     # now call the individual workers to fetch these dates
+                    # also block on this function to ensure that all data is scraped
                     for core_date_list in dates_to_fetch_sublists:
-                        multipool.apply_async(
+                        multipool.apply(
                             scrape_equity_summary_data, (core_date_list, all_listed_symbols))
+                    multipool.apply_async(update_dividend_yield, ())
                     multipool.apply_async(update_technical_analysis_data, ())
                     ###### Not updated #############
                     # multipool.apply_async(scrape_historical_indices_data, ())
