@@ -1385,14 +1385,17 @@ def calculate_fundamental_analysis_ratios():
         # create new dataframe for calculated ratios
         audited_calculated_df = pd.DataFrame()
         audited_calculated_df['symbol'] = audited_raw_df['symbol'].copy()
+        audited_calculated_df['date'] = audited_raw_df['date'].copy()
         # calculate the average equity
-        audited_calculated_df['total_stockholders_equity'] = audited_raw_df['total_shareholders_equity'].copy(
+        average_equity_df = pd.DataFrame()
+        average_equity_df['symbol'] = audited_calculated_df['symbol'].copy()
+        average_equity_df['total_stockholders_equity'] = audited_raw_df['total_shareholders_equity'].copy(
         )
-        audited_calculated_df['average_stockholders_equity'] = audited_calculated_df.groupby('symbol')['total_stockholders_equity'].apply(
+        average_equity_df['average_stockholders_equity'] = average_equity_df.groupby('symbol')['total_stockholders_equity'].apply(
             lambda x: (x + x.shift(1))/2)
         # calculate the return on equity
         audited_calculated_df['RoE'] = audited_raw_df['net_income'] / \
-            audited_calculated_df['average_stockholders_equity']
+            average_equity_df['average_stockholders_equity']
         # now calculate the return on invested capital
         audited_calculated_df['RoIC'] = audited_raw_df['profit_after_tax'] / \
             audited_raw_df['total_shareholders_equity']
@@ -1412,7 +1415,7 @@ def calculate_fundamental_analysis_ratios():
         # create a merged df to calculate the p/e
         price_to_earnings_df = pd.merge(
             audited_raw_df, share_price_df, how='inner', on='symbol')
-        price_to_earnings_df['price_to_earnings'] = price_to_earnings_df['close_price'] / \
+        audited_calculated_df['price_to_earnings_ratio'] = price_to_earnings_df['close_price'] / \
             price_to_earnings_df['basic_earnings_per_share']
         # now calculate the price to dividend per share ratio
         # first get the dividends per share
@@ -1422,9 +1425,37 @@ def calculate_fundamental_analysis_ratios():
         dividends_df = pd.merge(
             share_price_df, dividends_df, how='inner', on='symbol')
         # calculate the price to dividend per share ratio
-        dividends_df['price_to_dividends_per_share'] = dividends_df['close_price'] / \
+        audited_calculated_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
             dividends_df['dividend_amount']
         # now calculate the eps growth rate
+        audited_calculated_df['EPS_growth_rate'] = audited_raw_df['basic_earnings_per_share'].diff(
+        )*100
+        # now calculate the price to earnings-to-growth ratio
+        audited_calculated_df['PEG'] = audited_calculated_df['price_to_earnings_ratio'] / \
+            audited_calculated_df['EPS_growth_rate']
+        audited_calculated_df = audited_calculated_df.where(
+            pd.notnull(audited_calculated_df), None)
+        # now write the df to the database
+        logging.info("Now writing fundamental data to database.")
+        execute_completed_successfully = False
+        execute_failed_times = 0
+        while not execute_completed_successfully and execute_failed_times < 5:
+            try:
+                insert_stmt = insert(
+                    audited_calculated_table_name).values(audited_calculated_df.to_dict('records'))
+                upsert_stmt = insert_stmt.on_duplicate_key_update(
+                    {x.name: x for x in insert_stmt.inserted})
+                result = db_connect.dbcon.execute(
+                    upsert_stmt)
+                execute_completed_successfully = True
+            except sqlalchemy.exc.OperationalError as operr:
+                logging.warning(str(operr))
+                time.sleep(1)
+                execute_failed_times += 1
+            logging.info(
+                "Successfully scraped and wrote fundamental data to db.")
+            logging.info(
+                "Number of rows affected in the audited fundamental calculated table was "+str(result.rowcount))
         pass
     except Exception:
         logging.exception(
