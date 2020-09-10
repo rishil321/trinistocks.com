@@ -1365,6 +1365,9 @@ def calculate_fundamental_analysis_ratios():
     """
     audited_raw_table_name = 'audited_fundamental_raw_data'
     audited_calculated_table_name = 'audited_fundamental_calculated_data'
+    listed_equities_table_name = 'listed_equities'
+    daily_stock_summary_table_name = 'daily_stock_summary'
+    historical_dividend_info_table_name = 'historical_dividend_info'
     try:
         db_connect = DatabaseConnect()
         logging.info("Successfully connected to database")
@@ -1373,24 +1376,55 @@ def calculate_fundamental_analysis_ratios():
         audited_raw_table = Table(
             audited_raw_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
         listedequities_table = Table(
-            'listedequities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+            listed_equities_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
         audited_calculated_table = Table(
             audited_calculated_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
         # read the audited raw table as a pandas df
         audited_raw_df = pd.io.sql.read_sql(
-            f"SELECT * FROM {audited_raw_table_name} ORDER BY stockcode,date;", db_connect.dbengine)
+            f"SELECT * FROM {audited_raw_table_name} ORDER BY symbol,date;", db_connect.dbengine)
         # create new dataframe for calculated ratios
         audited_calculated_df = pd.DataFrame()
-        audited_calculated_df['stockcode'] = audited_raw_df['stockcode'].copy()
+        audited_calculated_df['symbol'] = audited_raw_df['symbol'].copy()
         # calculate the average equity
         audited_calculated_df['total_stockholders_equity'] = audited_raw_df['total_shareholders_equity'].copy(
         )
-        audited_calculated_df['average_stockholders_equity'] = audited_calculated_df.groupby('stockcode')['total_stockholders_equity'].apply(
+        audited_calculated_df['average_stockholders_equity'] = audited_calculated_df.groupby('symbol')['total_stockholders_equity'].apply(
             lambda x: (x + x.shift(1))/2)
         # calculate the return on equity
         audited_calculated_df['RoE'] = audited_raw_df['net_income'] / \
             audited_calculated_df['average_stockholders_equity']
         # now calculate the return on invested capital
+        audited_calculated_df['RoIC'] = audited_raw_df['profit_after_tax'] / \
+            audited_raw_df['total_shareholders_equity']
+        # now calculate the working capital
+        audited_calculated_df['working_capital'] = audited_raw_df['total_assets'] / \
+            audited_raw_df['total_liabilities']
+        # copy basic earnings per share
+        audited_calculated_df['EPS'] = audited_raw_df['basic_earnings_per_share']
+        # calculate price to earnings ratio
+        # first get the latest share price data
+        # get the latest date from the daily stock table
+        latest_stock_date = pd.io.sql.read_sql(
+            f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;", db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
+        # then get the share price for each listed stock at this date
+        share_price_df = pd.io.sql.read_sql(
+            f"SELECT symbol,close_price FROM {daily_stock_summary_table_name} WHERE date='{latest_stock_date}';", db_connect.dbengine)
+        # create a merged df to calculate the p/e
+        price_to_earnings_df = pd.merge(
+            audited_raw_df, share_price_df, how='inner', on='symbol')
+        price_to_earnings_df['price_to_earnings'] = price_to_earnings_df['close_price'] / \
+            price_to_earnings_df['basic_earnings_per_share']
+        # now calculate the price to dividend per share ratio
+        # first get the dividends per share
+        dividends_df = pd.io.sql.read_sql(
+            f"SELECT symbol,record_date,dividend_amount FROM {historical_dividend_info_table_name};", db_connect.dbengine)
+        # merge this df with the share_price_df
+        dividends_df = pd.merge(
+            share_price_df, dividends_df, how='inner', on='symbol')
+        # calculate the price to dividend per share ratio
+        dividends_df['price_to_dividends_per_share'] = dividends_df['close_price'] / \
+            dividends_df['dividend_amount']
+        # now calculate the eps growth rate
         pass
     except Exception:
         logging.exception(
@@ -1441,23 +1475,25 @@ def main():
                         update_daily_trades, ())
                 else:
                     # else this is a full update (run once a day)
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(check_num_equities_in_sector, ())
-                    multipool.apply_async(scrape_dividend_data, ())
-                    # block on the next function to wait until the dates are ready
-                    dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
-                        update_equity_summary_data, (start_date,))
-                    # now call the individual workers to fetch these dates
-                    async_results = []
-                    for core_date_list in dates_to_fetch_sublists:
-                        async_results.append(multipool.apply_async(
-                            scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
-                    # wait until all workers finish fetching data before continuing
-                    for result in async_results:
-                        result.wait()
-                    # now run functions that depend on this raw data
-                    multipool.apply_async(update_dividend_yield, ())
-                    multipool.apply_async(update_technical_analysis_data, ())
+                    # multipool.apply_async(scrape_listed_equity_data, ())
+                    # multipool.apply_async(check_num_equities_in_sector, ())
+                    # multipool.apply_async(scrape_dividend_data, ())
+                    # # block on the next function to wait until the dates are ready
+                    # dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
+                    #     update_equity_summary_data, (start_date,))
+                    # # now call the individual workers to fetch these dates
+                    # async_results = []
+                    # for core_date_list in dates_to_fetch_sublists:
+                    #     async_results.append(multipool.apply_async(
+                    #         scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
+                    # # wait until all workers finish fetching data before continuing
+                    # for result in async_results:
+                    #     result.wait()
+                    # # now run functions that depend on this raw data
+                    # multipool.apply_async(update_dividend_yield, ())
+                    # multipool.apply_async(update_technical_analysis_data, ())
+                    multipool.apply_async(
+                        calculate_fundamental_analysis_ratios, ())
                     ###### Not updated #############
                     # multipool.apply_async(scrape_historical_indices_data, ())
                     # multipool.apply_async(scrape_historical_data, ())
@@ -1474,6 +1510,6 @@ def main():
         customlogging.flush_smtp_logger()
 
 
-        # If this script is being run from the command-line, then run the main() function
+# If this script is being run from the command-line, then run the main() function
 if __name__ == "__main__":
     main()
