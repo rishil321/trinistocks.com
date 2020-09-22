@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+    {% block description %}"Fundamental data for stocks listed on the Trinidad and Tobago Stock Exchange (TTSE),
+    displayed in a line chart for comparison."
+    {% endblock description %}
+
+    {% block title %}trinistats | Stocks | Fundamental Indicators for stocks listed on the TTSE
+    {% endblock title %}
+
+    {% block notificationbar %}
+    <label class="panellabel" for="symbol">Stock:</label>
+    <select class="custom-date-selector" id="symbol" name="symbol">
+        <!--Add options based on dictionary items returned-->
+        {% for listed_stock in listed_stocks %}
+            {% if listed_stock.symbol == selected_symbol %}
+                <option value="{{ listed_stock.symbol }}" selected>{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+            {% else %}
+                <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <div class="panel-block">
+        <label class="panellabel" for="">O/S Parameter:</label>
+        <select class="custom-date-selector" id="os_parameter" name="os_parameter">
+            <option value="os_offer_vol" selected>O/S Offer Volume</option>
+            <option value="os_bid">O/S Bid Price($)</option>
+            <option value="os_bid_vol">O/S Bid Volume</option>
+            <option value="os_offer">O/S Offer Price($)</option>
+        </select>
+    </div>
+    <div class="panel-block">
+        <label class="panellabel" for="startdate">Start Date:</label>
+        <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte" >
+    </div>
+    <div class="panel-block">    
+        <label class="panellabel" for="enddate">End Date:</label>
+        <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
+    </div>
+    <div class="panel-block">
+        <input type="hidden" value="date" name="sort"></input>    
+        <input name="configure_button" class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:ostradeshistory' %}" value="Search"/>
+    </div>
+    {% endblock notificationbar %}
+
+    {% block mainblock %}
+        <h1 style="text-align:center" id="charttitle">Outstanding Trade History for {{selected_stock_name}} ({{selected_stock_symbol}})</h1>
+        <!-- Chart -->
+        <div id="chartdiv" class="chart-div" style="">
+        </div>
+         <br>
+        <div class="tablediv">
+        {% render_table table %}
+        </div>
+    {% endblock mainblock %}
+
+    {% block chartjs %}
+    {{ graph_labels|json_script:"graph_labels" }}
+    {{ graph_dataset|json_script:"graph_dataset" }}
+    <script>
+    var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
+    var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
+    var trace1 = {
+        x: graph_labels,
+        y: graph_dataset,
+        type: 'scatter'
+    };
+    var data = [trace1];
+    var layout = {
+    xaxis: {
+        automargin: true,
+        title: {text:'Date',
+        standoff: 20
+        },
+        titlefont: {
+        size: 20
+        },
+        showticklabels: true,
+        tickangle: 'auto',
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis: {
+        title: '{{os_parameter_string|safe}}',
+        titlefont: {
+        size: 20
+        },
+        showticklabels: true,
+        tickangle: 45,
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all'
+    }
+    };
+    Plotly.newPlot('chartdiv', data, layout);
+    </script>
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#fundamentalhistorylink").toggleClass("has-background-red");
+    {% endblock %}

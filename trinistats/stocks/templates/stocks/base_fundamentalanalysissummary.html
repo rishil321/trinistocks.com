@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load django_tables2 %}
+{% load static %}
+
+    {% block description %}
+    "Fundamental indicators calculated for stocks listed on the Trinidad and Tobago Stock Exchange (TTSE),
+    displayed in a table."
+    {% endblock description %}
+
+    {% block title %}
+    trinistats | Stocks | Fundamental Stock Analysis Data for the Trinidad and Tobago Stock Exchange (TTSE)
+    {% endblock title %}
+
+    {% block sidepanelcontents %}
+    {% endblock sidepanelcontents %}
+
+    {% block mainblock %}
+    <h1>Fundamental Analysis Summary</h1>
+    <br>
+    <div class="tablediv_scroll">
+        {% render_table table %}
+    </div>
+    {% endblock mainblock %}
+
+    {% block chartjs %}
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#fundamentalanalysislink").toggleClass("has-background-red");
+    {% endblock %}
+    {% block changeconfigbutton %}
+    $('#configbutton').off('click')
+    $('#configbutton').css('cursor', 'not-allowed'); // 'default' to revert
+    {% endblock %}

@@ -79,6 +79,7 @@
                         <a class="navbar-item" id="dailytradingsummarylink" href="{% url "stocks:dailytradingsummary" %}">Daily Trading Summary</a>
                         <a class="navbar-item" id="listedstockslink" href="{% url "stocks:listedstocks" %}">Listed Stocks</a>
                         <a class="navbar-item" id="technicalanalysislink" href="{% url "stocks:technicalanalysis" %}">Technical Analysis</a>
+                        <a class="navbar-item" id="fundamentalanalysislink" href="{% url "stocks:fundamentalanalysis" %}"+"?sort=-sector">Fundamental Analysis</a>
                     </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable">
@@ -88,11 +89,11 @@
                         {% get_session_start_date_or_1_yr_back as start_date_1_yr%}
                         {% get_session_start_date_or_5_yr_back as start_date_5_yr%}
                         {% get_session_symbol_or_default as symbol%}
-                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock History</a>
+                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock Price History</a>
                         <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}'>Dividend History</a>
-                        <a class="navbar-item" id="dividendyieldlink" href='{% url "stocks:dividendyieldhistory" %}'>Dividend Yield</a>
                         <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}'>Market Index History</a>
-                        <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}'>Outstanding Trades</a>
+                        <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}'>Outstanding Trade History</a>
+                        <a class="navbar-item" id="fundamentalhistorylink" href='{% url "stocks:fundamentalhistory" %}'>Fundamental Indicators History</a>
                     </div>
                 </div>
                 <a class="navbar-item" id="aboutlink" href='{% url "stocks:about" %}'>About</a>
@@ -103,6 +104,16 @@
         </div>
     </nav>
     {% endblock %}
+
+    <br>
+    <div class="container">
+        <div class="notification">
+            <form method="get">
+            {% block notificationbar%}
+            {% endblock notificationbar%}
+            </form>
+        </div>
+    </div>
 
     <nav class="panel is-pulled-left is-hidden" id="sidepanel">
         <p class="has-text-centered has-text-weight-bold">

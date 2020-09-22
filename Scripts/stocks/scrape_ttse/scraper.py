@@ -52,14 +52,18 @@ import customlogging
 
 # Put your constants here. These should be named in CAPS
 
-# The following equity ids are listed in USD on the exchange (all others are listed in TTD)
+# Most stocks on the TTSE have prices and dividends listed in TTD. These are the exceptions.
+# The following stocks have both prices and dividends listed in USD on the exchange
 USD_STOCK_SYMBOLS = ['MPCCEL']
+# These have prices in TTD, but dividends in USD
+USD_DIVIDEND_SYMBOLS = ['SFC','FCI']
+# These have prices listed in TTD, but dividends in JMD
+JMD_DIVIDEND_SYMBOLS = ['GKC','JMMBGL','NCBFG']
+# These have prices in TTD, but dividends in BBD
+BBD_DIVIDEND_SYMBOLS = ['CPFV']
 # The timeout to set for multiprocessing tasks (in seconds)
 MULTIPROCESSING_TIMEOUT = 60*60
 WEBPAGE_LOAD_TIMEOUT_SECS = 30
-
-# Put your global variables here.
-
 
 # Put your class definitions here. These should use the CapWords convention.
 
@@ -704,15 +708,10 @@ def update_dividend_yield():
         # Set up a list to store our dividendyielddata
         dividend_yield_data = []
         # Now get our conversion rates to convert between TTD and USD/JMD
-        api_response_ttd = requests.get(
-            url="https://fcsapi.com/api-v2/forex/base_latest?symbol=TTD&type=forex&access_key=o9zfwlibfXciHoFO4LQU2NfTwt2vEk70DAiOH1yb2ao4tBhNmm")
-        if (api_response_ttd.status_code == 200):
-            # get the conversion rate from TTD to JMD
-            ttd_jmd = Decimal(json.loads(
-                api_response_ttd.content.decode('utf-8'))['response']['JMD'])
-            # get the conversion rate from USD to TTD
-            usd_ttd = Decimal(
-                1.00)/Decimal(json.loads(api_response_ttd.content.decode('utf-8'))['response']['USD'])
+        global TTD_USD
+        global TTD_JMD
+        global TTD_BBD
+        if TTD_USD:
             # Calculate our dividend yields using our values
             for dividend_data in dividend_yearly_data:
                 for stock_quote in stock_closing_quotes:
@@ -732,9 +731,11 @@ def update_dividend_yield():
                             # Check currencies, and use a multiplier for the conversion rate for dividends in other currencies
                             conrate = Decimal(1.00)
                             if dividend_data['currency'] == "USD":
-                                conrate = usd_ttd
+                                conrate = 1/TTD_USD
                             elif dividend_data['currency'] == "JMD":
-                                conrate = 1/ttd_jmd
+                                conrate = 1/TTD_JMD
+                            elif dividend_data['currency'] == "BBD":
+                                conrate = 1/TTD_BBD
                             else:
                                 pass
                                 # Else our conrate should remain 1
@@ -1359,7 +1360,7 @@ def update_technical_analysis_data():
             logging.info("Successfully closed database connection")
 
 
-def calculate_fundamental_analysis_ratios():
+def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
     """
     Calculate the important ratios for fundamental analysis, based off our manually entered data from the financial statements
     """
@@ -1435,6 +1436,28 @@ def calculate_fundamental_analysis_ratios():
             audited_calculated_df['EPS_growth_rate']
         audited_calculated_df = audited_calculated_df.where(
             pd.notnull(audited_calculated_df), None)
+        # calculate dividend yield and dividend payout ratio
+        # note that the price_to_earnings_df contains the share price
+        # we need to set up a series with the conversion factors for different currencies
+        symbols_list = price_to_earnings_df['symbol'].to_list()
+        conversion_rates = []
+        for symbol in symbols_list:
+            if symbol in USD_DIVIDEND_SYMBOLS:
+                conversion_rates.append(1/TTD_USD)
+            elif symbol in JMD_DIVIDEND_SYMBOLS:
+                conversion_rates.append(1/TTD_JMD)
+            elif symbol in BBD_DIVIDEND_SYMBOLS:
+                conversion_rates.append(1/TTD_BBD)
+            else:
+                conversion_rates.append(1.00)
+        # now add this new series to our df
+        price_to_earnings_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=price_to_earnings_df.index)
+        audited_calculated_df['dividend_yield'] = 100* price_to_earnings_df['dividend_conversion_rates']* \
+            price_to_earnings_df['dividends_per_share'] / price_to_earnings_df['close_price']
+        audited_calculated_df['dividend_payout_ratio'] = 100* price_to_earnings_df['total_dividends_paid'] / \
+            price_to_earnings_df['net_income']
+        # replace inf with None
+        audited_calculated_df = audited_calculated_df.replace([np.inf, -np.inf], None)
         # now write the df to the database
         logging.info("Now writing fundamental data to database.")
         execute_completed_successfully = False
@@ -1442,7 +1465,7 @@ def calculate_fundamental_analysis_ratios():
         while not execute_completed_successfully and execute_failed_times < 5:
             try:
                 insert_stmt = insert(
-                    audited_calculated_table_name).values(audited_calculated_df.to_dict('records'))
+                    audited_calculated_table).values(audited_calculated_df.to_dict('records'))
                 upsert_stmt = insert_stmt.on_duplicate_key_update(
                     {x.name: x for x in insert_stmt.inserted})
                 result = db_connect.dbcon.execute(
@@ -1467,6 +1490,19 @@ def calculate_fundamental_analysis_ratios():
             db_connect.close()
             logging.info("Successfully closed database connection")
 
+def fetch_latest_currency_conversion_rates():
+    logging.debug("Now trying to fetch latest currency conversions.")
+    api_response_ttd = requests.get(
+            url="https://fcsapi.com/api-v2/forex/base_latest?symbol=TTD&type=forex&access_key=o9zfwlibfXciHoFO4LQU2NfTwt2vEk70DAiOH1yb2ao4tBhNmm")
+    if (api_response_ttd.status_code == 200):
+        # store the conversion rates that we need
+        TTD_JMD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['JMD'])
+        TTD_USD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['USD'])
+        TTD_BBD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['BBD'])
+        logging.debug("Currency conversions fetched correctly.")
+        return TTD_JMD, TTD_USD, TTD_BBD
+    else:
+        logging.exception(f"Cannot load URL for currency conversions.{api_response_ttd.status_code},{api_response_ttd.reason},{api_response_ttd.url}")
 
 def main():
     """The main steps in coordinating the scraping"""
@@ -1475,7 +1511,7 @@ def main():
         q_listener, q = customlogging.setup_logging(
             logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
             logfilestandardname=os.path.basename(__file__),
-            stdoutlogginglevel=logging.INFO,
+            stdoutlogginglevel=logging.DEBUG,
             smtploggingenabled=True,
             smtplogginglevel=logging.ERROR,
             smtpmailhost='localhost',
@@ -1506,6 +1542,8 @@ def main():
                         update_daily_trades, ())
                 else:
                     # else this is a full update (run once a day)
+                    # get the latest conversion rates
+                    TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(fetch_latest_currency_conversion_rates,())
                     # multipool.apply_async(scrape_listed_equity_data, ())
                     # multipool.apply_async(check_num_equities_in_sector, ())
                     # multipool.apply_async(scrape_dividend_data, ())
@@ -1524,7 +1562,7 @@ def main():
                     # multipool.apply_async(update_dividend_yield, ())
                     # multipool.apply_async(update_technical_analysis_data, ())
                     multipool.apply_async(
-                        calculate_fundamental_analysis_ratios, ())
+                        calculate_fundamental_analysis_ratios, (TTD_JMD, TTD_USD, TTD_BBD))
                     ###### Not updated #############
                     # multipool.apply_async(scrape_historical_indices_data, ())
                     # multipool.apply_async(scrape_historical_data, ())

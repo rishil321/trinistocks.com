@@ -164,3 +164,34 @@ class TechnicalAnalysisSummary(models.Model):
     class Meta:
         managed = False
         db_table = 'technical_analysis_summary'
+
+
+class FundamentalAnalysisSummary(models.Model):
+    id = models.AutoField(primary_key=True)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, db_column='symbol')
+    date = models.DateField(verbose_name="Date")
+    RoE = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True)
+    EPS = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True)
+    EPS_growth_rate = models.DecimalField(
+        max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="EPS Growth Rate(%)")
+    PEG = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True)
+    RoIC = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True)
+    working_capital = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Working Capital")
+    price_to_earnings_ratio = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="P/E")
+    price_to_dividends_per_share_ratio = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="P/DPS")
+    dividend_yield = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Dividend Yield(%)")
+    dividend_payout_ratio = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Dividend Payout Ratio(%)")
+
+    class Meta:
+        managed = False
+        db_table = 'audited_fundamental_calculated_data'

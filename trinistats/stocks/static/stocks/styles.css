@@ -203,6 +203,10 @@ tr.odd td.headcol {
     background-color: #ff9980;
 }
 
+.notification{
+    background-color:lightgray;
+}
+
 .horizontal-flex-container {
     display: flex;
     flex-direction: row;

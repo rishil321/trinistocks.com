@@ -8,7 +8,7 @@ click==7.1.1
 coreapi==2.3.3
 coreschema==0.0.4
 covid==2.2.0
-dataclasses==0.7
+dataclasses==0.6
 dateutils==0.6.7
 Deprecated==1.2.9
 Django==3.0.5
