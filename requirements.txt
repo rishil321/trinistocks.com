@@ -11,7 +11,7 @@ covid==2.2.0
 dataclasses==0.6
 dateutils==0.6.7
 Deprecated==1.2.9
-Django==3.0.5
+Django==3.0.7
 django-chartjs==2.0.0
 django-filter==2.2.0
 django-tables2==2.3.0
