@@ -475,7 +475,7 @@ class StockHistoryView(BasicLineChartAndTableView):
                 query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
                                           'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
                                           'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
-                                          'chart_type': 'candlestick', 'sort': 'date'})
+                                          'chart_type': 'candlestick', 'sort': '-date'})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(StockHistoryView, self).get(request)
@@ -559,7 +559,7 @@ class DividendHistoryView(BasicLineChartAndTableView):
                 query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
                                           'record_date__gte': stocks_template_tags.get_5_yr_back(),
                                           'record_date__lte': stocks_template_tags.get_today(),
-                                          'sort': 'record_date'})
+                                          'sort': '-record_date'})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(DividendHistoryView, self).get(request)
@@ -753,7 +753,7 @@ class MarketIndexHistoryView(BasicLineChartAndTableView):
                 query_string = urlencode({'index_name': 'Composite Totals', 'index_parameter': 'index_value',
                                           'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
                                           'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
-                                          'sort': 'date'})
+                                          'sort': '-date'})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(MarketIndexHistoryView, self).get(request)
@@ -797,7 +797,7 @@ class OSTradesHistoryView(BasicLineChartAndTableView):
                 query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
                                           'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
                                           'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
-                                          'os_parameter': 'os_offer_vol', 'sort': 'date'})
+                                          'os_parameter': 'os_offer_vol', 'sort': '-date'})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(OSTradesHistoryView, self).get(request)
