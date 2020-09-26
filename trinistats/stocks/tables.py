@@ -166,7 +166,7 @@ class TechnicalAnalysisSummaryTable(tables.Table):
 class FundamentalAnalysisSummaryTable(tables.Table):
 
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                                    "td": {"class": "headcol"}}, linkify=(lambda record: render_symbol_link(value=record)))
+                                                                                    "td": {"class": "headcol"}}, linkify=(lambda record: render_fundamental_history_symbol_link(value=record)))
     sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
     date = tables.Column(verbose_name="Last Updated")
     RoE = tables.Column()
@@ -187,6 +187,17 @@ class FundamentalAnalysisSummaryTable(tables.Table):
 
 # methods
 # render the URLs for the symbol column
+def render_fundamental_history_symbol_link(value):
+    base_url = reverse(
+            'stocks:fundamentalhistory', current_app="stocks")
+    query_string = urlencode({'symbol1': value.symbol_id,
+                            'symbol2': 'WCO',
+                            'indicator': 'EPS',
+                            'date__gte': stocks_template_tags.get_5_yr_back(),
+                            'date__lte': stocks_template_tags.get_today()})
+    url = '{}?{}'.format(base_url, query_string)
+    return url
+
 def render_symbol_link(value):
     base_url = reverse(
             'stocks:stockhistory', current_app="stocks")
