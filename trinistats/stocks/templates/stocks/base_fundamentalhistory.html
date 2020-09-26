@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load render_table from django_tables2 %}
 {% load static %}
 
     {% block description %}"Fundamental data for stocks listed on the Trinidad and Tobago Stock Exchange (TTSE),
@@ -9,64 +8,101 @@
     {% block title %}trinistats | Stocks | Fundamental Indicators for stocks listed on the TTSE
     {% endblock title %}
 
-    {% block notificationbar %}
-    <label class="panellabel" for="symbol">Stock:</label>
-    <select class="custom-date-selector" id="symbol" name="symbol">
-        <!--Add options based on dictionary items returned-->
-        {% for listed_stock in listed_stocks %}
-            {% if listed_stock.symbol == selected_symbol %}
-                <option value="{{ listed_stock.symbol }}" selected>{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
-            {% else %}
-                <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
-            {% endif %}
-        {% endfor %}
-    </select>
-    <div class="panel-block">
-        <label class="panellabel" for="">O/S Parameter:</label>
-        <select class="custom-date-selector" id="os_parameter" name="os_parameter">
-            <option value="os_offer_vol" selected>O/S Offer Volume</option>
-            <option value="os_bid">O/S Bid Price($)</option>
-            <option value="os_bid_vol">O/S Bid Volume</option>
-            <option value="os_offer">O/S Offer Price($)</option>
+    {% block customizationbar %}
+
+    <div class="column">
+        <label class="" for="indicator">Indicator<br></label>
+        <select class="custom-date-selector" id="indicator" name="indicator">
+            <!--Add options based on dictionary items returned-->
+            {% for indicator in all_indicators %}
+                {% if indicator.field_name == selected_indicator %}
+                    <option value="{{ indicator.field_name }}" selected>{{indicator.verbose_name}}</option>
+                {% else %}
+                    <option value="{{ indicator.field_name }}">{{indicator.verbose_name}}</option>
+                {% endif %}
+            {% endfor %}
         </select>
     </div>
-    <div class="panel-block">
-        <label class="panellabel" for="startdate">Start Date:</label>
+
+    <div class="column">
+        <label class="" for="symbol1">Stock 1<br></label>
+        <select class="custom-date-selector" id="symbol1" name="symbol1">
+            <!--Add options based on dictionary items returned-->
+            {% for listed_stock in listed_stocks %}
+                {% if listed_stock.symbol == symbol1 %}
+                    <option value="{{ listed_stock.symbol }}" selected>{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+                {% else %}
+                    <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="column">
+        <label class="" for="symbol2">Stock 2<br></label>
+        <select class="custom-date-selector" id="symbol2" name="symbol2">
+            <!--Add options based on dictionary items returned-->
+            {% for listed_stock in listed_stocks %}
+                {% if listed_stock.symbol == symbol2 %}
+                    <option value="{{ listed_stock.symbol }}" selected>{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+                {% else %}
+                    <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="column">
+        <label class="" for="startdate">Start Date<br></label>
         <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte" >
     </div>
-    <div class="panel-block">    
-        <label class="panellabel" for="enddate">End Date:</label>
+
+    <div class="column">
+        <label class="" for="enddate">End Date<br></label>
         <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
     </div>
-    <div class="panel-block">
+
+    <div class="column">
         <input type="hidden" value="date" name="sort"></input>    
         <input name="configure_button" class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:ostradeshistory' %}" value="Search"/>
     </div>
-    {% endblock notificationbar %}
+    {% endblock customizationbar %}
 
     {% block mainblock %}
-        <h1 style="text-align:center" id="charttitle">Outstanding Trade History for {{selected_stock_name}} ({{selected_stock_symbol}})</h1>
+        <h1 style="text-align:center" id="charttitle">Comparing {{selected_indicator_verbose_name}} between {{symbol1}} and {{symbol2}}</h1>
         <!-- Chart -->
-        <div id="chartdiv" class="chart-div" style="">
-        </div>
-         <br>
-        <div class="tablediv">
-        {% render_table table %}
-        </div>
+        <div id="chartdiv1" class="chart-div" style=""></div>
+        <hr>
+        <h1 style="text-align:center" id="charttitle">Stock Prices</h1>
+        <div id="chartdiv2" class="chart-div" style=""></div>
     {% endblock mainblock %}
 
     {% block chartjs %}
-    {{ graph_labels|json_script:"graph_labels" }}
-    {{ graph_dataset|json_script:"graph_dataset" }}
+    {{ graph_labels_1|json_script:"graph_labels_1" }}
+    {{ graph_labels_2|json_script:"graph_labels_2" }}
+    {{ graph_labels_3|json_script:"graph_labels_3" }}
+    {{ graph_dataset_1|json_script:"graph_dataset_1" }}
+    {{ graph_dataset_2|json_script:"graph_dataset_2" }}
+    {{ graph_close_prices_1|json_script:"graph_close_prices_1" }}
+    {{ graph_close_prices_2|json_script:"graph_close_prices_2" }}
     <script>
-    var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
-    var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
+    var graph_labels_1 = JSON.parse(document.getElementById('graph_labels_1').textContent);
+    var graph_labels_2 = JSON.parse(document.getElementById('graph_labels_2').textContent);
+    var graph_dataset_1 = JSON.parse(document.getElementById('graph_dataset_1').textContent);
+    var graph_dataset_2 = JSON.parse(document.getElementById('graph_dataset_2').textContent);
     var trace1 = {
-        x: graph_labels,
-        y: graph_dataset,
+        x: graph_labels_1,
+        y: graph_dataset_1,
+        name :'{{symbol1}}',
         type: 'scatter'
     };
-    var data = [trace1];
+    var trace2 = {
+    x: graph_labels_2,
+    y: graph_dataset_2,
+    name :'{{symbol2}}',
+    type: 'scatter'
+    };
+    var data = [trace1,trace2];
     var layout = {
     xaxis: {
         automargin: true,
@@ -85,7 +121,7 @@
         showexponent: 'all'
     },
     yaxis: {
-        title: '{{os_parameter_string|safe}}',
+        title: '{{selected_indicator_verbose_name|safe}}',
         titlefont: {
         size: 20
         },
@@ -98,7 +134,58 @@
         showexponent: 'all'
     }
     };
-    Plotly.newPlot('chartdiv', data, layout);
+    Plotly.newPlot('chartdiv1', data, layout);
+
+    //second graph of stock close prices
+    var graph_labels_3 = JSON.parse(document.getElementById('graph_labels_3').textContent);
+    var graph_close_prices_1 = JSON.parse(document.getElementById('graph_close_prices_1').textContent);
+    var graph_close_prices_2 = JSON.parse(document.getElementById('graph_close_prices_2').textContent);
+    var trace3 = {
+        x: graph_labels_3,
+        y: graph_close_prices_1,
+        name :'{{symbol1}}',
+        mode: 'markers'
+    };
+    var trace4 = {
+    x: graph_labels_3,
+    y: graph_close_prices_2,
+    name :'{{symbol2}}',
+    mode: 'markers',
+    line: {shape: 'spline'},
+    };
+    var data2 = [trace3,trace4];
+    var layout2 = {
+    xaxis: {
+        automargin: true,
+        title: {text:'Date',
+        standoff: 20
+        },
+        titlefont: {
+        size: 20
+        },
+        showticklabels: true,
+        tickangle: 'auto',
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis: {
+        title: 'Stock Price(TTD$)',
+        titlefont: {
+        size: 20
+        },
+        showticklabels: true,
+        tickangle: 45,
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all'
+    }
+    };
+    Plotly.newPlot('chartdiv2', data2, layout2);
     </script>
     {% endblock chartjs %}
     <!-- END MAIN -->

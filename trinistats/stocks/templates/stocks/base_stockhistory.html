@@ -2,49 +2,55 @@
 {% load django_tables2 %}
 {% load static %}
 
-    {% block description %}"Historical stock price data for all stocks listed on the Trinidad and Tobago Stock Exchange (TTSE),
-    displayed in a line/candlestick chart and table."
-    {% endblock description %}
+{% block description %}"Historical stock price data for all stocks listed on the Trinidad and Tobago Stock Exchange (TTSE),
+displayed in a line/candlestick chart and table."
+{% endblock description %}
 
-    {% block title %}trinistats | Stocks | Historical Stock Data for the Trinidad and Tobago Stock Exchange (TTSE)
-    {% endblock title %}
+{% block title %}trinistats | Stocks | Historical Stock Data for the Trinidad and Tobago Stock Exchange (TTSE)
+{% endblock title %}
 
-{% block sidepanelcontents %}
-<div class="panel-block">
-    <label class="panellabel" for="symbol">Stock:</label>
-    <select id="symbol" name="symbol" class="custom-dropdown">
-        <!--Add options based on dictionary items returned-->
-        {% for listed_stock in listed_stocks %}
-            {% if listed_stock.symbol == selected_symbol %}
-            <option value="{{ listed_stock.symbol }}" selected>{{listed_stock.symbol}} ({{ listed_stock.security_name }})
-            </option>
-            {% else %}
-            <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
-            {% endif %}
-        {% endfor %}
-    </select>
-</div>
-<div class="panel-block">
-    <label class="panellabel" for="startdate">Start Date:</label>
-    <input type="date" class="custom-date-selector" value="{{ entered_start_date }}" id="startdate" name="date__gte">
-</div>
-<div class="panel-block">
-    <label class="panellabel" for="enddate">End Date:</label>
-    <input type="date" class="custom-date-selector" value="{{ entered_end_date }}" id="enddate" name="date__lte" />
-</div>
-<div class="panel-block">
-    <label class="panellabel" for="chart_type">Chart Type:</label>
-    <select id="chart_type" name="chart_type" class="custom-dropdown">
-        <option value="line">Line</option>
-        <option value="candlestick">Candlestick</option>
-    </select>
-</div>
-<div class="panel-block">
-    <input type="hidden" value="date" name="sort"></input>
-    <input type="submit" name="configure_button" class="custom-red-button"
+{% block customizationbar %}
+
+    <div class="column">
+        <label class="" for="symbol">Stock:</label>
+        <select id="symbol" name="symbol" class="custom-dropdown">
+            <!--Add options based on dictionary items returned-->
+            {% for listed_stock in listed_stocks %}
+                {% if listed_stock.symbol == selected_symbol %}
+                <option value="{{ listed_stock.symbol }}" selected>{{listed_stock.symbol}} ({{ listed_stock.security_name }})
+                </option>
+                {% else %}
+                <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="column">
+       <label class="" for="startdate">Start Date:</label>
+        <input type="date" class="custom-date-selector" value="{{ entered_start_date }}" id="startdate" name="date__gte">
+    </div>
+
+    <div class="column">
+        <label class="" for="enddate">End Date:</label>
+        <input type="date" class="custom-date-selector" value="{{ entered_end_date }}" id="enddate" name="date__lte" />
+    </div>
+
+    <div class="column">
+        <label class="" for="chart_type">Chart Type:</label>
+        <select id="chart_type" name="chart_type" class="custom-dropdown">
+            <option value="line">Line</option>
+            <option value="candlestick">Candlestick</option>
+        </select>
+    </div>
+
+    <div class="column">
+        <input type="hidden" value="date" name="sort"></input>
+        <input type="submit" name="configure_button" class="custom-red-button"
         onclick="location.href='{% url 'stocks:stockhistory' %}" value="Search"></input>
-</div>
-{% endblock sidepanelcontents %}
+    </div>
+
+{% endblock customizationbar %}
 
 {% block mainblock %}
 <h1 style="" id="charttitle">Stock Price History for {{selected_stock_name}} ({{selected_stock_symbol}})</h1>

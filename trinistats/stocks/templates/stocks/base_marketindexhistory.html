@@ -9,37 +9,44 @@
     {% block title %}trinistats | Stocks | Market Index Historical Data for the Trinidad and Tobago Stock Exchange (TTSE)
     {% endblock title %}
 
-    {% block sidepanelcontents %}
-    <div class="panel-block">
-        <label class="panellabel" for="">Market Index Name</label>
-        <select class="custom-date-selector" id="index_name" name="index_name">
-            <option value="Composite Totals">Composite Totals</option>
-            <option value="All T&T Totals">All T&T Totals</option>
-            <option value="Cross-Listed Totals">Cross-Listed Totals</option>
-        </select>
-    </div>
-    <div class="panel-block">
-    <label class="panellabel" for="">Market Parameter</label>
+
+{% block customizationbar %}
+
+<div class="column">
+    <label class="" for="">Market Index Name</label><br>
+    <select class="custom-date-selector" id="index_name" name="index_name">
+        <option value="Composite Totals">Composite Totals</option>
+        <option value="All T&T Totals">All T&T Totals</option>
+        <option value="Cross-Listed Totals">Cross-Listed Totals</option>
+    </select>
+</div>
+
+<div class="column">
+    <label class="" for="">Market Parameter</label><br>
     <select class="custom-date-selector" id="index_parameter" name="index_parameter">
         <option value="index_value">Index Value</option>
         <option value="volume_traded">Volume Traded</option>
         <option value="value_traded">Value Traded</option>
         <option value="num_trades">No. of Trades</option>
     </select>
-    </div>
-    <div class="panel-block">
-        <label class="panellabel"for="startdate">Start Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte">
-    </div>
-    <div class="panel-block">    
-        <label class="panellabel" for="enddate">End Date:</label>
-        <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
-    </div>
-    <div class="panel-block">   
-        <input type="hidden" value="date" name="sort"></input>
-        <input name="configure_button" class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:marketindexhistory' %}" value="Search"/>
-    </div>
-    {% endblock sidepanelcontents %}
+</div>
+
+<div class="column">
+    <label class="" for="startdate">Start Date</label><br>
+    <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte">
+</div>
+
+<div class="column">
+    <label class="" for="enddate">End Date</label><br>
+    <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
+</div>
+
+<div class="column">
+    <input type="hidden" value="date" name="sort"></input>
+    <input name="configure_button" class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:marketindexhistory' %}" value="Search"/>
+</div>
+
+{% endblock customizationbar %}
 
     {% block mainblock %}
         <h1 style="" id="charttitle">{{index_name}} Index History</h1>

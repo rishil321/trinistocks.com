@@ -7,11 +7,12 @@
     {% endblock description %}
 
     {% block title %}trinistats | Stocks | Outstanding Trades Data for the Trinidad and Tobago Stock Exchange (TTSE)
-    {% endblock title %}
+    {% endblock title %}}
 
-    {% block sidepanelcontents %}
-    <div class="panel-block">
-        <label class="panellabel" for="symbol">Stock:</label>
+    {% block customizationbar %}
+
+    <div class="column">
+       <label class="" for="symbol">Stock</label><br>
         <select class="custom-date-selector" id="symbol" name="symbol">
             <!--Add options based on dictionary items returned-->
             {% for listed_stock in listed_stocks %}
@@ -23,8 +24,9 @@
             {% endfor %}
         </select>
     </div>
-    <div class="panel-block">
-        <label class="panellabel" for="">O/S Parameter:</label>
+
+    <div class="column">
+        <label class="" for="">O/S Parameter</label><br>
         <select class="custom-date-selector" id="os_parameter" name="os_parameter">
             <option value="os_offer_vol" selected>O/S Offer Volume</option>
             <option value="os_bid">O/S Bid Price($)</option>
@@ -32,19 +34,23 @@
             <option value="os_offer">O/S Offer Price($)</option>
         </select>
     </div>
-    <div class="panel-block">
-        <label class="panellabel" for="startdate">Start Date:</label>
+
+    <div class="column">
+        <label class="" for="startdate">Start Date</label><br>
         <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte" >
     </div>
-    <div class="panel-block">    
-        <label class="panellabel" for="enddate">End Date:</label>
+
+    <div class="column">
+        <label class="" for="enddate">End Date</label><br>
         <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
     </div>
-    <div class="panel-block">
+
+    <div class="column">
         <input type="hidden" value="date" name="sort"></input>    
         <input name="configure_button" class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:ostradeshistory' %}" value="Search"/>
     </div>
-    {% endblock sidepanelcontents %}
+
+    {% endblock customizationbar %}
 
     {% block mainblock %}
         <h1 style="text-align:center" id="charttitle">Outstanding Trade History for {{selected_stock_name}} ({{selected_stock_symbol}})</h1>

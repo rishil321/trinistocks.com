@@ -8,9 +8,10 @@
     {% block title %}trinistats | Stocks | Dividend Payment History Data for the Trinidad and Tobago Stock Exchange (TTSE)
     {% endblock title %}
 
-    {% block sidepanelcontents %}
-    <div class="panel-block">
-        <label class="panellabel" for="symbol">Stock:</label>
+    {% block customizationbar %}
+
+    <div class="column">
+        <label class="" for="symbol">Stock:</label>
         <select class="custom-dropdown" id="symbol" name="symbol">
             <!--Add options based on dictionary items returned-->
             {% for listed_stock in listed_stocks %}
@@ -22,19 +23,23 @@
             {% endfor %}
         </select>
     </div>
-    <div class="panel-block">
-        <label class="panellabel" for="startdate">Start Date:</label>
+
+    <div class="column">
+       <label class="" for="startdate">Start Date:</label>
         <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="record_date__gte">
     </div>
-    <div class="panel-block">    
-        <label for="enddate" class="panellabel">End Date:</label>
+
+    <div class="column">
+        <label for="enddate" class="">End Date:</label>
         <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="record_date__lte"/>
     </div>
-    <div class="panel-block">
+
+    <div class="column">
         <input type="hidden" value="record_date" name="sort"></input>
         <input name="configure_button"  class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:dividendhistory' %}" value="Search"/>
     </div>
-    {% endblock sidepanelcontents %}
+
+    {% endblock customizationbar %}
 
     {% block mainblock %}
     <h1 id="charttitle">Dividend History for {{selected_stock_name}} ({{selected_stock_symbol}})</h1>

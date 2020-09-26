@@ -29,6 +29,10 @@ def get_session_end_date_or_today(context):
     else:
         return datetime.now().strftime("%Y-%m-%d")
 
+@register.simple_tag(takes_context=False)
+def get_today():
+    return datetime.now().strftime("%Y-%m-%d")
+
 
 @register.simple_tag(takes_context=True)
 def get_session_start_date_or_1_yr_back(context):
@@ -38,6 +42,10 @@ def get_session_start_date_or_1_yr_back(context):
     else:
         return (datetime.now()+relativedelta(years=-1)).strftime('%Y-%m-%d')
 
+@register.simple_tag(takes_context=False)
+def get_1_yr_back():
+    return (datetime.now()+relativedelta(years=-1)).strftime('%Y-%m-%d')
+
 
 @register.simple_tag(takes_context=True)
 def get_session_start_date_or_5_yr_back(context):
@@ -46,6 +54,10 @@ def get_session_start_date_or_5_yr_back(context):
         return session_data['entered_start_date']
     else:
         return (datetime.now()+relativedelta(years=-5)).strftime('%Y-%m-%d')
+
+@register.simple_tag(takes_context=False)
+def get_5_yr_back():
+    return (datetime.now()+relativedelta(years=-5)).strftime('%Y-%m-%d')
 
 
 @register.simple_tag(takes_context=True)

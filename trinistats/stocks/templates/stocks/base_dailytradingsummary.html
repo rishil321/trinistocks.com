@@ -21,16 +21,23 @@
     {% endblock title %}
 
     {% block sidepanelcontents %}
-    <div class="panel-block">
-        <label class="panellabel" for="date">Trading date</label>
-        <input type="date" class="custom-date-selector" value="{{ selected_date_parsed }}" id="date" name="date">
-    </div>
-    <div class="panel-block">
-        <input type="hidden" value="1" name="was_traded_today"></input>
-        <input type="hidden" value="-value_traded" name="sort"></input>
-        <input type="submit" name="configure_button" class="custom-red-button" onclick="location.href='{% url 'stocks:dailytradingsummary' %}" value="Search"/>
-    <div>
     {% endblock sidepanelcontents %}
+
+    <form method="get">
+    <div class="columns is-centered is-multiline is-vcentered" id="customizationbar" style="text-align:center;">
+        {% block customizationbar%}
+        <div class="column">
+            <label class="" for="date">Trading date</label>
+            <input type="date" class="custom-date-selector" value="{{ selected_date_parsed }}" id="date" name="date">
+        </div>
+        <div class="column">
+            <input type="hidden" value="1" name="was_traded_today"></input>
+            <input type="hidden" value="-value_traded" name="sort"></input>
+            <input type="submit" name="configure_button" class="custom-red-button" onclick="location.href='{% url 'stocks:dailytradingsummary' %}" value="Search"/>
+        </div>
+        {% endblock customizationbar%}
+    </div>
+    </form>
 
     {% block mainblock %}
     <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selected_date }}</h1>

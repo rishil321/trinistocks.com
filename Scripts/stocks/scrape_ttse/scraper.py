@@ -1544,30 +1544,27 @@ def main():
                     # else this is a full update (run once a day)
                     # get the latest conversion rates
                     TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(fetch_latest_currency_conversion_rates,())
-                    # multipool.apply_async(scrape_listed_equity_data, ())
-                    # multipool.apply_async(check_num_equities_in_sector, ())
-                    # multipool.apply_async(scrape_dividend_data, ())
-                    # # block on the next function to wait until the dates are ready
-                    # dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
-                    #     update_equity_summary_data, (start_date,))
-                    # # now call the individual workers to fetch these dates
-                    # async_results = []
-                    # for core_date_list in dates_to_fetch_sublists:
-                    #     async_results.append(multipool.apply_async(
-                    #         scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
-                    # # wait until all workers finish fetching data before continuing
-                    # for result in async_results:
-                    #     result.wait()
-                    # # now run functions that depend on this raw data
-                    # multipool.apply_async(update_dividend_yield, ())
-                    # multipool.apply_async(update_technical_analysis_data, ())
+                    multipool.apply_async(scrape_listed_equity_data, ())
+                    multipool.apply_async(check_num_equities_in_sector, ())
+                    multipool.apply_async(scrape_dividend_data, ())
+                    # block on the next function to wait until the dates are ready
+                    dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
+                        update_equity_summary_data, (start_date,))
+                    # now call the individual workers to fetch these dates
+                    async_results = []
+                    for core_date_list in dates_to_fetch_sublists:
+                        async_results.append(multipool.apply_async(
+                            scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
+                    # wait until all workers finish fetching data before continuing
+                    for result in async_results:
+                        result.wait()
+                    # now run functions that depend on this raw data
+                    multipool.apply_async(update_technical_analysis_data, ())
                     multipool.apply_async(
                         calculate_fundamental_analysis_ratios, (TTD_JMD, TTD_USD, TTD_BBD))
                     ###### Not updated #############
                     # multipool.apply_async(scrape_historical_indices_data, ())
                     # multipool.apply_async(scrape_historical_data, ())
-                    # multipool.apply_async(
-                    #     calculate_fundamental_analysis_ratios, ())
                 multipool.close()
                 multipool.join()
                 logging.info(os.path.basename(__file__) +

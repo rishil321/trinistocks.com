@@ -1,6 +1,9 @@
 import django_tables2 as tables
 from stocks import models
 from django_tables2.export.views import ExportMixin
+from django.urls import reverse
+from .templatetags import stocks_template_tags
+from urllib.parse import urlencode
 
 
 class HistoricalStockInfoTable(tables.Table):
@@ -36,7 +39,7 @@ class HistoricalDividendYieldTable(tables.Table):
 
 class DailyTradingSummaryTable(tables.Table):
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                                    "td": {"class": "headcol"}})
+                                                                                    "td": {"class": "headcol"}}, linkify=(lambda record: render_symbol_link(value=record)))
     volume_traded = tables.Column(verbose_name="Volume Traded (Shares)")
     last_sale_price = tables.Column(verbose_name="Last Sale Price ($)")
     currency = tables.Column(
@@ -59,6 +62,7 @@ class DailyTradingSummaryTable(tables.Table):
     # freeze the first column of the table
     def render_symbol(self, value, column):
         return value
+
 
     class Meta:
         attrs = {"class": "djangotables"}
@@ -115,7 +119,7 @@ class OSTradesHistoryTable(tables.Table):
 
 class TechnicalAnalysisSummaryTable(tables.Table):
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                                    "td": {"class": "headcol"}})
+                                                                                    "td": {"class": "headcol"}},linkify=(lambda record: render_symbol_link(value=record)))
     sma_200 = tables.Column()
     sma_20 = tables.Column()
     last_close_price = tables.Column()
@@ -160,8 +164,9 @@ class TechnicalAnalysisSummaryTable(tables.Table):
 
 
 class FundamentalAnalysisSummaryTable(tables.Table):
+
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                                    "td": {"class": "headcol"}})
+                                                                                    "td": {"class": "headcol"}}, linkify=(lambda record: render_symbol_link(value=record)))
     sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
     date = tables.Column(verbose_name="Last Updated")
     RoE = tables.Column()
@@ -178,3 +183,16 @@ class FundamentalAnalysisSummaryTable(tables.Table):
     class Meta:
         attrs = {'class': 'djangotables'}
         export_formats = ['csv', 'xlsx']
+
+
+# methods
+# render the URLs for the symbol column
+def render_symbol_link(value):
+    base_url = reverse(
+            'stocks:stockhistory', current_app="stocks")
+    query_string = urlencode({'symbol': value.symbol_id,
+                            'date__gte': stocks_template_tags.get_1_yr_back(),
+                            'date__lte': stocks_template_tags.get_today(),
+                            'chart_type': 'candlestick', 'sort': 'date'})
+    url = '{}?{}'.format(base_url, query_string)
+    return url
