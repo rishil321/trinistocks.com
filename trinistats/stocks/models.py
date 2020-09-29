@@ -191,6 +191,10 @@ class FundamentalAnalysisSummary(models.Model):
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Dividend Yield(%)")
     dividend_payout_ratio = models.DecimalField(
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Dividend Payout Ratio(%)")
+    book_value_per_share = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="BVPS")
+    price_to_book_ratio = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="P/B")
 
     class Meta:
         managed = False

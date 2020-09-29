@@ -179,6 +179,8 @@ class FundamentalAnalysisSummaryTable(tables.Table):
     price_to_dividends_per_share_ratio = tables.Column(verbose_name="P/DPS")
     dividend_yield = tables.Column(verbose_name="Dividend Yield (%)")
     dividend_payout_ratio = tables.Column(verbose_name="Dividend Payout Ratio")
+    book_value_per_share = tables.Column(verbose_name="BVPS")
+    price_to_book_ratio = tables.Column(verbose_name="P/B")
 
     class Meta:
         attrs = {'class': 'djangotables'}

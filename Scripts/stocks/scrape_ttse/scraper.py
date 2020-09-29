@@ -1416,7 +1416,10 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
         # create a merged df to calculate the p/e
         price_to_earnings_df = pd.merge(
             audited_raw_df, share_price_df, how='inner', on='symbol')
-        audited_calculated_df['price_to_earnings_ratio'] = price_to_earnings_df['close_price'] / \
+        # calculate a conversion rate for the stock price
+        price_to_earnings_df['share_price_conversion_rates'] =  price_to_earnings_df.apply(lambda x: TTD_USD if 
+                        x.currency == 'USD' else (TTD_JMD if x.currency == 'JMD' else (TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
+        audited_calculated_df['price_to_earnings_ratio'] = price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates'] / \
             price_to_earnings_df['basic_earnings_per_share']
         # now calculate the price to dividend per share ratio
         # first get the dividends per share
@@ -1425,21 +1428,8 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
         # merge this df with the share_price_df
         dividends_df = pd.merge(
             share_price_df, dividends_df, how='inner', on='symbol')
-        # calculate the price to dividend per share ratio
-        audited_calculated_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
-            dividends_df['dividend_amount']
-        # now calculate the eps growth rate
-        audited_calculated_df['EPS_growth_rate'] = audited_raw_df['basic_earnings_per_share'].diff(
-        )*100
-        # now calculate the price to earnings-to-growth ratio
-        audited_calculated_df['PEG'] = audited_calculated_df['price_to_earnings_ratio'] / \
-            audited_calculated_df['EPS_growth_rate']
-        audited_calculated_df = audited_calculated_df.where(
-            pd.notnull(audited_calculated_df), None)
-        # calculate dividend yield and dividend payout ratio
-        # note that the price_to_earnings_df contains the share price
         # we need to set up a series with the conversion factors for different currencies
-        symbols_list = price_to_earnings_df['symbol'].to_list()
+        symbols_list = dividends_df['symbol'].to_list()
         conversion_rates = []
         for symbol in symbols_list:
             if symbol in USD_DIVIDEND_SYMBOLS:
@@ -1451,11 +1441,31 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
             else:
                 conversion_rates.append(1.00)
         # now add this new series to our df
-        price_to_earnings_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=price_to_earnings_df.index)
-        audited_calculated_df['dividend_yield'] = 100* price_to_earnings_df['dividend_conversion_rates']* \
-            price_to_earnings_df['dividends_per_share'] / price_to_earnings_df['close_price']
+        dividends_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=dividends_df.index)
+        # calculate the price to dividend per share ratio
+        audited_calculated_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
+            (dividends_df['dividend_amount']*dividends_df['dividend_conversion_rates'])
+        # now calculate the eps growth rate
+        audited_calculated_df['EPS_growth_rate'] = audited_raw_df['basic_earnings_per_share'].diff(
+        )*100
+        # now calculate the price to earnings-to-growth ratio
+        audited_calculated_df['PEG'] = audited_calculated_df['price_to_earnings_ratio'] / \
+            audited_calculated_df['EPS_growth_rate']
+        audited_calculated_df = audited_calculated_df.where(
+            pd.notnull(audited_calculated_df), None)
+        # calculate dividend yield and dividend payout ratio
+        # note that the price_to_earnings_df contains the share price
+        audited_calculated_df['dividend_yield'] = 100 * \
+            price_to_earnings_df['dividends_per_share'] / (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates'])
         audited_calculated_df['dividend_payout_ratio'] = 100* price_to_earnings_df['total_dividends_paid'] / \
             price_to_earnings_df['net_income']
+        # calculate the book value per share (BVPS)
+        audited_calculated_df['book_value_per_share'] = (audited_raw_df['total_assets'] - audited_raw_df['total_liabilities']) / \
+                                                        audited_raw_df['total_shares_outstanding']
+        # calculate the price to book ratio
+        audited_calculated_df['price_to_book_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
+            ((price_to_earnings_df['total_assets'] - price_to_earnings_df['total_liabilities']) / \
+                                                        price_to_earnings_df['total_shares_outstanding'])
         # replace inf with None
         audited_calculated_df = audited_calculated_df.replace([np.inf, -np.inf], None)
         # now write the df to the database
@@ -1544,22 +1554,22 @@ def main():
                     # else this is a full update (run once a day)
                     # get the latest conversion rates
                     TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(fetch_latest_currency_conversion_rates,())
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(check_num_equities_in_sector, ())
-                    multipool.apply_async(scrape_dividend_data, ())
-                    # block on the next function to wait until the dates are ready
-                    dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
-                        update_equity_summary_data, (start_date,))
-                    # now call the individual workers to fetch these dates
-                    async_results = []
-                    for core_date_list in dates_to_fetch_sublists:
-                        async_results.append(multipool.apply_async(
-                            scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
-                    # wait until all workers finish fetching data before continuing
-                    for result in async_results:
-                        result.wait()
-                    # now run functions that depend on this raw data
-                    multipool.apply_async(update_technical_analysis_data, ())
+                    # multipool.apply_async(scrape_listed_equity_data, ())
+                    # multipool.apply_async(check_num_equities_in_sector, ())
+                    # multipool.apply_async(scrape_dividend_data, ())
+                    # # block on the next function to wait until the dates are ready
+                    # dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
+                    #     update_equity_summary_data, (start_date,))
+                    # # now call the individual workers to fetch these dates
+                    # async_results = []
+                    # for core_date_list in dates_to_fetch_sublists:
+                    #     async_results.append(multipool.apply_async(
+                    #         scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
+                    # # wait until all workers finish fetching data before continuing
+                    # for result in async_results:
+                    #     result.wait()
+                    # # now run functions that depend on this raw data
+                    # multipool.apply_async(update_technical_analysis_data, ())
                     multipool.apply_async(
                         calculate_fundamental_analysis_ratios, (TTD_JMD, TTD_USD, TTD_BBD))
                     ###### Not updated #############
