@@ -785,7 +785,7 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
         market_summary_data_keys = ['index_name', 'index_value', 'index_change', 'change_percent',
                                     'volume_traded', 'value_traded', 'num_trades']
         daily_stock_data_keys = ['symbol', 'open_price', 'high', 'low', 'os_bid', 'os_bid_vol', 'os_offer',
-                                 'os_offer_vol', 'last_sale_price', 'was_traded_today', 'volume_traded', 'close_price', 'change_dollars']
+                                 'os_offer_vol', 'last_sale_price', 'was_traded_today', 'volume_traded','num_trades', 'close_price', 'change_dollars']
         # set up the database connection to write data to the db
         db_connect = DatabaseConnect()
         logging.debug("Successfully connected to database"+pid_string)
@@ -1267,8 +1267,9 @@ def update_technical_analysis_data():
                     technical_analysis_table['Closing Price'][0].replace('$', ''))
                 stock_technical_data['high_52w'] = float(
                     technical_analysis_table['Change'][4].replace('$', ''))
-                stock_technical_data['low_52w'] = float(
-                    technical_analysis_table['Change%'][4].replace('$', ''))
+                # leaving out the 52w low because it is not correct from the ttse site
+                #stock_technical_data['low_52w'] = float(
+                #    technical_analysis_table['Change%'][4].replace('$', ''))
                 stock_technical_data['wtd'] = float(
                     technical_analysis_table['Opening Price'][6].replace('%', ''))
                 stock_technical_data['mtd'] = float(
@@ -1310,6 +1311,8 @@ def update_technical_analysis_data():
                     f"SELECT volume_traded FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 30;", db_connect.dbengine)
                 adtv_df = volume_traded_df.rolling(window=30).mean()
                 stock_technical_data['adtv'] = adtv_df['volume_traded'].iloc[-1]
+                # calculate the 52w low
+                stock_technical_data['low_52w'] = stock_change_df['close_price'].min()
                 # filter out nan from this dict
                 for key in stock_technical_data:
                     if pd.isna(stock_technical_data[key]):
@@ -1500,6 +1503,7 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
             db_connect.close()
             logging.info("Successfully closed database connection")
 
+
 def fetch_latest_currency_conversion_rates():
     logging.debug("Now trying to fetch latest currency conversions.")
     api_response_ttd = requests.get(
@@ -1513,6 +1517,7 @@ def fetch_latest_currency_conversion_rates():
         return TTD_JMD, TTD_USD, TTD_BBD
     else:
         logging.exception(f"Cannot load URL for currency conversions.{api_response_ttd.status_code},{api_response_ttd.reason},{api_response_ttd.url}")
+
 
 def main():
     """The main steps in coordinating the scraping"""
@@ -1553,10 +1558,10 @@ def main():
                 else:
                     # else this is a full update (run once a day)
                     # get the latest conversion rates
-                    TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(fetch_latest_currency_conversion_rates,())
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(check_num_equities_in_sector, ())
-                    multipool.apply_async(scrape_dividend_data, ())
+                    # TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(fetch_latest_currency_conversion_rates,())
+                    # multipool.apply_async(scrape_listed_equity_data, ())
+                    # multipool.apply_async(check_num_equities_in_sector, ())
+                    # multipool.apply_async(scrape_dividend_data, ())
                     # block on the next function to wait until the dates are ready
                     dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
                         update_equity_summary_data, (start_date,))

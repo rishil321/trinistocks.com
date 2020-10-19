@@ -25,10 +25,21 @@ from urllib.parse import urlencode
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.db.models import Max
+from django.urls import reverse_lazy
+from django.http import HttpResponseRedirect
+from django.core.validators import validate_email
+from django.contrib.auth import authenticate, password_validation
+from django.core import exceptions
+from django.contrib import messages
+from django.views.generic.edit import FormView
+from django.contrib.auth.models import User
+from django.contrib.auth.views import LoginView 
+from django.contrib.auth import login,logout
 # Imports from local machine
 from stocks import models, filters
 from stocks import tables as stocks_tables
 from .templatetags import stocks_template_tags
+from . import forms
 
 # Set up logging
 logger = logging.getLogger('root')
@@ -270,6 +281,7 @@ class FundamentalAnalysisSummary( ExportMixin, tables2.views.SingleTableMixin, T
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
+
 
 class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
     """
@@ -947,11 +959,127 @@ class FundamentalHistoryView(BasicLineChartAndTableView):
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
 
+
 class AboutPageView(TemplateView):
     """
     Set up the data for the technical analysis summary page
     """
     template_name = 'stocks/base_about.html'
+
+
+class LoginPageView(FormView):
+    """
+    User login  
+    """
+    template_name = 'stocks/base_login.html'
+    form_class = forms.LoginForm
+    success_url = reverse_lazy('stocks:login',current_app="stocks")
+
+    def get_context_data(self, **kwargs):
+        """This is called when the form is called for the first time"""
+        context = super(LoginPageView, self).get_context_data(**kwargs)
+        context['initial_form'] = True
+        return context
+
+    def form_invalid(self,form, **kwargs):
+        """This is called when the form is submitted with invalid data"""
+        context = super(LoginPageView, self).get_context_data(**kwargs)
+        context['form_submit_success'] = False
+        context['initial_form'] = False
+        return self.render_to_response(context)
+
+    def form_valid(self,form, **kwargs):
+        """This is called when the form is submitted with all data valid"""
+        # set up our context variables
+        context = super(LoginPageView, self).get_context_data(**kwargs)
+        context['form_submit_success'] = True
+        context['initial_form'] = False
+        # login the user
+        user = authenticate(self.request, username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+        if user is not None:
+            login(self.request, user)
+            logger.info(f"{form.cleaned_data['username']} logged in successfully.")
+        return self.render_to_response(context)
+
+
+class LogoutPageView(TemplateView):
+    """
+    User logout
+    """
+    template_name = 'stocks/base_logout.html'
+
+    def get_context_data(self, **kwargs):
+        """This is called when the form is called for the first time"""
+        context = super(LogoutPageView, self).get_context_data(**kwargs)
+        try:
+            if self.request.GET['logout']:
+                logout(self.request)
+                context['logout_success'] = True
+        except MultiValueDictKeyError:
+            pass
+        return context
+
+
+class RegisterPageView(FormView):
+    """
+    Register new user
+    """
+    template_name = 'stocks/base_register.html'
+    form_class = forms.RegisterForm
+    success_url = reverse_lazy('stocks:register',current_app="stocks")
+    
+    def get_context_data(self, **kwargs):
+        """This is called when the form is called for the first time"""
+        context = super(RegisterPageView, self).get_context_data(**kwargs)
+        context['initial_form'] = True
+        return context
+
+    def form_valid(self,form, **kwargs):
+        """This is called when the form is submitted with all data valid"""
+        # set up our context variables
+        context = super(RegisterPageView, self).get_context_data(**kwargs)
+        context['form_submit_success'] = True
+        context['initial_form'] = False
+        # create the user
+        new_username = form.cleaned_data['username']
+        new_email = form.cleaned_data['email']
+        new_password = form.cleaned_data['password']
+        User.objects.create_user(new_username, new_email, new_password)
+        logger.info(f"Successfully created user: {new_username}.")
+        return self.render_to_response(context)
+
+    def form_invalid(self,form, **kwargs):
+        """This is called when the form is submitted with invalid data"""
+        context = super(RegisterPageView, self).get_context_data(**kwargs)
+        context['form_submit_success'] = False
+        context['initial_form'] = False
+        return self.render_to_response(context)
+
+
+class PortfolioTransactions(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+    """
+    Used to display the transactions page for portfolio management
+    """
+
+    template_name = 'stocks/base_portfoliotransactions.html'
+    model = None  # models.something
+    table_class = None  # tables.something
+    filterset_class = None  # filters.something
+    page_name = ''  # a string representing the name of the page
+
+    def __init__(self):
+        super(BasicLineChartAndTableView, self).__init__()
+        logger.debug("Now loading template: "+self.template_name)
+
+    def set_graph_dataset(self,):
+        self.graph_dataset = []
+
+    def get_context_data(self, *args, **kwargs):
+        # get the current context
+        context = super().get_context_data(
+            *args, **kwargs)
+        logger.debug("Now loading all listed equities.")
+        return context
 
 
 # CONSTANTS

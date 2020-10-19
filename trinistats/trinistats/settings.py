@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from django.urls import reverse_lazy
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -216,3 +217,5 @@ EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 MANAGERS = ADMINS
 DEFAULT_FROM_EMAIL = 'django_server1@trinistats.com'
+
+LOGIN_URL = reverse_lazy('stocks:login',current_app="stocks")
