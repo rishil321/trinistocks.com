@@ -81,3 +81,10 @@ class LoginForm(forms.Form):
         else:
             raise ValidationError("Your password was incorrect. Please recheck.")
         return password
+
+
+class PortfolioTransactionForm(forms.Form):
+    symbol = forms.CharField(widget=forms.Select(attrs={'class' : 'custom-dropdown'}))
+    num_shares = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))
+    bought_or_sold =  forms.CharField(widget=forms.Select(attrs={'class' : 'custom-dropdown'}))
+    price = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))

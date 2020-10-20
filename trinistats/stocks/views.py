@@ -1056,32 +1056,32 @@ class RegisterPageView(FormView):
         return self.render_to_response(context)
 
 
-class PortfolioTransactions(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class PortfolioTransactionsView(FormView):
     """
-    Used to display the transactions page for portfolio management
+    Allow user to add new market transactions for their portfolio
     """
-
     template_name = 'stocks/base_portfoliotransactions.html'
-    model = None  # models.something
-    table_class = None  # tables.something
-    filterset_class = None  # filters.something
-    page_name = ''  # a string representing the name of the page
-
-    def __init__(self):
-        super(BasicLineChartAndTableView, self).__init__()
-        logger.debug("Now loading template: "+self.template_name)
-
-    def set_graph_dataset(self,):
-        self.graph_dataset = []
-
-    def get_context_data(self, *args, **kwargs):
-        # get the current context
-        context = super().get_context_data(
-            *args, **kwargs)
+    form_class = forms.PortfolioTransactionForm
+    success_url = reverse_lazy('stocks:portfoliotransactions',current_app="stocks")
+    
+    def get_context_data(self, **kwargs):
+        """This is called when the form is called for the first time"""
+        context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
         logger.debug("Now loading all listed equities.")
+        listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
+        context['listed_stocks'] = listed_stocks
         return context
 
+    def form_valid(self,form, **kwargs):
+        """This is called when the form is submitted with all data valid"""
+        # set up our context variables
+        context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
+        return self.render_to_response(context)
 
+    def form_invalid(self,form, **kwargs):
+        """This is called when the form is submitted with invalid data"""
+        context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
+        return self.render_to_response(context)
 # CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
 

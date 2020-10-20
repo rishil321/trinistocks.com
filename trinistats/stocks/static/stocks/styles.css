@@ -56,7 +56,7 @@ h1 {
     font-size: 1.2rem;
 }
 
-.less_width{
+.less-width{
     margin-left:0%;
     margin-right:0%;
 }
@@ -370,9 +370,9 @@ tr.odd td.headcol {
         height: 14em;
     }
 
-    .less_width{
-        margin-left:20%;
-        margin-right:20%;
+    .less-width{
+        margin-left:30%;
+        margin-right:30%;
     }
 
     .form-input-error ul {

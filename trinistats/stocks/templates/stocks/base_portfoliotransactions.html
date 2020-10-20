@@ -1,19 +1,110 @@
 {% extends "base.html" %}
-{% load django_tables2 %}
 {% load static %}
 
-    {% block description %}"Technical indicators calculated for stocks listed on the Trinidad and Tobago Stock Exchange (TTSE),
-    displayed in a table."
+    {% block description %}"Load "
     {% endblock description %}
 
     {% block title %}trinistats | Stocks | Technical Stock Analysis Data for the Trinidad and Tobago Stock Exchange (TTSE)
     {% endblock title %}
 
     {% block mainblock %}
-    <h1>Technical Analysis Summary</h1>
-    <br>
-    <div class="tablediv_scroll">
-        {% render_table table %}
+    <div class="box has-text-centered">
+        <h1>Stock Portfolio Transactions</h1>
+        <br>
+        <p>Add all of the transactions that you've made on the market here. This will help us build and track stocks in your portfolio.</p>
+    </div>
+    <div style="text-align:center;" class="box less-width">
+    <form action="{% url "stocks:portfoliotransactions" %}" method="post">
+        {% csrf_token %}
+
+        <div class="field">
+            <label class="label" for="{{ form.symbol.id_for_label }}">Stock Symbol</label>
+            <div class="select">
+                <select>
+                {% for listed_stock in listed_stocks %}
+                <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
+                {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="{{ form.num_shares.id_for_label }}">Number of Shares Traded</label>
+            <div class="control has-icons-left has-icons-right">
+                {{form.num_shares}}
+                <span class="icon is-small is-left">
+                    <i class="fas fa-pizza-slice"></i>
+                </span>
+                <span class="icon is-small is-right">
+                {% if form.num_shares.value and form.num_shares.errors %}
+                <i class="fas fa-exclamation-circle"></i>
+                {% elif form.num_shares.value %}
+                <i class="fas fa-check"></i>
+                {% endif %}
+                </span>
+            </div>
+            {% if form.num_shares.value and form.num_shares.errors %}
+                <p class="help is-danger">
+                {% for error in form.num_shares.errors %}
+                {{error}}
+                {% endfor %}
+                </p>
+            {% elif form.num_shares.value %}
+            <p class="help is-success">
+            Looks like a valid number of shares.
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="field">
+            <label class="label" for="{{ form.bought_or_sold.id_for_label }}">Bought/Sold</label>
+            <div class="select">
+                <select>
+                <option value="bought">Bought</option>
+                <option value="sold">Sold</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="{{ form.price.id_for_label }}">Share Price</label>
+            <div class="control has-icons-left has-icons-right">
+                {{form.price}}
+                <span class="icon is-small is-left">
+                    <i class="fas fa-dollar-sign"></i>
+                </span>
+                <span class="icon is-small is-right">
+                {% if form.price.value and form.price.errors %}
+                <i class="fas fa-exclamation-circle"></i>
+                {% elif form.price.value %}
+                <i class="fas fa-check"></i>
+                {% endif %}
+                </span>
+            </div>
+            {% if form.price.value and form.price.errors %}
+                <p class="help is-danger">
+                {% for error in form.price.errors %}
+                {{error}}
+                {% endfor %}
+                </p>
+            {% elif form.price.value %}
+            <p class="help is-success">
+            Looks like a valid price.
+            </p>
+            {% endif %}
+        </div>
+    
+        <input id="add_transaction_button" class="button is-primary" type="submit" value="Add Transaction"></input>
+    </form>
+    </div>
+    <div class="box" style="text-align:center;" id="login_attempt_box">
+        {% if not initial_form and form_submit_success %}
+        <p>Login successful! Welcome back <b>{{form.username.value}}</b>&nbsp<i class="fas fa-child fa-2x has-text-success"></i></p>
+        {% elif not initial_form and not form_submit_success %}
+        <p><i class="far fa-frown fa-2x has-text-danger"></i>
+        There was a problem with your login. Please check the issues above.
+        </p>
+        {% endif %}
     </div>
     {% endblock mainblock %}
 
@@ -23,9 +114,5 @@
     
     <!--Javascript-->
     {% block activepagetoggle %}
-    $("#technicalanalysislink").toggleClass("has-background-red");
-    {% endblock %}
-    {% block changeconfigbutton %}
-    $('#configbutton').off('click')
-    $('#configbutton').css('cursor', 'not-allowed'); // 'default' to revert
+    $("#portfoliotransactionslink").toggleClass("has-background-red");
     {% endblock %}

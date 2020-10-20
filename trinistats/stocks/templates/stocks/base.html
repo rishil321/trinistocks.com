@@ -83,11 +83,11 @@
                 <div class="navbar-item has-dropdown is-hoverable">
                     <a class="navbar-link has-text-weight-bold">Historical</a>
                     <div class="navbar-dropdown has-background-black">
-                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock Price History</a>
-                        <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}'>Dividend History</a>
-                        <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}'>Market Index History</a>
-                        <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}'>Outstanding Trade History</a>
-                        <a class="navbar-item" id="fundamentalhistorylink" href='{% url "stocks:fundamentalhistory" %}'>Fundamental Indicators History</a>
+                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock Prices</a>
+                        <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}'>Dividends Paid</a>
+                        <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}'>Market Indices</a>
+                        <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}'>Outstanding Trades</a>
+                        <a class="navbar-item" id="fundamentalhistorylink" href='{% url "stocks:fundamentalhistory" %}'>Fundamental Indicators</a>
                     </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable">
@@ -185,10 +185,6 @@
         });
         //trigger the red background for the active page
         {% block activepagetoggle %}
-        {% endblock %}
-        {% block changeconfigbutton %}
-        $('#configbutton').on('click');
-        $('configbutton').css('cursor', 'pointer'); // 'default' to revert
         {% endblock %}
     });
     </script>

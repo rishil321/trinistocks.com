@@ -33,4 +33,6 @@ urlpatterns = [
          name='logout'),
      path('register', views.RegisterPageView.as_view(),
          name='register'),
+     path('portfoliotransactions', views.PortfolioTransactionsView.as_view(),
+         name='portfoliotransactions'),
 ]
