@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
  
 """
-Description of this module/script goes here
+This script was used as a one-off to import some old stock prices that I pulled from a website
+into the TTSE database 
 :param -f OR --first_parameter: The description of your first input parameter
 :returns: Whatever your script returns when called
 :raises Exception if any issues are encountered

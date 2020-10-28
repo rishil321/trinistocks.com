@@ -1,9 +1,9 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import User
 import django.core.validators as validators
 import django.contrib.auth.password_validation as password_validators
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate,get_user_model
+from stocks import models
 
 class RegisterForm(forms.Form):
     username = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))
@@ -18,10 +18,10 @@ class RegisterForm(forms.Form):
         data = self.cleaned_data['username']
         # check if this username exists already
         try:
-            user_check = User.objects.get(username=data)
+            user_check = get_user_model().objects.get(username=data)
             # if an exception is not raised, then this user already exists
             raise ValidationError("Your username already exists. Please choose another.")
-        except User.DoesNotExist:
+        except models.User.DoesNotExist:
             # continue since this user does not already exist. 
             pass
         return data
@@ -30,10 +30,10 @@ class RegisterForm(forms.Form):
         data = self.cleaned_data['email']
         # check if this email exists already
         try:
-            email_check = User.objects.get(email=data)
+            email_check = get_user_model().objects.get(email=data)
             # if an exception is not raised, then this user already exists
             raise ValidationError("This email address has already been used. Please choose another or reset the password for this user.")
-        except User.DoesNotExist:
+        except models.User.DoesNotExist:
             # continue since this user does not already exist. 
             pass
         # check if this is a valid email address
@@ -60,11 +60,11 @@ class LoginForm(forms.Form):
         try:
             data = self.cleaned_data['username']
             # check if this email exists
-            User.objects.get(username=data)
+            get_user_model().objects.get(username=data)
             # if an exception is not raised, then this user exists
         except KeyError:
             raise ValidationError("Please enter a username.")
-        except User.DoesNotExist:
+        except models.User.DoesNotExist:
             raise ValidationError("This username could not be found. Please recheck.")
         return data
 
@@ -84,7 +84,34 @@ class LoginForm(forms.Form):
 
 
 class PortfolioTransactionForm(forms.Form):
-    symbol = forms.CharField(widget=forms.Select(attrs={'class' : 'custom-dropdown'}))
+
+    # Set up the required data for this form
+    ALL_LISTED_EQUITY_CHOICES = []
+    choices = models.ListedEquities.objects.all().order_by('symbol')
+    for choice in choices:
+        ALL_LISTED_EQUITY_CHOICES.append((choice.symbol,choice.symbol))
+    symbol = forms.ChoiceField(widget=forms.Select(attrs={'class' : ''}), choices = ALL_LISTED_EQUITY_CHOICES)
     num_shares = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))
-    bought_or_sold =  forms.CharField(widget=forms.Select(attrs={'class' : 'custom-dropdown'}))
+    bought_or_sold =  forms.ChoiceField(widget=forms.Select(attrs={'class' : ''}), choices = (("Bought","Bought"),("Sold","Sold")))
     price = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))
+    date = forms.DateField()
+
+    def clean_num_shares(self):
+        num_shares = self.cleaned_data['num_shares']
+        try:
+            num_shares = int(num_shares)
+        except ValueError:
+            raise ValidationError("You have not entered a valid number of shares. Please recheck.")
+        return num_shares
+
+    def clean_price(self):
+        price = self.cleaned_data['price']
+        try:
+            # check if this is a valid float
+            price = float(price)
+            # check if this is positive
+            if price <= 0.0:
+                raise ValueError()
+        except (ValueError,TypeError):
+            raise ValidationError("You have not entered a valid price. Please recheck.")
+        return price

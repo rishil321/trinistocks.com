@@ -2,6 +2,9 @@ from django.db import models
 from django.urls import reverse
 from .templatetags import stocks_template_tags
 from urllib.parse import urlencode
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 
@@ -167,6 +170,7 @@ class TechnicalAnalysisSummary(models.Model):
 
 
 class FundamentalAnalysisSummary(models.Model):
+
     id = models.AutoField(primary_key=True)
     symbol = models.ForeignKey(
         ListedEquities, models.CASCADE, db_column='symbol')
@@ -199,3 +203,44 @@ class FundamentalAnalysisSummary(models.Model):
     class Meta:
         managed = False
         db_table = 'audited_fundamental_calculated_data'
+
+
+class PortfolioTransactions(models.Model):
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.CASCADE, default=1)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, default='AGL')
+    date = models.DateField(verbose_name="Date")
+    bought_or_sold = models.CharField(max_length=10)
+    share_price = models.DecimalField(max_digits=12, decimal_places=2)
+    num_shares = models.IntegerField()
+
+    class Meta:
+        managed = True
+        db_table = 'portfolio_transactions'
+        unique_together = [['user','date','symbol','num_shares']]
+
+
+class PortfolioSummary(models.Model):
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.CASCADE, default=1)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, default='AGL')
+    num_shares = models.IntegerField()
+    market_value = models.DecimalField(max_digits=20, decimal_places=2)
+    book_value = models.DecimalField(max_digits=20, decimal_places=2)
+
+    class Meta:
+        managed = True
+        db_table = 'portfolio_summary'
+        unique_together = [['user','symbol']]
+
+
+class User(AbstractUser):
+    pass
+    # add additional fields in here
+
+    def __str__(self):
+        return self.username

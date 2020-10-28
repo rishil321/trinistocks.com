@@ -1,28 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-This module is used to scrape the Trinidad and Tobago Stock Exchange at https://stockex.co.tt/
-:returns: 0 if successful
-:raises Exception if any issues are encountered
+"""This is the main module used for scraping data off the Trinidad and Tobago Stock Exchange website.
+
+:raises requests.exceptions.HTTPError: If https://www.stockex.co.tt/ is inaccessible/slow
+:return: 0
+:rtype: Integer
 """
 
 # Put all your imports here, one per line.
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
-import sys
 import logging
 import os
-from pathlib import Path
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
-import csv
-import shutil
-from decimal import Decimal
 import argparse
-import json
-import getopt
 import multiprocessing
 import time
 import tempfile
@@ -31,73 +25,27 @@ import re
 # Imports from the cheese factory
 from pid import PidFile
 import requests
-import urllib.request
-import urllib.parse
 from sqlalchemy import create_engine, Table, select, MetaData, text, and_
 from sqlalchemy.dialects.mysql import insert
 import sqlalchemy.exc
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-from selenium.common.exceptions import WebDriverException
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
 
 # Imports from the local filesystem
-import ttsescraperconfig
-import customlogging
+from ... import custom_logging
+from ...database_ops import DatabaseConnect
+from ..crosslisted_symbols import USD_STOCK_SYMBOLS
 
 # Put your constants here. These should be named in CAPS
 
-# Most stocks on the TTSE have prices and dividends listed in TTD. These are the exceptions.
-# The following stocks have both prices and dividends listed in USD on the exchange
-USD_STOCK_SYMBOLS = ['MPCCEL']
-# These have prices in TTD, but dividends in USD
-USD_DIVIDEND_SYMBOLS = ['SFC','FCI']
-# These have prices listed in TTD, but dividends in JMD
-JMD_DIVIDEND_SYMBOLS = ['GKC','JMMBGL','NCBFG']
-# These have prices in TTD, but dividends in BBD
-BBD_DIVIDEND_SYMBOLS = ['CPFV']
 # The timeout to set for multiprocessing tasks (in seconds)
 MULTIPROCESSING_TIMEOUT = 60*60
 WEBPAGE_LOAD_TIMEOUT_SECS = 30
+# Define a start date to use for the full updates
+START_DATE = '2017-01-01'
 
 # Put your class definitions here. These should use the CapWords convention.
-
-
-class DatabaseConnect:
-    """
-    Manages connections the the backend MySQL database
-    """
-
-    dbcon = None
-    dbengine = None
-
-    def __init__(self,):
-        logging.debug("Creating a new DatabaseConnect object.")
-        # Get the required login info from our config file
-        dbuser = ttsescraperconfig.dbusername
-        dbpass = ttsescraperconfig.dbpassword
-        dbaddress = ttsescraperconfig.dbaddress
-        dbschema = ttsescraperconfig.schema
-        self.dbengine = create_engine("mysql://"+dbuser+":"+dbpass+"@"+dbaddress+"/" +
-                                      dbschema, echo=False)
-        self.dbcon = self.dbengine.connect()
-        if self.dbcon:
-            logging.debug("Connected to database successfully")
-        else:
-            raise ConnectionError(
-                "Could not connect to database at "+dbaddress)
-
-    def close(self,):
-        """
-        Close the database connection
-        """
-        if self.dbengine:
-            self.dbengine.dispose()
 
 
 # Put your function definitions here. These should be lowercase, separated by underscores.
@@ -108,6 +56,7 @@ def scrape_listed_equity_data():
     https://www.stockex.co.tt/listed-securities/?IdInstrumentType=1&IdSegment=&IdSector=
     and scrape the useful output into a list of dictionaries to write to the db
     """
+    db_connection = None
     try:
         logging.info(
             "Now scraping listing data from all listed equities.")
@@ -204,13 +153,14 @@ def scrape_listed_equity_data():
     except Exception as exc:
         logging.exception(
             f"Problem encountered while updating listed equities. Here's what we know: {str(exc)}")
-        customlogging.flush_smtp_logger()
+        custom_logging.flush_smtp_logger()
     finally:
-        if 'db_connection' in locals() and db_connection is not None:
+        if db_connection is not None:
             db_connection.close()
 
 
 def check_num_equities_in_sector():
+    db_connection = None
     try:
         logging.info(
             "Now computing number of equities in each sector.")
@@ -245,9 +195,9 @@ def check_num_equities_in_sector():
     except Exception as exc:
         logging.exception(
             "Problem encountered while calculating number of equities in each sector."+str(exc))
-        customlogging.flush_smtp_logger()
+        custom_logging.flush_smtp_logger()
     finally:
-        if 'db_connection' in locals() and db_connection is not None:
+        if db_connection is not None:
             db_connection.close()
 
 
@@ -256,6 +206,7 @@ def scrape_historical_indices_data():
     https://www.stockex.co.tt/indices/
     and scrape the useful output into a list of dictionaries to write to the db
     """
+    db_connection = None
     try:
         logging.info(
             "Now scraping historical data for all indices.")
@@ -305,9 +256,9 @@ def scrape_historical_indices_data():
     except Exception as exc:
         logging.exception(
             f"Problem encountered while updating listed equities. Here's what we know: {str(exc)}")
-        customlogging.flush_smtp_logger()
+        custom_logging.flush_smtp_logger()
     finally:
-        if 'db_connection' in locals() and db_connection is not None:
+        if db_connection is not None:
             db_connection.close()
 
 
@@ -315,6 +266,7 @@ def scrape_dividend_data():
     """Use the requests and pandas libs to browse through 
     https://www.stockex.co.tt/manage-stock/<symbol> for each listed security
     """
+    db_connection = None
     try:
         logging.info("Now trying to scrape dividend data")
         # First read all symbols from the listed_equities table
@@ -406,367 +358,12 @@ def scrape_dividend_data():
         return 0
     except Exception as ex:
         logging.exception("Error encountered while scraping dividend data.")
-        customlogging.flush_smtp_logger()
+        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
-        if 'db_connection' in locals() and db_connection is not None:
+        if db_connection is not None:
             db_connection.close()
             logging.info("Successfully closed database connection")
-
-
-def scrape_historical_data():
-    """Use the Selenium module to open the Chrome browser and browse through
-    all listed equity securities at the URL
-    https://www.stockex.co.tt/controller.php?action=listed_companies
-    For each listed security, press the history button and get
-    all data from 2010 to the current date
-    """
-    try:
-        # This list of dicts will contain all data to be written to the db
-        allhistoricaldata = []
-        # First open the browser
-        logging.info(
-            "Now opening the Chrome browser to fetch historical stock data.")
-        options = Options()
-        options.headless = True
-        driver = webdriver.Chrome(options=options)
-        # Then go the stockex.co.tt URL that lists all equities
-        logging.debug(
-            "Navigating to https://stockex.co.tt/controller.php?action=listed_companies")
-        driver.get("https://stockex.co.tt/controller.php?action=listed_companies")
-        # All equities are wrapped in an 'a' tag, so we filter all of these elements
-        # into an array
-        pagelinks = driver.find_elements_by_tag_name("a")
-        listedstockcodes = []
-        # For each 'a' element that we found
-        for link in pagelinks:
-            # All valid equities contain the StockCode keyword in their href
-            if "StockCode" in link.get_attribute("href"):
-                # Instead of loading this main URL, we simply get the Stock Code for
-                # each equity
-                stockurl = link.get_attribute("href")
-                stockcode = stockurl.split("StockCode=", 1)[1]
-                listedstockcodes.append(stockcode)
-        # Now we go through each equity in our list and navigate to their historical page
-        logging.info("Found links for " +
-                     str(len(listedstockcodes))+" equities.")
-        logging.info("Now downloading the historical data for each.")
-        for stockcode in listedstockcodes:
-            logging.info(
-                "Now trying to fetch historical data for stock code:"+stockcode)
-            try:
-                # Construct the full URL using the stock code
-                equityhistoryurl = "https://www.stockex.co.tt/controller.php?action=view_stock_history&StockCode=" + stockcode
-                # Load the URL for this equity
-                driver.get(equityhistoryurl)
-                # Check if there is an alert
-                try:
-                    WebDriverWait(driver, 3).until(EC.alert_is_present(),
-                                                   'Timed out waiting for PA creation ' +
-                                                   'confirmation popup to appear.')
-                    # Dismiss the alert asking you to download flash player
-                    driver.switch_to.alert.dismiss()
-                except TimeoutException:
-                    pass
-                # First find the field to enter the start date
-                startdateinputfield = driver.find_element_by_id("StartDate")
-                startdateinputfield.clear()
-                # Then enter 01/01/2010 in the start date field
-                startdateinputfield.send_keys(START_DATE)
-                # Now find the field to enter the ending date
-                enddateinputfield = driver.find_element_by_id("EndDate")
-                enddateinputfield.clear()
-                # Then enter the ending date as today
-                currentdate = f"{datetime.now():%m/%d/%Y}"
-                enddateinputfield.send_keys(str(currentdate))
-                # Now find the submit button and click it
-                # Note that the page has several submit buttons for some reason
-                submitbuttons = driver.find_elements_by_name("Submit")
-                for button in submitbuttons:
-                    if button.get_attribute("value") == "Submit":
-                        button.click()
-                # Now we are going to download the csv containing this data
-                # Set the download location
-                historicaldatafile = Path(
-                    tempfile.gettempdir(), "historicaldata.csv")
-                # Delete the file if it exists
-                try:
-                    os.remove(historicaldatafile)
-                except OSError:
-                    pass
-                # The link we want to find is wrapped in an "a" tag
-                importantelements = driver.find_elements_by_tag_name("a")
-                for importantelement in importantelements:
-                    if importantelement.text == "Download CSV":
-                        downloadURL = importantelement.get_attribute("href")
-                        # Now actually download the file to this location
-                        with urllib.request.urlopen(downloadURL) as response, open(historicaldatafile, 'wb') as outfile:
-                            shutil.copyfileobj(response, outfile)
-                        break
-                # Create some dictionaries to store our data
-                stockhistorydates = []
-                closingquotes = []
-                changedollars = []
-                volumetraded = []
-                # Now open our downloaded file to read and parse the contents
-                with open(historicaldatafile, 'r') as filestream:
-                    csvreader = csv.reader(filestream)
-                    for csvline in csvreader:
-                        # Each comma-separated value represents something to add to our list
-                        stockhistorydates.append(csvline[0])
-                        closingquotes.append(csvline[1])
-                        changedollars.append(csvline[2])
-                        volumetraded.append(csvline[4])
-                # Now we have all the important historical information for this equity
-                # So we can add the lists to our global dictionary
-                # But first we need to get the symbol for this security
-                symbolelement = driver.find_element_by_xpath(
-                    "//*[contains(text(), 'Symbol :')]")
-                # Find the parent of this element, which contains the actual symbol
-                symbolelement = symbolelement.find_element_by_xpath("./..")
-                symbol = symbolelement.text.split(": ", 1)[1]
-                # Check if data for this symbol has already been added
-                symbolalreadyadded = False
-                for historicaldata in allhistoricaldata:
-                    if historicaldata['symbol'] == symbol:
-                        symbolalreadyadded = True
-                # If we have not already added data for this symbol, then we continue
-                if not symbolalreadyadded:
-                    # Now create our list of dicts containing all of the dividends
-                    for index, date in enumerate(stockhistorydates):
-                        # For each record, check that our date is valid
-                        try:
-                            parseddate = parse(date, fuzzy=True).date()
-                            # Also remove any commas in the volume traded
-                            # and try cast to an int
-                            volumetraded[index] = int(
-                                volumetraded[index].replace(",", ""))
-                            # If the parse does not throw an errors, continue
-                            historicaldata = {'date': parseddate,
-                                              'closingquote': closingquotes[index],
-                                              'changedollars': changedollars[index],
-                                              'volumetraded': volumetraded[index],
-                                              'symbol': symbol}
-                            allhistoricaldata.append(historicaldata)
-                        except ValueError:
-                            # If the parsing does throw an error, then we do not add the element
-                            # as it is not valid
-                            pass
-                    logging.info(
-                        "Successfully fetched historical data for "+symbol)
-                else:
-                    logging.info("Symbol already added. Skipping.")
-            except Exception as e:
-                logging.error(
-                    "Unable to scrape historical data for stock code:"+stockcode+". "+str(e))
-        # Now write the data to the database
-        db_connect = DatabaseConnect()
-        # Each table is mapped to a class, so we create references to those classes
-        historicalstockinfo_table = Table(
-            'historicalstockinfo', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        listedequities_table = Table(
-            'listedequities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        logging.info("Preparing data for the historicalstockinfo table...")
-        # Now select the symbols and stockcodes from our existing securities
-        selectstmt = select(
-            [listedequities_table.c.symbol, listedequities_table.c.stockcode])
-        result = db_connect.dbcon.execute(selectstmt)
-        for row in result:
-            # The first element in our row tuple is the symbol, and the second is our stockcode
-            for historicaldatatoinsert in allhistoricaldata:
-                # Map the symbol for each equity to an stockcode in our table
-                if historicaldatatoinsert.get('symbol', None) == row[0]:
-                    historicaldatatoinsert['stockcode'] = row[1]
-                    # Check whether this data is for a non-TTD equity
-                    if historicaldatatoinsert['stockcode'] in USD_STOCK_CODES:
-                        historicaldatatoinsert['currency'] = 'USD'
-                    else:
-                        historicaldatatoinsert['currency'] = 'TTD'
-                    # Now remove our unneeded columns
-                    historicaldatatoinsert.pop('symbol', None)
-        # Now we add the new data into our db
-        logging.info("Inserting historical stock info data into database.")
-        insert_stmt = insert(historicalstockinfo_table).values(
-            allhistoricaldata)
-        on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
-            closingquote=insert_stmt.inserted.closingquote,
-            changedollars=insert_stmt.inserted.changedollars,
-            volumetraded=insert_stmt.inserted.volumetraded,
-            currency=insert_stmt.inserted.currency,
-        )
-        result = db_connect.dbcon.execute(on_duplicate_key_stmt)
-        logging.info("Number of rows affected was "+str(result.rowcount))
-        logging.info(
-            "Successfully wrote data for the historicalstockinfo table into database.")
-        db_connect.close()
-        return 0
-    except Exception as ex:
-        logging.exception(
-            "We ran into a problem while trying to fetch the historical stock data.")
-        customlogging.flush_smtp_logger()
-    finally:
-        if 'driver' in locals() and driver is not None:
-            # Always close the browser
-            driver.quit()
-            logging.info(
-                "Successfully closed web browser used to fetch historic stock data.")
-
-
-def update_dividend_yield():
-    """This function goes through each equity listed in the listedequity table
-    and calculates the dividend yield for that equity for each year that we have data on it
-    """
-    try:
-        logging.info("Now calculating dividend yields.")
-        db_connect = DatabaseConnect()
-        # get the tables that we need
-        historical_dividend_info_table = Table(
-            'historical_dividend_info', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        listed_equities_table = Table(
-            'listed_equities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        dividend_yield_table = Table(
-            'dividend_yield', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        # Now get all dividend data stored in the db
-        logging.info("Now fetching all dividend data listed in DB.")
-        select_stmt = select([historical_dividend_info_table.c.dividend_amount, historical_dividend_info_table.c.record_date,
-                              historical_dividend_info_table.c.symbol, historical_dividend_info_table.c.currency])
-        result = db_connect.dbcon.execute(select_stmt)
-        # And store them in lists
-        all_dividend_data = []
-        # Also create an extra list to find a set from
-        dividend_symbols = []
-        for row in result:
-            all_dividend_data.append(
-                dict(amount=row[0], date=row[1], symbol=row[2], currency=row[3]))
-            dividend_symbols.append(row[2])
-        # Get a unique list of the symbols that have dividends above
-        unique_symbols = list(set(dividend_symbols))
-        # Then for each equity, get their latest closing share prices
-        logging.info(
-            "Now fetching last closing price for each stock.")
-        stock_closing_quotes = []
-        # set up a list of datetimes to fetch dividend data for
-        datetime_years_to_fetch = []
-        current_year = datetime.now().year
-        temp_date = datetime.strptime('2010-12-31', '%Y-%m-%d')
-        while temp_date.year < current_year:
-            datetime_years_to_fetch.append(temp_date)
-            temp_date += relativedelta(years=1)
-        # get the last closing quote for each listed stock
-        for symbol in unique_symbols:
-            # store the years that we are interested in calculating dividends for
-            for date in datetime_years_to_fetch:
-                try:
-                    select_stmt = text(
-                        "SELECT close_price FROM daily_stock_summary WHERE symbol = :sym ORDER BY date DESC LIMIT 1;")
-                    result = db_connect.dbcon.execute(
-                        select_stmt, sym=symbol)
-                    row = result.fetchone()
-                    stock_closing_quotes.append(
-                        dict(symbol=symbol, close_price=row[0], date=date))
-                except Exception as exc:
-                    # if we do not have quotes for a particular year, simply ignore it
-                    logging.warning(
-                        f"Could not find a closing quote for {symbol}. Info: {str(exc)}")
-        # Now we need to compute the total dividend amount per year
-        logging.info("Calculating total dividends paid per year per stock.")
-        # Create a list of dictionaries to store the dividend per year per stockcode
-        dividend_yearly_data = []
-        for symbol in unique_symbols:
-            # Create a dictionary to store data for this stockcode
-            equity_yearly_data = dict(symbol=symbol)
-            # Also store the currency for one of the dividends
-            currency_stored = False
-            # go through each year that we are interested in and check if we have dividend data
-            # for that year for this stockcode
-            for date in datetime_years_to_fetch:
-                # check if we have dividend data for this year
-                for dividend_data in all_dividend_data:
-                    if dividend_data['symbol'] == symbol and dividend_data['date'].year == date.year:
-                        # Get the year of this dividend entry for this equity
-                        if (str(date.year)+"_dividends") in equity_yearly_data:
-                            # If a key has already been created in the dict for this year,
-                            # then we simply add our amount to this
-                            equity_yearly_data[str(
-                                date.year)+"_dividends"] += Decimal(dividend_data['amount'])
-                        else:
-                            # Else create a new key in the dictionary for this year pair
-                            equity_yearly_data[str(date.year)+"_dividends"] = Decimal(
-                                dividend_data['amount'])
-                        # Get the currency if we haven't already
-                        if not currency_stored:
-                            equity_yearly_data['currency'] = dividend_data['currency']
-                            currency_stored = True
-                # if we did not find any dividend data for this equity id and year, store 0
-                if not str(date.year)+"_dividends" in equity_yearly_data:
-                    equity_yearly_data[str(
-                        date.year)+"_dividends"] = Decimal(0.00)
-                    # set the currency as TTD for these 0 dividend equities
-                    equity_yearly_data['currency'] = 'TTD'
-            # Then store the dict in our list of all dividend yearly data
-            dividend_yearly_data.append(equity_yearly_data)
-        # Set up a list to store our dividendyielddata
-        dividend_yield_data = []
-        # Now get our conversion rates to convert between TTD and USD/JMD
-        global TTD_USD
-        global TTD_JMD
-        global TTD_BBD
-        if TTD_USD:
-            # Calculate our dividend yields using our values
-            for dividend_data in dividend_yearly_data:
-                for stock_quote in stock_closing_quotes:
-                    if (stock_quote['symbol'] == dividend_data['symbol']) and (str(stock_quote['date'].year)+"_dividends" in dividend_data):
-                        # If we have matched our stock data and our dividend data (by stockcode and year)
-                        # Check if this is a USD listed equity id
-                        global USD_STOCK_SYMBOLS
-                        if stock_quote['symbol'] in USD_STOCK_SYMBOLS:
-                            # all of the USD listed equities so far have dividends in USD as well, so we don't need to convert
-                            dividend_yield = dividend_data[str(
-                                stock_quote['date'].year)+"_dividends"]*100/stock_quote['close_price']
-                            # Add this value to our list
-                            dividend_yield_data.append({'yield_percent': dividend_yield, 'date': stock_quote['date'],
-                                                        'symbol': stock_quote['symbol']})
-                        else:
-                            # else this equity is listed in TTD
-                            # Check currencies, and use a multiplier for the conversion rate for dividends in other currencies
-                            conrate = Decimal(1.00)
-                            if dividend_data['currency'] == "USD":
-                                conrate = 1/TTD_USD
-                            elif dividend_data['currency'] == "JMD":
-                                conrate = 1/TTD_JMD
-                            elif dividend_data['currency'] == "BBD":
-                                conrate = 1/TTD_BBD
-                            else:
-                                pass
-                                # Else our conrate should remain 1
-                            # Now calculate the dividend yield for the year
-                            dividend_yield = dividend_data[str(
-                                stock_quote['date'].year)+"_dividends"]*conrate*100/stock_quote['close_price']
-                            # Add this value to our list
-                            dividend_yield_data.append({'yield_percent': dividend_yield, 'date': stock_quote['date'],
-                                                        'symbol': stock_quote['symbol']})
-        else:
-            raise ConnectionError(
-                "Could not connect to API to convert currencies. Status code "+api_response_ttd.status_code+". Reason: "+api_response_ttd.reason)
-        logging.info("Dividend yield calculated successfully.")
-        logging.info("Inserting data into database.")
-        insert_stmt = insert(dividend_yield_table).values(dividend_yield_data)
-        upsert_stmt = insert_stmt.on_duplicate_key_update(
-            {x.name: x for x in insert_stmt.inserted})
-        result = db_connect.dbcon.execute(upsert_stmt)
-        logging.info("Number of rows affected was "+str(result.rowcount))
-        logging.info(
-            "Successfully wrote data for the dividend_yield table into database.")
-        return 0
-    except Exception as ex:
-        logging.exception(
-            "We ran into an error while calculating dividend yields.")
-        customlogging.flush_smtp_logger()
-    finally:
-        if db_connect.dbengine:
-            # Always close the database engine
-            db_connect.dbengine.close()
-            logging.info("Successfully disconnected from database.")
 
 
 def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
@@ -778,6 +375,7 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
     """
     # declare a string to identify this PID
     pid_string = " in PID: "+str(os.getpid())
+    db_connect = None
     try:
         logging.info(
             "Now opening using pandas to fetch daily summary data"+pid_string)
@@ -871,14 +469,14 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                             result = db_connect.dbcon.execute(
                                 upsert_stmt)
                             execute_completed_successfully = True
+                            logging.info("Successfully scraped and wrote to db market indices data for " +
+                                 fetch_date+pid_string)
+                            logging.info(
+                                "Number of rows affected in the historical_indices_summary table was "+str(result.rowcount)+pid_string)
                         except sqlalchemy.exc.OperationalError as operr:
                             logging.warning(str(operr))
                             time.sleep(2)
                             execute_failed_times += 1
-                    logging.info("Successfully scraped and wrote to db market indices data for " +
-                                 fetch_date+pid_string)
-                    logging.info(
-                        "Number of rows affected in the historical_indices_summary table was "+str(result.rowcount)+pid_string)
                     # now lets try to wrangle the daily data for stocks
                     all_daily_stock_data = []
                     for shares_table in [ordinary_shares_table, preference_shares_table, second_tier_shares_table, mutual_funds_shares_table,
@@ -972,14 +570,14 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
                             result = db_connect.dbcon.execute(
                                 upsert_stmt)
                             execute_completed_successfully = True
+                            logging.info("Successfully scraped and wrote to db daily equity/shares data for " +
+                                fetch_date+pid_string)
+                            logging.info(
+                                "Number of rows affected in the daily_stock_summary table was "+str(result.rowcount)+pid_string)
                         except sqlalchemy.exc.OperationalError as operr:
                             logging.warning(str(operr))
                             time.sleep(2)
                             execute_failed_times += 1
-                    logging.info("Successfully scraped and wrote to db daily equity/shares data for " +
-                                 fetch_date+pid_string)
-                    logging.info(
-                        "Number of rows affected in the daily_stock_summary table was "+str(result.rowcount)+pid_string)
                 else:
                     logging.warning(
                         "This date is not a valid trading date: "+fetch_date+pid_string)
@@ -998,10 +596,10 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
     except Exception:
         logging.exception(
             "Could not complete historical_indices_summary and daily_stock_summary update."+pid_string)
-        customlogging.flush_smtp_logger()
+        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
-        if 'db_connect' in locals() and db_connect is not None:
+        if db_connect is not None:
             db_connect.close()
             logging.info("Successfully closed database connection"+pid_string)
 
@@ -1012,6 +610,7 @@ def update_equity_summary_data(start_date):
     for, based on the start_date specified and the dates already in the historical_indices_info table
     """
     logging.info("Now updating daily market summary data.")
+    db_connect = None
     try:
         db_connect = DatabaseConnect()
         logging.info("Successfully connected to database.")
@@ -1065,7 +664,7 @@ def update_equity_summary_data(start_date):
     except Exception as ex:
         logging.exception(
             f"We ran into a problem while trying to build the list of dates to scrape market summary data for. Here's what we know: {str(ex)}")
-        customlogging.flush_smtp_logger()
+        custom_logging.flush_smtp_logger()
 
 
 def update_daily_trades():
@@ -1076,6 +675,7 @@ def update_daily_trades():
     :returns: 0 if successful
     :raises Exception if any issues are encountered
     """
+    db_connect = None
     try:
         today_date = datetime.now().strftime('%Y-%m-%d')
         db_connect = DatabaseConnect()
@@ -1201,14 +801,14 @@ def update_daily_trades():
                     result = db_connect.dbcon.execute(
                         upsert_stmt)
                     execute_completed_successfully = True
+                    logging.info(
+                        "Successfully scraped and wrote to db daily equity/shares data for ")
+                    logging.info(
+                        "Number of rows affected in the daily_stock_summary table was "+str(result.rowcount))
                 except sqlalchemy.exc.OperationalError as operr:
                     logging.warning(str(operr))
                     time.sleep(2)
                     execute_failed_times += 1
-            logging.info(
-                "Successfully scraped and wrote to db daily equity/shares data for ")
-            logging.info(
-                "Number of rows affected in the daily_stock_summary table was "+str(result.rowcount))
         else:
             logging.warning("No data found for today.")
         return 0
@@ -1216,7 +816,7 @@ def update_daily_trades():
         logging.exception("Could not load daily data for today!")
     finally:
         # Always close the database connection
-        if 'db_connect' in locals() and db_connect is not None:
+        if db_connect is not None:
             db_connect.close()
             logging.info("Successfully closed database connection")
 
@@ -1225,6 +825,7 @@ def update_technical_analysis_data():
     """
     Calculate/scrape the data needed for the technical_analysis_summary table
     """
+    db_connect = None
     try:
         db_connect = DatabaseConnect()
         logging.info("Successfully connected to database")
@@ -1355,175 +956,19 @@ def update_technical_analysis_data():
     except Exception:
         logging.exception(
             "Could not complete technical analysis summary data update.")
-        customlogging.flush_smtp_logger()
+        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
-        if 'db_connect' in locals() and db_connect is not None:
+        if db_connect is not None:
             db_connect.close()
             logging.info("Successfully closed database connection")
-
-
-def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
-    """
-    Calculate the important ratios for fundamental analysis, based off our manually entered data from the financial statements
-    """
-    audited_raw_table_name = 'audited_fundamental_raw_data'
-    audited_calculated_table_name = 'audited_fundamental_calculated_data'
-    listed_equities_table_name = 'listed_equities'
-    daily_stock_summary_table_name = 'daily_stock_summary'
-    historical_dividend_info_table_name = 'historical_dividend_info'
-    try:
-        db_connect = DatabaseConnect()
-        logging.info("Successfully connected to database")
-        logging.info("Now reading raw fundamental data from db")
-        # load the audited raw data table
-        audited_raw_table = Table(
-            audited_raw_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        listedequities_table = Table(
-            listed_equities_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        audited_calculated_table = Table(
-            audited_calculated_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        # read the audited raw table as a pandas df
-        audited_raw_df = pd.io.sql.read_sql(
-            f"SELECT * FROM {audited_raw_table_name} ORDER BY symbol,date;", db_connect.dbengine)
-        # create new dataframe for calculated ratios
-        audited_calculated_df = pd.DataFrame()
-        audited_calculated_df['symbol'] = audited_raw_df['symbol'].copy()
-        audited_calculated_df['date'] = audited_raw_df['date'].copy()
-        # calculate the average equity
-        average_equity_df = pd.DataFrame()
-        average_equity_df['symbol'] = audited_calculated_df['symbol'].copy()
-        average_equity_df['total_stockholders_equity'] = audited_raw_df['total_shareholders_equity'].copy(
-        )
-        average_equity_df['average_stockholders_equity'] = average_equity_df.groupby('symbol')['total_stockholders_equity'].apply(
-            lambda x: (x + x.shift(1))/2)
-        # calculate the return on equity
-        audited_calculated_df['RoE'] = audited_raw_df['net_income'] / \
-            average_equity_df['average_stockholders_equity']
-        # now calculate the return on invested capital
-        audited_calculated_df['RoIC'] = audited_raw_df['profit_after_tax'] / \
-            audited_raw_df['total_shareholders_equity']
-        # now calculate the working capital
-        audited_calculated_df['working_capital'] = audited_raw_df['total_assets'] / \
-            audited_raw_df['total_liabilities']
-        # copy basic earnings per share
-        audited_calculated_df['EPS'] = audited_raw_df['basic_earnings_per_share']
-        # calculate price to earnings ratio
-        # first get the latest share price data
-        # get the latest date from the daily stock table
-        latest_stock_date = pd.io.sql.read_sql(
-            f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;", db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
-        # then get the share price for each listed stock at this date
-        share_price_df = pd.io.sql.read_sql(
-            f"SELECT symbol,close_price FROM {daily_stock_summary_table_name} WHERE date='{latest_stock_date}';", db_connect.dbengine)
-        # create a merged df to calculate the p/e
-        price_to_earnings_df = pd.merge(
-            audited_raw_df, share_price_df, how='inner', on='symbol')
-        # calculate a conversion rate for the stock price
-        price_to_earnings_df['share_price_conversion_rates'] =  price_to_earnings_df.apply(lambda x: TTD_USD if 
-                        x.currency == 'USD' else (TTD_JMD if x.currency == 'JMD' else (TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
-        audited_calculated_df['price_to_earnings_ratio'] = price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates'] / \
-            price_to_earnings_df['basic_earnings_per_share']
-        # now calculate the price to dividend per share ratio
-        # first get the dividends per share
-        dividends_df = pd.io.sql.read_sql(
-            f"SELECT symbol,record_date,dividend_amount FROM {historical_dividend_info_table_name};", db_connect.dbengine)
-        # merge this df with the share_price_df
-        dividends_df = pd.merge(
-            share_price_df, dividends_df, how='inner', on='symbol')
-        # we need to set up a series with the conversion factors for different currencies
-        symbols_list = dividends_df['symbol'].to_list()
-        conversion_rates = []
-        for symbol in symbols_list:
-            if symbol in USD_DIVIDEND_SYMBOLS:
-                conversion_rates.append(1/TTD_USD)
-            elif symbol in JMD_DIVIDEND_SYMBOLS:
-                conversion_rates.append(1/TTD_JMD)
-            elif symbol in BBD_DIVIDEND_SYMBOLS:
-                conversion_rates.append(1/TTD_BBD)
-            else:
-                conversion_rates.append(1.00)
-        # now add this new series to our df
-        dividends_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=dividends_df.index)
-        # calculate the price to dividend per share ratio
-        audited_calculated_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
-            (dividends_df['dividend_amount']*dividends_df['dividend_conversion_rates'])
-        # now calculate the eps growth rate
-        audited_calculated_df['EPS_growth_rate'] = audited_raw_df['basic_earnings_per_share'].diff(
-        )*100
-        # now calculate the price to earnings-to-growth ratio
-        audited_calculated_df['PEG'] = audited_calculated_df['price_to_earnings_ratio'] / \
-            audited_calculated_df['EPS_growth_rate']
-        audited_calculated_df = audited_calculated_df.where(
-            pd.notnull(audited_calculated_df), None)
-        # calculate dividend yield and dividend payout ratio
-        # note that the price_to_earnings_df contains the share price
-        audited_calculated_df['dividend_yield'] = 100 * \
-            price_to_earnings_df['dividends_per_share'] / (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates'])
-        audited_calculated_df['dividend_payout_ratio'] = 100* price_to_earnings_df['total_dividends_paid'] / \
-            price_to_earnings_df['net_income']
-        # calculate the book value per share (BVPS)
-        audited_calculated_df['book_value_per_share'] = (audited_raw_df['total_assets'] - audited_raw_df['total_liabilities']) / \
-                                                        audited_raw_df['total_shares_outstanding']
-        # calculate the price to book ratio
-        audited_calculated_df['price_to_book_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
-            ((price_to_earnings_df['total_assets'] - price_to_earnings_df['total_liabilities']) / \
-                                                        price_to_earnings_df['total_shares_outstanding'])
-        # replace inf with None
-        audited_calculated_df = audited_calculated_df.replace([np.inf, -np.inf], None)
-        # now write the df to the database
-        logging.info("Now writing fundamental data to database.")
-        execute_completed_successfully = False
-        execute_failed_times = 0
-        while not execute_completed_successfully and execute_failed_times < 5:
-            try:
-                insert_stmt = insert(
-                    audited_calculated_table).values(audited_calculated_df.to_dict('records'))
-                upsert_stmt = insert_stmt.on_duplicate_key_update(
-                    {x.name: x for x in insert_stmt.inserted})
-                result = db_connect.dbcon.execute(
-                    upsert_stmt)
-                execute_completed_successfully = True
-            except sqlalchemy.exc.OperationalError as operr:
-                logging.warning(str(operr))
-                time.sleep(1)
-                execute_failed_times += 1
-            logging.info(
-                "Successfully scraped and wrote fundamental data to db.")
-            logging.info(
-                "Number of rows affected in the audited fundamental calculated table was "+str(result.rowcount))
-        pass
-    except Exception:
-        logging.exception(
-            "Could not complete fundamental data update.")
-        customlogging.flush_smtp_logger()
-    finally:
-        # Always close the database connection
-        if 'db_connect' in locals() and db_connect is not None:
-            db_connect.close()
-            logging.info("Successfully closed database connection")
-
-
-def fetch_latest_currency_conversion_rates():
-    logging.debug("Now trying to fetch latest currency conversions.")
-    api_response_ttd = requests.get(
-            url="https://fcsapi.com/api-v2/forex/base_latest?symbol=TTD&type=forex&access_key=o9zfwlibfXciHoFO4LQU2NfTwt2vEk70DAiOH1yb2ao4tBhNmm")
-    if (api_response_ttd.status_code == 200):
-        # store the conversion rates that we need
-        TTD_JMD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['JMD'])
-        TTD_USD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['USD'])
-        TTD_BBD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['BBD'])
-        logging.debug("Currency conversions fetched correctly.")
-        return TTD_JMD, TTD_USD, TTD_BBD
-    else:
-        logging.exception(f"Cannot load URL for currency conversions.{api_response_ttd.status_code},{api_response_ttd.reason},{api_response_ttd.url}")
 
 
 def main():
     """The main steps in coordinating the scraping"""
     try:
         # Set up logging for this module
-        q_listener, q = customlogging.setup_logging(
+        q_listener, q = custom_logging.setup_logging(
             logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
             logfilestandardname=os.path.basename(__file__),
             stdoutlogginglevel=logging.DEBUG,
@@ -1544,12 +989,12 @@ def main():
             args = parser.parse_args()
             # set the start date based on the the full history option
             if args.full_history:
-                start_date = '2017-01-01'
+                start_date = START_DATE
             else:
                 start_date = (datetime.now() +
                               relativedelta(months=-1)).strftime('%Y-%m-%d')
             # run all functions within a multiprocessing pool
-            with multiprocessing.Pool(os.cpu_count(), customlogging.logging_worker_init, [q]) as multipool:
+            with multiprocessing.Pool(os.cpu_count(), custom_logging.logging_worker_init, [q]) as multipool:
                 logging.info("Now starting TTSE scraper.")
                 # check if this is the daily update (run inside the trading day)
                 if args.daily_update:
@@ -1557,11 +1002,9 @@ def main():
                         update_daily_trades, ())
                 else:
                     # else this is a full update (run once a day)
-                    # get the latest conversion rates
-                    # TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(fetch_latest_currency_conversion_rates,())
-                    # multipool.apply_async(scrape_listed_equity_data, ())
-                    # multipool.apply_async(check_num_equities_in_sector, ())
-                    # multipool.apply_async(scrape_dividend_data, ())
+                    multipool.apply_async(scrape_listed_equity_data, ())
+                    multipool.apply_async(check_num_equities_in_sector, ())
+                    multipool.apply_async(scrape_dividend_data, ())
                     # block on the next function to wait until the dates are ready
                     dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
                         update_equity_summary_data, (start_date,))
@@ -1570,25 +1013,21 @@ def main():
                     for core_date_list in dates_to_fetch_sublists:
                         async_results.append(multipool.apply_async(
                             scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
+                    # update the technical analysis stock data
+                    multipool.apply_async(update_technical_analysis_data, ())
                     # wait until all workers finish fetching data before continuing
                     for result in async_results:
                         result.wait()
-                    # now run functions that depend on this raw data
-                    multipool.apply_async(update_technical_analysis_data, ())
-                    multipool.apply_async(
-                        calculate_fundamental_analysis_ratios, (TTD_JMD, TTD_USD, TTD_BBD))
-                    ###### Not updated #############
-                    # multipool.apply_async(scrape_historical_indices_data, ())
-                    # multipool.apply_async(scrape_historical_data, ())
                 multipool.close()
                 multipool.join()
                 logging.info(os.path.basename(__file__) +
                              " executed successfully.")
                 q_listener.stop()
+                return 0
     except Exception as exc:
         logging.error(
             f"Error in script {os.path.basename(__file__)}", exc_info=exc)
-        customlogging.flush_smtp_logger()
+        custom_logging.flush_smtp_logger()
 
 
 # If this script is being run from the command-line, then run the main() function

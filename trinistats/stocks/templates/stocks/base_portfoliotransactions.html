@@ -10,8 +10,21 @@
     {% block mainblock %}
     <div class="box has-text-centered">
         <h1>Stock Portfolio Transactions</h1>
-        <br>
-        <p>Add all of the transactions that you've made on the market here. This will help us build and track stocks in your portfolio.</p>
+    </div>
+    <div class="box" style="text-align:center;" id="login_attempt_box">
+        {% if initial_form %}
+        <p>Please add all of the transactions that you've made on the market here. This will help us build and track stocks in your portfolio.</p>
+        {% elif form_submit_success and not general_error %}
+        <p>Your transaction has been added successfully! &nbsp<i class="far fa-check-circle fa-2x has-text-success"></i></p>
+        {% elif not form_submit_success %}
+        <p><i class="fas fa-exclamation-circle fa-2x has-text-danger"></i>
+        There was a problem with your submission. Please check the issues above.
+        </p>
+        {% elif form_submit_success and general_error %}
+        <p><i class="fas fa-exclamation-circle fa-2x has-text-danger"></i>
+        {{general_error}}
+        </p>
+        {% endif %}
     </div>
     <div style="text-align:center;" class="box less-width">
     <form action="{% url "stocks:portfoliotransactions" %}" method="post">
@@ -20,11 +33,7 @@
         <div class="field">
             <label class="label" for="{{ form.symbol.id_for_label }}">Stock Symbol</label>
             <div class="select">
-                <select>
-                {% for listed_stock in listed_stocks %}
-                <option value="{{ listed_stock.symbol }}">{{listed_stock.symbol}} ({{ listed_stock.security_name }})</option>
-                {% endfor %}
-                </select>
+            {{form.symbol}}
             </div>
         </div>
 
@@ -59,10 +68,7 @@
         <div class="field">
             <label class="label" for="{{ form.bought_or_sold.id_for_label }}">Bought/Sold</label>
             <div class="select">
-                <select>
-                <option value="bought">Bought</option>
-                <option value="sold">Sold</option>
-                </select>
+            {{form.bought_or_sold}}
             </div>
         </div>
 
@@ -93,18 +99,16 @@
             </p>
             {% endif %}
         </div>
+
+        <div class="field">
+            <label class="label" for="{{ form.date.id_for_label }}">Date Executed on Market</label>
+            <div class="control">
+                <input class="input" type="date" name="date" required id="id_date">
+            </div>
+        </div>
     
         <input id="add_transaction_button" class="button is-primary" type="submit" value="Add Transaction"></input>
     </form>
-    </div>
-    <div class="box" style="text-align:center;" id="login_attempt_box">
-        {% if not initial_form and form_submit_success %}
-        <p>Login successful! Welcome back <b>{{form.username.value}}</b>&nbsp<i class="fas fa-child fa-2x has-text-success"></i></p>
-        {% elif not initial_form and not form_submit_success %}
-        <p><i class="far fa-frown fa-2x has-text-danger"></i>
-        There was a problem with your login. Please check the issues above.
-        </p>
-        {% endif %}
     </div>
     {% endblock mainblock %}
 
@@ -116,3 +120,18 @@
     {% block activepagetoggle %}
     $("#portfoliotransactionslink").toggleClass("has-background-red");
     {% endblock %}
+    {% block morejs%}
+    <script>
+    {% if initial_form %}
+    //if this is the initial form, hide the register attempt message box
+        $("#register_attempt_box").hide();
+    //else if this is a successful form submission
+    {% else %}
+    // else this is a failed form submission
+        $("#register_attempt_box").show();
+        $("#id_symbol").val("{{selected_symbol}}").change();
+        $("#id_bought_or_sold").val("{{bought_or_sold}}").change();
+        $("#id_date").val("{{date}}").change();
+    {% endif %} 
+    </script>
+    {% endblock morejs%}

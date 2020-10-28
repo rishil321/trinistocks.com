@@ -77,9 +77,12 @@
     <button id="register_button" class="button is-danger" onclick="window.location.href='{% url "stocks:register" %}';" value="">Register new account</button>
     </div>
     <div class="box" style="text-align:center;" id="login_attempt_box">
-        {% if not initial_form and form_submit_success %}
+        {% if next_URL_included %}
+        <p class="has-text-centered">You need to be logged in to view that page.</p>
+        {% endif %}
+        {% if form_submit_success %}
         <p>Login successful! Welcome back <b>{{form.username.value}}</b>&nbsp<i class="fas fa-child fa-2x has-text-success"></i></p>
-        {% elif not initial_form and not form_submit_success %}
+        {% elif form_submit_fail %}
         <p><i class="far fa-frown fa-2x has-text-danger"></i>
         There was a problem with your login. Please check the issues above.
         </p>
@@ -97,21 +100,13 @@
     {% endblock %}
     {% block morejs%}
     <script>
-    {% if initial_form %}
-    //if this is the initial form, hide the register attempt message box
-        $("#register_attempt_box").hide();
     //else if this is a successful form submission
-    {% elif form_submit_success == True %}
+    {% if form_submit_success %}
         $("#id_username").prop('disabled', true);
         $("#id_password").prop('disabled', true);
         $(".help").hide();
         $("#login_button").prop('disabled', true);
         $("#register_button").prop('disabled', true);
-        $("#register_attempt_box").show();
-    {% else %}
-    // else this is a failed form submission
-        $("#register_attempt_box").show();
     {% endif %} 
-    console.log('{{request.user}}');
     </script>
     {% endblock morejs%}

@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module sets up logging using a /logs directory and tees the log output
+"""
+A module used to set up queues for logging using multiple threads.
+This module sets up logging using a /logs directory and tees the log output
 to the stdout stream and a filestream. The log files are then named <standard name><current datetime>.log
 and are placed in the /logs directory. The logs directory is created in the working directory of the script that calls it.
-Input parameters:
-:param logfilestandardname: This sets the standard names for the logfiles. Eg.For logging for a module named parsestring.py, you can set the standard name to be 'parsestring'
-:param logginglevel: Sets the logging level. Valid inputs are the levels listed in https://docs.python.org/3/library/logging.html#levels
-:param stdoutenabled: Sets whether we want to log to the stdout stream as well
-:returns 0 if successful
-:raises Exception if problems are encountered
 """
 # Put all your imports here, one per line. However multiple imports from the same lib are allowed on a line.
 import multiprocessing
@@ -65,16 +61,41 @@ class BufferingSMTPHandler(logging.handlers.BufferingHandler):
 # Put your function definitions here. These should be lower-case, separated by underscores.
 
 
-def setup_logging(logfilestandardname: 'str: Words to prepend the log files for easy identification' = 'log',
-                  logdirparent: 'str: The parent dir where you want the log dir created: eg: str(os.path.dirname(os.path.realpath(__file__)))' = str(os.getcwd()),
-                  filelogginglevel: 'A valid Python logging level eg. logging.INFO, logging.ERROR etc.' = logging.DEBUG,
-                  stdoutlogginglevel: 'A valid Python logging level eg. logging.INFO, logging.ERROR etc.' = logging.DEBUG,
-                  smtploggingenabled: 'boolean: Whether to log to an email address as well ' = False,
-                  smtplogginglevel: 'A valid Python logging level eg. logging.INFO, logging.ERROR etc.' = logging.INFO,
-                  smtpmailhost: 'str: The mailhost to use eg. localhost' = 'localhost',
-                  smtpfromaddr: 'str: The address to send the email from' = 'Python default email',
-                  smtptoaddr: 'list: A list of addresses to send the email to' = 'test@gmail.com',
-                  smtpsubj: 'str: The subject of the email' = 'Test Python Email') -> 'int: 0 if successful':
+def setup_logging(logfilestandardname = 'log',
+                  logdirparent = str(os.getcwd()),
+                  filelogginglevel = logging.DEBUG,
+                  stdoutlogginglevel = logging.DEBUG,
+                  smtploggingenabled = False,
+                  smtplogginglevel = logging.INFO,
+                  smtpmailhost = 'localhost',
+                  smtpfromaddr = 'Python default email',
+                  smtptoaddr = 'test@gmail.com',
+                  smtpsubj = 'Test Python Email'):
+    """Setup the logging module to write logs to several different streams
+
+    :param logfilestandardname: [description], defaults to 'log'
+    :type logfilestandardname: str, optional
+    :param logdirparent: [description], defaults to str(os.getcwd())
+    :type logdirparent: [type], optional
+    :param filelogginglevel: [description], defaults to logging.DEBUG
+    :type filelogginglevel: [type], optional
+    :param stdoutlogginglevel: [description], defaults to logging.DEBUG
+    :type stdoutlogginglevel: [type], optional
+    :param smtploggingenabled: [description], defaults to False
+    :type smtploggingenabled: bool, optional
+    :param smtplogginglevel: [description], defaults to logging.INFO
+    :type smtplogginglevel: [type], optional
+    :param smtpmailhost: [description], defaults to 'localhost'
+    :type smtpmailhost: str, optional
+    :param smtpfromaddr: [description], defaults to 'Python default email'
+    :type smtpfromaddr: str, optional
+    :param smtptoaddr: [description], defaults to 'test@gmail.com'
+    :type smtptoaddr: str, optional
+    :param smtpsubj: [description], defaults to 'Test Python Email'
+    :type smtpsubj: str, optional
+    :return: [description]
+    :rtype: [type]
+    """    
     # Get the logging module
     q = multiprocessing.Queue()
     # this is the handler for all log records

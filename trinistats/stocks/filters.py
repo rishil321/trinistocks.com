@@ -70,3 +70,9 @@ class TechnicalAnalysisSummaryFilter(django_filters.FilterSet):
     class Meta:
         model = models.TechnicalAnalysisSummary
         fields = {}
+
+
+class PortfolioSummaryFilter(django_filters.FilterSet):
+    class Meta:
+        model = models.PortfolioTransactions
+        fields = {}

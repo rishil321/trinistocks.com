@@ -209,3 +209,7 @@ def render_symbol_link(value):
                             'chart_type': 'candlestick', 'sort': 'date'})
     url = '{}?{}'.format(base_url, query_string)
     return url
+
+
+class PortfolioSummaryTable(tables.Table):
+    pass

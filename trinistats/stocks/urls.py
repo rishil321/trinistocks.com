@@ -35,4 +35,6 @@ urlpatterns = [
          name='register'),
      path('portfoliotransactions', views.PortfolioTransactionsView.as_view(),
          name='portfoliotransactions'),
+     path('portfoliosummary', views.PortfolioSummaryView.as_view(),
+         name='portfoliosummary'),
 ]

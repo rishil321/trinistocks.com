@@ -32,14 +32,16 @@ from django.contrib.auth import authenticate, password_validation
 from django.core import exceptions
 from django.contrib import messages
 from django.views.generic.edit import FormView
-from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView 
-from django.contrib.auth import login,logout
+from django.contrib.auth import login,logout,get_user_model
+from django.db.utils import IntegrityError
 # Imports from local machine
 from stocks import models, filters
 from stocks import tables as stocks_tables
 from .templatetags import stocks_template_tags
 from . import forms
+from django.conf import settings
+from Scripts.stocks
 
 # Set up logging
 logger = logging.getLogger('root')
@@ -975,17 +977,18 @@ class LoginPageView(FormView):
     form_class = forms.LoginForm
     success_url = reverse_lazy('stocks:login',current_app="stocks")
 
-    def get_context_data(self, **kwargs):
-        """This is called when the form is called for the first time"""
+    def get(self, request, *args, **kwargs):
         context = super(LoginPageView, self).get_context_data(**kwargs)
-        context['initial_form'] = True
-        return context
+        # store a next URL if one is included
+        if 'next' in self.request.GET:
+            self.request.session['next_URL'] = self.request.GET.get('next') 
+            context['next_URL_included'] = True
+        return self.render_to_response(context)
 
     def form_invalid(self,form, **kwargs):
         """This is called when the form is submitted with invalid data"""
         context = super(LoginPageView, self).get_context_data(**kwargs)
-        context['form_submit_success'] = False
-        context['initial_form'] = False
+        context['form_submit_fail'] = True
         return self.render_to_response(context)
 
     def form_valid(self,form, **kwargs):
@@ -993,12 +996,14 @@ class LoginPageView(FormView):
         # set up our context variables
         context = super(LoginPageView, self).get_context_data(**kwargs)
         context['form_submit_success'] = True
-        context['initial_form'] = False
         # login the user
         user = authenticate(self.request, username=form.cleaned_data['username'], password=form.cleaned_data['password'])
         if user is not None:
             login(self.request, user)
             logger.info(f"{form.cleaned_data['username']} logged in successfully.")
+            # if there is a 'next' URL included, move to it
+            if 'next_URL' in self.request.session:
+                return redirect(self.request.session['next_URL'])
         return self.render_to_response(context)
 
 
@@ -1044,7 +1049,7 @@ class RegisterPageView(FormView):
         new_username = form.cleaned_data['username']
         new_email = form.cleaned_data['email']
         new_password = form.cleaned_data['password']
-        User.objects.create_user(new_username, new_email, new_password)
+        get_user_model().objects.create_user(new_username, new_email, new_password)
         logger.info(f"Successfully created user: {new_username}.")
         return self.render_to_response(context)
 
@@ -1064,24 +1069,88 @@ class PortfolioTransactionsView(FormView):
     form_class = forms.PortfolioTransactionForm
     success_url = reverse_lazy('stocks:portfoliotransactions',current_app="stocks")
     
+    def get(self, request, *args, **kwargs):
+        # return a redirect if the user is not logged in
+        if not self.request.user.is_authenticated:
+            return redirect('%s?next=%s' % (settings.LOGIN_URL, self.request.path))
+        return self.render_to_response(self.get_context_data())
+
     def get_context_data(self, **kwargs):
         """This is called when the form is called for the first time"""
         context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
-        logger.debug("Now loading all listed equities.")
-        listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
-        context['listed_stocks'] = listed_stocks
+        context['initial_form'] = True
         return context
 
     def form_valid(self,form, **kwargs):
-        """This is called when the form is submitted with all data valid"""
-        # set up our context variables
         context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
+        try:
+            """This is called when the form is submitted with all data valid"""
+            # set up our context variables
+            context['form_submit_success'] = True
+            context['initial_form'] = False
+            # try to repopulate data
+            if "symbol" in form.data:
+                context['selected_symbol'] = form.data['symbol']
+            if "date" in form.data:
+                context['date'] = form.data['date']
+            if "bought_or_sold" in form.data:
+                context['bought_or_sold'] = form.data['bought_or_sold']
+            # insert the record into the db
+            current_user = get_user_model().objects.get(username=self.request.user.username)
+            transaction = models.PortfolioTransactions.objects.create(user = current_user, date = form.data['date'], symbol=models.ListedEquities.objects.get(symbol=form.data['symbol']), 
+                bought_or_sold = form.data['bought_or_sold'], share_price = form.data['price'], num_shares = form.data['num_shares'])
+        except IntegrityError as exc:
+            context['general_error'] = "Sorry. It seems like that's a duplicate entry. Did you already add this transaction?"
+        except Exception as exc:
+            context['general_error'] = f"Sorry. We ran into an error with your submission. Here's what we know: {exc}"
         return self.render_to_response(context)
 
     def form_invalid(self,form, **kwargs):
         """This is called when the form is submitted with invalid data"""
         context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
+        context['form_submit_success'] = False
+        context['initial_form'] = False
+        # try to repopulate data
+        if "symbol" in form.data:
+            context['selected_symbol'] = form.data['symbol']
+        if "date" in form.data:
+            context['date'] = form.data['date']
+        if "bought_or_sold" in form.data:
+            context['bought_or_sold'] = form.data['bought_or_sold']
         return self.render_to_response(context)
+
+
+class PortfolioSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+    """
+    Set up the data for the technical analysis summary page
+    """
+    template_name = 'stocks/base_portfoliosummary.html'
+    model = models.PortfolioTransactions
+    table_class = stocks_tables.PortfolioSummaryTable
+    table_pagination = False
+    filterset_class = filters.PortfolioSummaryFilter
+
+    def get_context_data(self, *args, **kwargs):
+        logger.info(f"{self.template_name} was called")
+        # get the current context
+        context = super().get_context_data(
+             *args, **kwargs)
+        try:
+            logger.info("Successfully loaded page.")
+            current_user = get_user_model().objects.get(username=self.request.user.username)
+            current_data = self.model.objects.filter(user=current_user)
+            symbols = current_data.values('symbol_id')
+            context['current_username'] = self.request.user.username
+            context['graph_labels'] = current_data.values('symbol_id')
+            context['graph_dataset'] = [1]
+        except (ValueError,Exception) as ex:
+            logger.exception(
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
+
+
+
 # CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
 

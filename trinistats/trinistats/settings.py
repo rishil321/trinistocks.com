@@ -219,3 +219,4 @@ MANAGERS = ADMINS
 DEFAULT_FROM_EMAIL = 'django_server1@trinistats.com'
 
 LOGIN_URL = reverse_lazy('stocks:login',current_app="stocks")
+AUTH_USER_MODEL = 'stocks.User'
