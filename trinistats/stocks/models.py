@@ -234,7 +234,7 @@ class PortfolioSummary(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'portfolio_summary'
+        db_table = 'portfolio_summary '
         unique_together = [['user','symbol']]
 
 

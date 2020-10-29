@@ -13,6 +13,7 @@
 # Imports from Python standard libraries
 import logging
 import os
+import sys
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
@@ -21,7 +22,7 @@ import multiprocessing
 import time
 import tempfile
 import re
-
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Imports from the cheese factory
 from pid import PidFile
 import requests
@@ -802,7 +803,7 @@ def update_daily_trades():
                         upsert_stmt)
                     execute_completed_successfully = True
                     logging.info(
-                        "Successfully scraped and wrote to db daily equity/shares data for ")
+                        "Successfully scraped and wrote to db daily equity/shares data for daily trades.")
                     logging.info(
                         "Number of rows affected in the daily_stock_summary table was "+str(result.rowcount))
                 except sqlalchemy.exc.OperationalError as operr:
@@ -964,7 +965,7 @@ def update_technical_analysis_data():
             logging.info("Successfully closed database connection")
 
 
-def main():
+def main(args):
     """The main steps in coordinating the scraping"""
     try:
         # Set up logging for this module
@@ -980,13 +981,6 @@ def main():
             smtpsubj='Automated report from Python script: '+os.path.basename(__file__))
         # Set up a pidfile to ensure that only one instance of this script runs at a time
         with PidFile(piddir=tempfile.gettempdir()):
-            # first check the arguements given to this script
-            parser = argparse.ArgumentParser()
-            parser.add_argument("-f",
-                                "--full_history", help="Record all data from 2010 to now", action="store_true")
-            parser.add_argument("-d",
-                                "--daily_update", help="Only update data for the daily summary for today", action="store_true")
-            args = parser.parse_args()
             # set the start date based on the the full history option
             if args.full_history:
                 start_date = START_DATE
@@ -1013,7 +1007,7 @@ def main():
                     for core_date_list in dates_to_fetch_sublists:
                         async_results.append(multipool.apply_async(
                             scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
-                    # update the technical analysis stock data
+                    # update tShe technical analysis stock data
                     multipool.apply_async(update_technical_analysis_data, ())
                     # wait until all workers finish fetching data before continuing
                     for result in async_results:
@@ -1032,4 +1026,11 @@ def main():
 
 # If this script is being run from the command-line, then run the main() function
 if __name__ == "__main__":
-    main()
+    # first check the arguements given to this script
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f",
+                        "--full_history", help="Record all data from 2010 to now", action="store_true")
+    parser.add_argument("-d",
+                        "--daily_update", help="Only update data for the daily summary for today", action="store_true")
+    args = parser.parse_args()
+    main(args)

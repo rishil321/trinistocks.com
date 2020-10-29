@@ -36,7 +36,6 @@ class DatabaseConnect:
         self.dbcon = self.dbengine.connect()
         if self.dbcon:
             logging.info("Connected to database successfully")
-            return 0
         else:
             raise ConnectionError(
                 "Could not connect to database at "+dbaddress)
