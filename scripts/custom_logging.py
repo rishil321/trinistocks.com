@@ -10,19 +10,15 @@ and are placed in the /logs directory. The logs directory is created in the work
 # Put all your imports here, one per line. However multiple imports from the same lib are allowed on a line.
 import multiprocessing
 import logging
-import sys
 import os
 from pathlib import Path
 from datetime import datetime
-import string
 import logging.handlers
 import smtplib
 
 # CONSTANTS. These should be all in upper case
 
 # Global variables
-smtploggerindex = None
-outlogginglevel = None
 
 # Class definitions
 
@@ -96,26 +92,21 @@ def setup_logging(logfilestandardname = 'log',
     :return: [description]
     :rtype: [type]
     """    
-    # Get the logging module
+    # Set up a queue to take in logging messages from multiple threads
     q = multiprocessing.Queue()
-    # this is the handler for all log records
-    handler = logging.StreamHandler()
+    # set up a stream handler for stdout
+    stdout_handler = logging.StreamHandler()
     # Set the format of the messages for logs
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
+    stdout_handler.setFormatter(formatter)
     # ql gets records from the queue and sends them to the handler
-    ql = logging.handlers.QueueListener(q, handler)
+    ql = logging.handlers.QueueListener(q, stdout_handler)
     ql.start()
     mainlogger = logging.getLogger()
-    mainlogger.setLevel(stdoutlogginglevel)
-    # set the global variable as well
-    global outlogginglevel
-    outlogginglevel = stdoutlogginglevel
     # add the handler to the logger so records from this process are handled
-    mainlogger.addHandler(handler)
-    # Get the stdouthandler (the default handler in mainlogger)
-    stdouthandler = mainlogger.handlers[0]
+    mainlogger.addHandler(stdout_handler)
+    mainlogger.setLevel(stdoutlogginglevel)
     # Check the current working directory for a 'logs' folder to store our logfiles
     logdirectory = logdirparent+os.path.sep+'logs'
     # Create the directory if it doesn't already exist
@@ -129,8 +120,6 @@ def setup_logging(logfilestandardname = 'log',
     logfilehandler.setFormatter(formatter)
     # Set the level of logging for files
     logfilehandler.setLevel(filelogginglevel)
-    # Set the format for stdout log output messages
-    stdouthandler.setFormatter(formatter)
     # Add the log handler for files
     mainlogger.addHandler(logfilehandler)
     # Now set up the SMTP log handler
@@ -139,11 +128,6 @@ def setup_logging(logfilestandardname = 'log',
             smtpmailhost, smtpfromaddr, smtptoaddr, smtpsubj)
         smtploghandler.setLevel(smtplogginglevel)
         mainlogger.addHandler(smtploghandler)
-        # Get the index of the SMTP log handler
-        for index, handler in enumerate(mainlogger.handlers):
-            if isinstance(handler, BufferingSMTPHandler):
-                # And store the index for the flush method
-                smtploggerindex = index
     return ql, q
 
 
@@ -157,11 +141,12 @@ def flush_smtp_logger():
 
 
 def logging_worker_init(q):
-    # all records from worker processes go to qh and then into q
+    # the worker processes write logs into the q, which are then handled by this queuehandler
     qh = logging.handlers.QueueHandler(q)
     logger = logging.getLogger()
-    global outlogginglevel
-    logger.setLevel(outlogginglevel)
     logger.addHandler(qh)
-    # remove the default handler once we add this special queue handler
-    logging.getLogger().removeHandler(logging.getLogger().handlers[0])
+    # remove the default stdout handler
+    for handler in logger.handlers:
+        if handler.__class__ == logging.StreamHandler:
+            logger.removeHandler(handler)
+    pass
