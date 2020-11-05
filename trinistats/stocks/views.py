@@ -1,11 +1,9 @@
 # Imports from standard Python lib
-import csv
-import json
 import logging
-import traceback
 from datetime import datetime
 # Imports from cheese factory
 import dateutil
+from django.core.exceptions import ValidationError
 import django_tables2 as tables2
 from django_tables2.export.views import ExportMixin
 from django_filters.views import FilterView
@@ -41,8 +39,7 @@ from stocks import tables as stocks_tables
 from .templatetags import stocks_template_tags
 from . import forms
 from django.conf import settings
-from Scripts.stocks
-
+from scripts.stocks.updatedb import updater
 # Set up logging
 logger = logging.getLogger('root')
 
@@ -1097,10 +1094,21 @@ class PortfolioTransactionsView(FormView):
                 context['bought_or_sold'] = form.data['bought_or_sold']
             # insert the record into the db
             current_user = get_user_model().objects.get(username=self.request.user.username)
+            # if the user is inserting a sell transaction, check that they have bought enough shares previously
+            if form.data['bought_or_sold'] == "Sold":
+                remaining_shares = models.PortfolioSummary.objects.all().filter(user_id=current_user.id,symbol_id=form.data['symbol'])[0].shares_remaining
+                if remaining_shares < int(form.data['num_shares']):
+                    raise ValidationError("You are trying to sell more shares than you have remaining! Did you forget to add some share purchases?")
             transaction = models.PortfolioTransactions.objects.create(user = current_user, date = form.data['date'], symbol=models.ListedEquities.objects.get(symbol=form.data['symbol']), 
                 bought_or_sold = form.data['bought_or_sold'], share_price = form.data['price'], num_shares = form.data['num_shares'])
+            # update the book values with this new transaction
+            updater.update_portfolio_summary_book_costs()
+            # update the market values 
+            updater.update_portfolio_summary_market_values()
         except IntegrityError as exc:
             context['general_error'] = "Sorry. It seems like that's a duplicate entry. Did you already add this transaction?"
+        except ValidationError as exc:
+            context['general_error'] = exc.message
         except Exception as exc:
             context['general_error'] = f"Sorry. We ran into an error with your submission. Here's what we know: {exc}"
         return self.render_to_response(context)
@@ -1125,7 +1133,7 @@ class PortfolioSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterVi
     Set up the data for the technical analysis summary page
     """
     template_name = 'stocks/base_portfoliosummary.html'
-    model = models.PortfolioTransactions
+    model = models.PortfolioSummary
     table_class = stocks_tables.PortfolioSummaryTable
     table_pagination = False
     filterset_class = filters.PortfolioSummaryFilter
@@ -1141,8 +1149,8 @@ class PortfolioSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterVi
             current_data = self.model.objects.filter(user=current_user)
             symbols = current_data.values('symbol_id')
             context['current_username'] = self.request.user.username
-            context['graph_labels'] = current_data.values('symbol_id')
-            context['graph_dataset'] = [1]
+            context['graph_labels'] = list(current_data.values_list('symbol_id', flat=True))
+            context['graph_dataset'] = list(current_data.values_list('market_value', flat=True))
         except (ValueError,Exception) as ex:
             logger.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)

@@ -219,7 +219,7 @@ class PortfolioTransactions(models.Model):
     class Meta:
         managed = True
         db_table = 'portfolio_transactions'
-        unique_together = [['user','date','symbol','num_shares']]
+        unique_together = [['user','date','symbol','num_shares', 'bought_or_sold']]
 
 
 class PortfolioSummary(models.Model):
@@ -228,13 +228,16 @@ class PortfolioSummary(models.Model):
         settings.AUTH_USER_MODEL, models.CASCADE, default=1)
     symbol = models.ForeignKey(
         ListedEquities, models.CASCADE, default='AGL')
-    num_shares = models.IntegerField()
-    market_value = models.DecimalField(max_digits=20, decimal_places=2)
-    book_value = models.DecimalField(max_digits=20, decimal_places=2)
+    shares_remaining = models.IntegerField()
+    average_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    book_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    current_market_price = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    market_value = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    total_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
 
     class Meta:
         managed = True
-        db_table = 'portfolio_summary '
+        db_table = 'portfolio_summary'
         unique_together = [['user','symbol']]
 
 

@@ -2,56 +2,49 @@
 {% load django_tables2 %}
 {% load static %}
 
-{% block description %}
-A summary of your stock holdings on the Trinidad and Tobago stock exchange.
-{% endblock description %}
+{% block description %} 
+A summary of your stock holdings on the Trinidad and Tobago stock exchange. 
+{% endblock description %} 
 
-{% block title %}trinistats | Stocks | Portfolio Summary
-{% endblock title %}
+{% block title %}
+trinistats | Stocks | Portfolio Summary 
+{% endblock title %} 
 
-{% block customizationbar %}
-{% endblock customizationbar %}
+{% block customizationbar %} 
+{% endblock customizationbar %} 
 
 {% block mainblock %}
 <h1 style="" id="charttitle">Portfolio Summary for {{current_username}}</h1>
 <!-- Chart -->
-<br>
-<div id="chartdiv" class="chart-div" style="">
-</div>
+<br />
+<div id="chartdiv" class="chart-div" style=""></div>
 <div class="is-clearfix clearfix"></div>
-<div class="tablediv_noscroll">
-    {% render_table table %}
-</div>
-{% endblock mainblock %}
-
-{% block chartjs %}
-{{ graph_labels|json_script:"graph_labels" }}
-{{ graph_dataset|json_script:"graph_dataset" }}
+<div class="tablediv_noscroll">{% render_table table %}</div>
+{% endblock mainblock %} {% block chartjs %}
 <script>
-var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
-var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
-var data = [{
-    values: graph_dataset,
-    labels: graph_labels,
-    type: 'pie',
-    textinfo: "label+percent",
-    textposition: "outside",
-    automargin: true
-}];
-var layout = {
-    showlegend: false
-};
-Plotly.newPlot('chartdiv', data, layout);
+  var graph_labels = {{graph_labels|safe}};
+  var graph_dataset = {{graph_dataset}};
+  var data = [{
+      values: graph_dataset,
+      labels: graph_labels,
+      type: 'pie',
+      textinfo: "label+percent",
+      textposition: "outside",
+      automargin: true
+  }];
+  var layout = {
+      showlegend: false
+  };
+  Plotly.newPlot('chartdiv', data, layout);
 </script>
 {% endblock chartjs %}
 <!-- END MAIN -->
 
 <!--Javascript-->
 {% block activepagetoggle %}
-$("#portfoliosummarylink").toggleClass("has-background-red");
-{% endblock %}
+$("#portfoliosummarylink").toggleClass("has-background-red"); 
+{% endblock activepagetoggle%} 
 
-{% block morejs%}
-<script>
-</script>
+{%block morejs%}
+<script></script>
 {% endblock morejs%}

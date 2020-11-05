@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-
 # Functions for URLS
 app_name = 'stocks'
 
