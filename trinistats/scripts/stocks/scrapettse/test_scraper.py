@@ -35,7 +35,7 @@ def test_daily_trades():
     parser.add_argument("-d",
                         "--daily_update", help="Only update data for the daily summary for today", action="store_true")
     args = parser.parse_args(['-d'])
-    scraper.main(args)
+    assert scraper.main(args) == 0
 
 def test_normal_updates():
     parser = argparse.ArgumentParser()
@@ -44,7 +44,19 @@ def test_normal_updates():
     parser.add_argument("-d",
                         "--daily_update", help="Only update data for the daily summary for today", action="store_true")
     args = parser.parse_args([])
-    scraper.main(args)
+    assert scraper.main(args) == 0
+
+def test_full_updates():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f",
+                        "--full_history", help="Record all data from 2010 to now", action="store_true")
+    parser.add_argument("-d",
+                        "--daily_update", help="Only update data for the daily summary for today", action="store_true")
+    args = parser.parse_args(['-f'])
+    assert scraper.main(args) == 0
+
+def test_update_technical_analysis_data():
+    assert scraper.update_technical_analysis_data() == 0
 
  
 def main():

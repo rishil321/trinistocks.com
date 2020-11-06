@@ -384,7 +384,7 @@ def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):
         market_summary_data_keys = ['index_name', 'index_value', 'index_change', 'change_percent',
                                     'volume_traded', 'value_traded', 'num_trades']
         daily_stock_data_keys = ['symbol', 'open_price', 'high', 'low', 'os_bid', 'os_bid_vol', 'os_offer',
-                                 'os_offer_vol', 'last_sale_price', 'was_traded_today', 'volume_traded','num_trades', 'close_price', 'change_dollars']
+                                 'os_offer_vol', 'last_sale_price', 'was_traded_today', 'volume_traded', 'close_price', 'change_dollars']
         # set up the database connection to write data to the db
         db_connect = DatabaseConnect()
         logging.debug("Successfully connected to database"+pid_string)
