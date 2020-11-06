@@ -73,6 +73,16 @@ class TechnicalAnalysisSummaryFilter(django_filters.FilterSet):
 
 
 class PortfolioSummaryFilter(django_filters.FilterSet):
+    
+    
     class Meta:
-        model = models.PortfolioTransactions
-        fields = {}
+        model = models.PortfolioSummary
+        fields = {'user_id'}
+
+    @property
+    def qs(self):
+        parent = super().qs
+        # filter default queryset to only allow portfolio summary data
+        # for the current user
+        current_user = getattr(self.request, 'user', None)
+        return parent.filter(user=current_user)

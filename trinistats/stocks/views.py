@@ -33,6 +33,7 @@ from django.views.generic.edit import FormView
 from django.contrib.auth.views import LoginView 
 from django.contrib.auth import login,logout,get_user_model
 from django.db.utils import IntegrityError
+import pandas as pd
 # Imports from local machine
 from stocks import models, filters
 from stocks import tables as stocks_tables
@@ -1147,10 +1148,26 @@ class PortfolioSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterVi
             logger.info("Successfully loaded page.")
             current_user = get_user_model().objects.get(username=self.request.user.username)
             current_data = self.model.objects.filter(user=current_user)
-            symbols = current_data.values('symbol_id')
             context['current_username'] = self.request.user.username
-            context['graph_labels'] = list(current_data.values_list('symbol_id', flat=True))
-            context['graph_dataset'] = list(current_data.values_list('market_value', flat=True))
+            # set up the data for the graphs 
+            # first get the symbols and their market values
+            symbols = list(current_data.values_list('symbol_id', flat=True))
+            market_values = list(current_data.values_list('market_value', flat=True))
+            # convert the market values to float 
+            symbol_market_values = [float(x) for x in market_values]
+            # then get the sectors and their market values
+            sectors_df = pd.DataFrame.from_records(current_data.values_list('symbol_id__sector','market_value'))
+            sectors_df.rename(columns={0:'sector',1:'market_value'}, inplace=True)
+            # sum the market values for all symbols in the same sector
+            sectors_df = sectors_df.groupby('sector').sum().reset_index()
+            sectors = sectors_df['sector'].to_list()
+            market_values = sectors_df['market_value'].to_list()
+            sector_market_values = [float(x) for x in market_values]
+            # set up our context variables to graph
+            context['symbols'] = symbols
+            context['symbol_market_values'] = symbol_market_values
+            context['sectors'] = sectors
+            context['sector_market_values'] = sector_market_values
         except (ValueError,Exception) as ex:
             logger.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)

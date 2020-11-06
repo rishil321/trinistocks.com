@@ -17,25 +17,40 @@ trinistats | Stocks | Portfolio Summary
 <h1 style="" id="charttitle">Portfolio Summary for {{current_username}}</h1>
 <!-- Chart -->
 <br />
-<div id="chartdiv" class="chart-div" style=""></div>
+<div id="chartdiv1" class="chart-div" style=""></div>
+<div id="chartdiv2" class="chart-div" style=""></div>
 <div class="is-clearfix clearfix"></div>
 <div class="tablediv_noscroll">{% render_table table %}</div>
 {% endblock mainblock %} {% block chartjs %}
 <script>
-  var graph_labels = {{graph_labels|safe}};
-  var graph_dataset = {{graph_dataset}};
-  var data = [{
-      values: graph_dataset,
-      labels: graph_labels,
+  var data1 = [{
+      values: {{symbol_market_values|safe}},
+      labels: {{symbols|safe}},
       type: 'pie',
       textinfo: "label+percent",
+      hoverinfo:"label+percent",
       textposition: "outside",
       automargin: true
   }];
-  var layout = {
-      showlegend: false
+  var layout1 = {
+    title: 'Currents Stocks In Portfolio (By Market Value)',  
+    showlegend: false
   };
-  Plotly.newPlot('chartdiv', data, layout);
+  Plotly.newPlot('chartdiv1', data1, layout1,{responsive: true});
+  var data2 = [{
+    values: {{sector_market_values|safe}},
+    labels: {{sectors|safe}},
+    type: 'pie',
+    textinfo: "label+percent",
+    hoverinfo:"label+percent",
+    textposition: "outside",
+    automargin: true
+  }];
+  var layout2 = {
+    title: 'Currents Sectors In Portfolio (By Market Value)',  
+    showlegend: false
+  };
+  Plotly.newPlot('chartdiv2', data2, layout2,{responsive: true});
 </script>
 {% endblock chartjs %}
 <!-- END MAIN -->

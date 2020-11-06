@@ -212,4 +212,36 @@ def render_symbol_link(value):
 
 
 class PortfolioSummaryTable(tables.Table):
-    pass
+    
+    symbol_id = tables.Column()
+    sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
+    shares_remaining = tables.Column(verbose_name='Number of Shares')
+    average_cost = tables.Column()
+    current_market_price = tables.Column(verbose_name='Market Price')
+    book_cost = tables.Column()
+    market_value = tables.Column()
+    total_gain_loss = tables.Column(verbose_name='Total Gain(Loss)')
+
+    def render_average_cost(self, value):
+        return f"${value}"
+
+    def render_current_market_price(self, value):
+        return f"${value}"
+
+    def render_book_cost(self, value):
+        return f"${value}"
+
+    def render_market_value(self, value):
+        return f"${value}"
+
+    def render_total_gain_loss(self, value, column):
+        if value<0:
+            column.attrs = {'td': {'bgcolor': '#ff9999'}}
+            return f"$({abs(value)})"
+        else:
+            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+            return f"${value}"
+    
+    class Meta:
+        attrs = {'class': 'djangotables'}
+        export_formats = ['csv', 'xlsx']
