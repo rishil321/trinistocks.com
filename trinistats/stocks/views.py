@@ -470,6 +470,7 @@ class StockHistoryView(BasicLineChartAndTableView):
     request = None
 
     def get(self, request, *args, **kwargs):
+        logger.debug(f"GET request submitted for: {request.build_absolute_uri()}")
         # get the filters included in the URL.
         # If the required filters are not present, return a redirect
         required_parameters = ['symbol', 'date__gte',

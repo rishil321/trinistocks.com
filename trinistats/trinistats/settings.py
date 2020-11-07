@@ -210,7 +210,7 @@ LOGGING = {
     },
 }
 
-ADMINS = [('Rishi', 'latchmepersad@gmail.com'), ]
+ADMINS = []
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 25
 EMAIL_HOST_USER = ''
