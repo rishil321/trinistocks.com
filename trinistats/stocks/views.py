@@ -480,9 +480,12 @@ class StockHistoryView(BasicLineChartAndTableView):
                 # check that each parameter has a value
                 if self.request.GET[parameter]:
                     pass
+                # check that the sort parameter is valid
+                if self.request.GET['sort'].replace('-','') not in ['date','open_price','close_price','high','low','volume_traded','change_price']:
+                    raise MultiValueDictKeyError("Incorrect value submitted for sorting.") 
             except MultiValueDictKeyError:
                 logger.warning(
-                    "Stock history page requested without all parameters. Sending redirect.")
+                    "Stock history page requested without all proper parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
                     'stocks:stockhistory', current_app="stocks")
