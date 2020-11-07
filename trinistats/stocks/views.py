@@ -1061,7 +1061,7 @@ class RegisterPageView(FormView):
                 f'You have created a new account at www.trinistats.com! Your username is {new_username}. \
                 Please login and start monitoring and growing your portfolio with us today.',
                 'trinistats@gmail.com',
-                [f'new_email'],
+                [f'{new_email}'],
             fail_silently=False,
             )
             logger.info(f"Sent email to {new_email}.")
