@@ -34,6 +34,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth import login,logout,get_user_model
 from django.db.utils import IntegrityError
 import pandas as pd
+from django.core.mail import send_mail
 # Imports from local machine
 from stocks import models, filters
 from stocks import tables as stocks_tables
@@ -1041,14 +1042,27 @@ class RegisterPageView(FormView):
         """This is called when the form is submitted with all data valid"""
         # set up our context variables
         context = super(RegisterPageView, self).get_context_data(**kwargs)
-        context['form_submit_success'] = True
-        context['initial_form'] = False
-        # create the user
-        new_username = form.cleaned_data['username']
-        new_email = form.cleaned_data['email']
-        new_password = form.cleaned_data['password']
-        get_user_model().objects.create_user(new_username, new_email, new_password)
-        logger.info(f"Successfully created user: {new_username}.")
+        try:
+            context['form_submit_success'] = True
+            context['initial_form'] = False
+            # create the user
+            new_username = form.cleaned_data['username']
+            new_email = form.cleaned_data['email']
+            new_password = form.cleaned_data['password']
+            get_user_model().objects.create_user(new_username, new_email, new_password)
+            logger.info(f"Successfully created user: {new_username}.")
+            # send an email to the user
+            send_mail(
+                'trinistats: Account Creation',
+                f'You have created a new account at www.trinistats.com! Your username is {new_username}. \
+                Please login and start monitoring and growing your portfolio with us today.',
+                'trinistats@gmail.com',
+                [f'new_email'],
+            fail_silently=False,
+            )
+            logger.info(f"Sent email to {new_email}.")
+        except Exception as exc:
+            logging.exception("We could not create the user.")
         return self.render_to_response(context)
 
     def form_invalid(self,form, **kwargs):

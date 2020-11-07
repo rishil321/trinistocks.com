@@ -15,24 +15,24 @@
     <!--Metadata-->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A variety of data relevant to the people of Trinidad and Tobago. Rel trini statistics.">
+    <meta name="description" content="A variety of data/statistics (stats) relevant to the people of Trinidad and Tobago.">
     <meta name="author" content="Rishi Latchmepersad">
     <!-- Twitter Card data -->
-    <meta name="twitter:card" content="Trinistats: Bringing more data to T&T.">
-    <meta name="twitter:title" content="Trinistats">
+    <meta name="twitter:card" content="trinistats: Bringing more data to T&T.">
+    <meta name="twitter:title" content="trinistats">
     <meta name="twitter:description" content="Bringing more data to the people of Trinidad and Tobago.">
     <meta name="twitter:creator" content="Rishi Latchmepersad">
     <!-- Twitter Summary card images must be at least 120x120px -->
     <meta name="twitter:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE">
     <!-- Open Graph data -->
-    <meta property="og:title" content="Trinistats" />
+    <meta property="og:title" content="trinistats" />
     <meta property="og:type" content="graph" />
-    <meta property="og:url" content="http://www.trinistats.com" />
+    <meta property="og:url" content="https://www.trinistats.com" />
     <meta property="og:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE" />
-    <meta property="og:description" content="Bringing more data to the people of Trinidad and Tobago." />
+    <meta property="og:description" content="Bringing more data/stats to the people of Trinidad and Tobago." />
     <meta property="og:site_name" content="trinistats.com" />
     <!--End Metadata-->
-    {% block title %}<title>trinistats | Home | Data 'fuh d' average Trini</title>{% endblock title %}
+    {% block title %}<title>trinistats | Home</title>{% endblock title %}
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -46,9 +46,9 @@
   <section class="hero is-dark">
     <div class="hero-body">
       <div class="container has-text-centered">
-        <img class="bannerimage" src="{%  static 'central/trinistats_logo.svg.png' %}"></img>
+        <img class="bannerimage" src="{%  static 'central/trinistats_logo_2_light.png' %}"></img>
         <h2 class="subtitle">
-          Data 'fuh d' average Trini
+          Data is our new oil.
         </h2>
       </div>
     </div>
@@ -59,7 +59,7 @@
       <a class="tile is-child box" style="background-color:green;color:white;" class="" href={% url "covid19:totals" %}>
         <p class="is-size-3">COVID-19</p>
         <i class="fas fa-virus fa-10x" title="COVID-19 Data for Trinidad and Tobago"></i>
-        <p class="is-size-5">Data on the tests and deaths within the country</p>
+        <p class="is-size-5">The tests and deaths within our country</p>
       </a>
     </div>
     <div class="tile is-parent has-text-centered custom-tile-parent" >
@@ -67,7 +67,7 @@
       <a class="tile is-child box" style="background-color:red;color:white;" href='{% url "stocks:landingpage" %}'>
         <p class="is-size-3">Stock Exchange</p>
         <i class="fas fa-chart-line fa-10x" title="Stock Data from the Trinidad and Tobago Stock Exchange (TTSE)"></i>
-        <p class="is-size-5">Data on equities listed on the local Stock Exchange</p>
+        <p class="is-size-5">Stats for stocks listed on our local exchange</p>
       </a>
     </div>
     <div class="tile is-parent has-text-centered custom-tile-parent">
