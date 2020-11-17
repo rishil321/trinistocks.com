@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+
+    {% block description %}
+    "trinistats user profile"
+    {% endblock description %}
+    {% block title %}trinistats | Stocks | User Profile
+    {% endblock title %}
+
+    {% block mainblock %}
+    <div class="box">
+        <h1>User Profile Management</h1>
+        <h2>Hello {{current_username}}</h2>
+    </div>
+    <div style="text-align:center;" class="box less-width">
+        <div class="columns">
+            <div class="column">
+                <label>Date account created:</label><br>
+                <label>Last login date:</label><br>
+                <label>Email address:</label><br>
+            </div>
+            <div class="column">
+                <label>{{date_created}}</label><br>
+                <label>{{last_login}}</label><br>
+                <label>{{email}}</label><br>
+            </div>
+        </div>
+    </div>
+    <div style="text-align:center;" class="box less-width">
+         <div class="columns">
+            <div class="column">
+            <button id="change_password_button" class="button is-warning is-size-6" onclick="window.location.href='{% url "stocks:password_change" %}';" value="">Change Password</button>
+            </div>
+            <div class="column">
+            <button id="delete_account_button" class="button is-danger is-size-6" onclick="promptDelete()" value="">Delete Account</button>
+            </div>
+        </div>
+        <button id="logout_button" class="button is-info is-size-5" onclick="window.location.href='{% url "stocks:logout" %}?logout=True';" value="">Logout</button>
+    </div>
+    {% endblock mainblock %}
+
+    {% block chartjs %}
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block activepagetoggle %}
+    {% endblock %}
+
+    {% block morejs%}
+    <script>
+    function promptDelete() {
+        let confirmMessage = confirm("Are you sure you want to permanently delete your account?");
+        if (confirmMessage) {
+            window.location.href='{% url "stocks:logout" %}?deleteaccount=True';
+        }
+    }
+    {% if logout_success %}
+        $("#logout_button").prop('disabled', true);
+    {% endif %}
+    </script>
+    {% endblock morejs%}

@@ -1,18 +1,16 @@
+# imports from standard libs
 from django import forms
 from django.core.exceptions import ValidationError
 import django.core.validators as validators
 import django.contrib.auth.password_validation as password_validators
 from django.contrib.auth import authenticate,get_user_model
+# imports from local machine
 from stocks import models
 
 class RegisterForm(forms.Form):
     username = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))
     email = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class' : 'input'}))
-
-    def send_email(self):
-        # send email using the self.cleaned_data dictionary
-        pass
 
     def clean_username(self):
         data = self.cleaned_data['username']
@@ -48,13 +46,10 @@ class RegisterForm(forms.Form):
         password_validators.validate_password(data)
         return data
 
+
 class LoginForm(forms.Form):
     username = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class' : 'input'}))
-
-    def send_email(self):
-        # send email using the self.cleaned_data dictionary
-        pass
 
     def clean_username(self):
         try:
@@ -115,3 +110,20 @@ class PortfolioTransactionForm(forms.Form):
         except (ValueError,TypeError):
             raise ValidationError("You have not entered a valid price. Please recheck.")
         return price
+
+
+class PasswordResetForm(forms.Form):
+    email = forms.CharField(widget=forms.TextInput(attrs={'class' : 'input'}))
+
+    def clean_email(self):
+        data = self.cleaned_data['email']
+        # check if this email exists in our db
+        try:
+            email_check = get_user_model().objects.get(email=data)
+            # send email?
+        except models.User.DoesNotExist:
+            raise ValidationError("A user with this email address was not found.")
+        # check if this is a valid email address
+        validators.validate_email(data)
+        # if no exception is raised, this is a valid email
+        return data

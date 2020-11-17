@@ -71,10 +71,17 @@
             {% endif %}
         </div>
     
-    <input id="login_button" class="button is-primary" type="submit" value="Login"></input>
+    <input id="login_button" class="button is-primary is-size-5" type="submit" value="Login"></input>
     </form>
     <br>
-    <button id="register_button" class="button is-danger" onclick="window.location.href='{% url "stocks:register" %}';" value="">Register new account</button>
+    <div class="columns">
+        <div class="column">
+            <button id="reset_password_button" class="button is-warning is-size-6" onclick="window.location.href='{% url "stocks:password_reset_request" %}';" value="">Reset Password</button>
+        </div>
+        <div class="column">
+            <button id="register_button" class="button is-danger is-size-6" onclick="window.location.href='{% url "stocks:register" %}';" value="">Register new account</button>
+        </div>
+    </div>
     </div>
     <div class="box" style="text-align:center;" id="login_attempt_box">
         {% if next_URL_included %}
@@ -107,6 +114,7 @@
         $(".help").hide();
         $("#login_button").prop('disabled', true);
         $("#register_button").prop('disabled', true);
+        $("#reset_password_button").prop('disabled', true);
     {% endif %} 
     </script>
     {% endblock morejs%}

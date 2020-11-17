@@ -33,8 +33,14 @@ from django.views.generic.edit import FormView
 from django.contrib.auth.views import LoginView 
 from django.contrib.auth import login,logout,get_user_model
 from django.db.utils import IntegrityError
+from django.contrib.auth.decorators import login_required
 import pandas as pd
 from django.core.mail import send_mail
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
 # Imports from local machine
 from stocks import models, filters
 from stocks import tables as stocks_tables
@@ -976,7 +982,7 @@ class LoginPageView(FormView):
     """
     User login  
     """
-    template_name = 'stocks/base_login.html'
+    template_name = 'stocks/account/base_login.html'
     form_class = forms.LoginForm
     success_url = reverse_lazy('stocks:login',current_app="stocks")
 
@@ -1010,21 +1016,25 @@ class LoginPageView(FormView):
         return self.render_to_response(context)
 
 
-class LogoutPageView(TemplateView):
+class LogoutPageView(LoginRequiredMixin,TemplateView):
     """
     User logout
     """
-    template_name = 'stocks/base_logout.html'
+    template_name = 'stocks/account/base_logout.html'
 
     def get_context_data(self, **kwargs):
         """This is called when the form is called for the first time"""
         context = super(LogoutPageView, self).get_context_data(**kwargs)
         try:
-            if self.request.GET['logout']:
+            if "logout" in self.request.GET:
                 logout(self.request)
                 context['logout_success'] = True
-        except MultiValueDictKeyError:
-            pass
+            elif "deleteaccount" in self.request.GET:
+                current_user = get_user_model().objects.get(username=self.request.user.username)
+                current_user.delete()
+                context['delete_account_success'] = True
+        except Exception as exc:
+            context['errors'] = exc.message
         return context
 
 
@@ -1032,7 +1042,7 @@ class RegisterPageView(FormView):
     """
     Register new user
     """
-    template_name = 'stocks/base_register.html'
+    template_name = 'stocks/account/base_register.html'
     form_class = forms.RegisterForm
     success_url = reverse_lazy('stocks:register',current_app="stocks")
     
@@ -1058,8 +1068,7 @@ class RegisterPageView(FormView):
             # send an email to the user
             send_mail(
                 'trinistats: Account Creation',
-                f'You have created a new account at www.trinistats.com! Your username is {new_username}. \
-                Please login and start monitoring and growing your portfolio with us today.',
+                f'You have created a new account at www.trinistats.com! Your username is {new_username}.Please login and start monitoring and growing your portfolio with us today.',
                 'trinistats@gmail.com',
                 [f'{new_email}'],
             fail_silently=False,
@@ -1077,19 +1086,14 @@ class RegisterPageView(FormView):
         return self.render_to_response(context)
 
 
-class PortfolioTransactionsView(FormView):
+class PortfolioTransactionsView(LoginRequiredMixin,FormView):
     """
     Allow user to add new market transactions for their portfolio
     """
     template_name = 'stocks/base_portfoliotransactions.html'
     form_class = forms.PortfolioTransactionForm
     success_url = reverse_lazy('stocks:portfoliotransactions',current_app="stocks")
-    
-    def get(self, request, *args, **kwargs):
-        # return a redirect if the user is not logged in
-        if not self.request.user.is_authenticated:
-            return redirect('%s?next=%s' % (settings.LOGIN_URL, self.request.path))
-        return self.render_to_response(self.get_context_data())
+
 
     def get_context_data(self, **kwargs):
         """This is called when the form is called for the first time"""
@@ -1147,7 +1151,7 @@ class PortfolioTransactionsView(FormView):
         return self.render_to_response(context)
 
 
-class PortfolioSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class PortfolioSummaryView(LoginRequiredMixin,ExportMixin, tables2.views.SingleTableMixin, FilterView):
     """
     Set up the data for the technical analysis summary page
     """
@@ -1156,6 +1160,7 @@ class PortfolioSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterVi
     table_class = stocks_tables.PortfolioSummaryTable
     table_pagination = False
     filterset_class = filters.PortfolioSummaryFilter
+
 
     def get_context_data(self, *args, **kwargs):
         logger.info(f"{self.template_name} was called")
@@ -1193,6 +1198,74 @@ class PortfolioSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterVi
         return context
 
 
+class UserProfileView(LoginRequiredMixin, TemplateView):
+    """
+    A summary of the user's profile on trinistats. Provides normal 
+    options to logout, delete account etc.
+    """
+    template_name = 'stocks/account/base_userprofile.html'
+
+    def get_context_data(self, **kwargs):
+        """Add context data for the page"""
+        context = super(UserProfileView, self).get_context_data(**kwargs)
+        logger.debug("Now loading context data for UserProfileView...")
+        current_user = get_user_model().objects.get(username=self.request.user.username)
+        context['current_username'] = self.request.user.username
+        context['date_created'] = current_user.date_joined.strftime("%d-%m-%Y")
+        context['last_login'] = current_user.last_login.strftime("%d-%m-%Y")
+        context['email'] = current_user.email
+        return context
+
+
+class PasswordResetRequestView(FormView):
+    """
+    Account password reset 
+    """
+    template_name = 'stocks/account/base_passwordreset.html'
+    form_class = forms.PasswordResetForm
+    success_url = reverse_lazy('stocks:password_reset_request',current_app="stocks")
+
+    def get(self, request, *args, **kwargs):
+        context = super(PasswordResetRequestView, self).get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def form_invalid(self,form, **kwargs):
+        """This is called when the form is submitted with invalid data"""
+        context = super(PasswordResetRequestView, self).get_context_data(**kwargs)
+        context['form_submit_fail'] = True
+        return self.render_to_response(context)
+
+    def form_valid(self,form, **kwargs):
+        """This is called when the form is submitted with all data valid"""
+        # set up our context variables
+        context = super(PasswordResetRequestView, self).get_context_data(**kwargs)
+        context['form_submit_success'] = True
+        # login the user
+        user = models.User.objects.get(email=form.cleaned_data['email'])
+        if user is not None:
+            # if we find a user with this email address, send them a password reset email
+            subject = "trinistats: Password Reset"
+            email_template_name = "stocks/account/password_reset_email.txt"
+            email_body = {
+            "email":user.email,
+            'domain':'127.0.0.1:8000',
+            'site_name': 'stocks',
+            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+            "user": user,
+            'token': default_token_generator.make_token(user),
+            'protocol': 'http',
+            }
+            email = render_to_string(email_template_name, email_body)
+            send_mail(
+            subject,
+            email,
+            'trinistats@gmail.com',
+            [user.email],
+            fail_silently=False,
+            )
+            logger.info(f"Sent password reset email to {user.email}.")
+            context['reset_sent'] = True
+        return self.render_to_response(context)
 
 # CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."

@@ -13,7 +13,10 @@
     </div>
     <div style="text-align:center;" class="box less-width">
         {% if logout_success %}
-        <p>You have been logged out successfully. &nbsp <i class="fas fa-2x fa-biking has-text-success"></i></p>
+        <p>You have been logged out successfully. &nbsp <i class="fas fa-2x fa-user-slash has-text-success"></i></p>
+        <br>
+        {% elif delete_account_success %}
+        <p>Your account has been deleted successfully. &nbsp <i class="fas fa-2x fa-user-minus has-text-success"></i></p>
         <br>
         {% else %}
         <p>
@@ -33,7 +36,7 @@
     {% endblock %}
     {% block morejs%}
     <script>
-    {% if logout_success %}
+    {% if logout_success or delete_account_success %}
         $("#logout_button").prop('disabled', true);
     {% endif %}
     </script>

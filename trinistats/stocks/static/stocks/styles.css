@@ -304,8 +304,6 @@ tr.odd td.headcol {
 /* Tooltip container */
 .tooltip {
     position: relative;
-    display: inline-block;
-    border-bottom: 1px dotted black;
     /* If you want dots under the hoverable text */
 }
 
@@ -341,11 +339,11 @@ tr.odd td.headcol {
     /* Use half of the width (120/2 = 60), to center the tooltip */
 }
 
-.tooltip .bottom {
+.tooltip span.bottom {
     width: 20rem;
     top: 100%;
     left: 50%;
-    margin-left: -18rem;
+    margin-left: -2rem;
     /* Use half of the width (120/2 = 60), to center the tooltip */
 }
 
@@ -388,5 +386,31 @@ tr.odd td.headcol {
         text-align: left;
         width: 100%;
         background-color: white;
+    }
+
+    .tooltip .left {
+        top: -5px;
+        right: 150%;
+    }
+
+    .tooltip .right {
+        top: -5px;
+        left: 105%;
+    }
+
+    .tooltip .top {
+        width: 120px;
+        bottom: 100%;
+        left: 50%;
+        margin-left: -60px;
+        /* Use half of the width (120/2 = 60), to center the tooltip */
+    }
+
+    .tooltip .bottom {
+        width: 20rem;
+        top: 100%;
+        left: 50%;
+        margin-left: -2rem;
+        /* Use half of the width (120/2 = 60), to center the tooltip */
     }
 }
