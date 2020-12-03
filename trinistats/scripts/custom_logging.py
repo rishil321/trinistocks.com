@@ -103,7 +103,7 @@ def setup_logging(logfilestandardname = 'log',
     # ql gets records from the queue and sends them to the handler
     ql = logging.handlers.QueueListener(q, stdout_handler)
     ql.start()
-    mainlogger = logging.getLogger()
+    mainlogger = logging.getLogger(__name__)
     # add the handler to the logger so records from this process are handled
     mainlogger.addHandler(stdout_handler)
     mainlogger.setLevel(stdoutlogginglevel)
@@ -133,7 +133,7 @@ def setup_logging(logfilestandardname = 'log',
 
 def flush_smtp_logger():
     # Find the SMTP log handler
-    mainlogger = logging.getLogger()
+    mainlogger = logging.getLogger(__name__)
     for handler in mainlogger.handlers:
         if handler.__class__ == BufferingSMTPHandler:
             # and flush the messages
@@ -143,7 +143,7 @@ def flush_smtp_logger():
 def logging_worker_init(q):
     # the worker processes write logs into the q, which are then handled by this queuehandler
     qh = logging.handlers.QueueHandler(q)
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     logger.addHandler(qh)
     # remove the default stdout handler
     for handler in logger.handlers:

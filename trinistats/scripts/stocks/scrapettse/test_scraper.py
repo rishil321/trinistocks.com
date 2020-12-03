@@ -58,6 +58,10 @@ def test_full_updates():
 def test_update_technical_analysis_data():
     assert scraper.update_technical_analysis_data() == 0
 
+
+def test_process_quarterly_reports():
+    assert scraper.process_quarterly_reports() == 0
+
  
 def main():
     """Docstring description for each function"""
