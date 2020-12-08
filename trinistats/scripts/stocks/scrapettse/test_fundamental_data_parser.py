@@ -19,7 +19,7 @@ import argparse
 # Imports from the cheese factory
 
 # Imports from the local filesystem
-from . import fundamental_data
+from . import fundamental_data_parser
 
 # Put your constants here. These should be named in CAPS.
 
@@ -29,16 +29,16 @@ from . import fundamental_data
  
 # Put your function definitions here. These should be lowercase, separated by underscores.
 def test_convert_quarterly_reports_text():
-    assert fundamental_data.convert_quarterly_reports_text() == 0
+    assert fundamental_data_parser.convert_quarterly_reports_text() == 0
 
 def test_convert_annual_reports_text():
-    assert fundamental_data.convert_annual_reports_text() == 0
+    assert fundamental_data_parser.convert_annual_reports_text() == 0
 
 def test_process_quarterly_reports():
-    assert fundamental_data.process_quarterly_reports() == 0
+    assert fundamental_data_parser.process_quarterly_reports() == 0
 
 def test_process_annual_reports():
-    assert fundamental_data.process_annual_reports() == 0
+    assert fundamental_data_parser.process_annual_reports() == 0
  
 def main():
     """Docstring description for each function"""

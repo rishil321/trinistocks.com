@@ -59,3 +59,14 @@ class DatabaseConnect:
         else:
             logging.debug("Database connection not established. Ignoring request to close.")
             return 0
+
+    def __enter__(self):
+        """Opens a database connection
+
+        :return: [description]
+        :rtype: [type]
+        """
+        return self
+  
+    def __exit__(self,exc_type, exc_value, exc_traceback): 
+        self.close()

@@ -32,6 +32,7 @@ import sqlalchemy.exc
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 # Imports from the local filesystem
 from ... import custom_logging
@@ -57,7 +58,6 @@ def scrape_listed_equity_data():
     https://www.stockex.co.tt/listed-securities/?IdInstrumentType=1&IdSegment=&IdSector=
     and scrape the useful output into a list of dictionaries to write to the db
     """
-    db_connection = None
     try:
         logging.info(
             "Now scraping listing data from all listed equities.")
@@ -83,9 +83,9 @@ def scrape_listed_equity_data():
             try:
                 per_stock_url = f"https://www.stockex.co.tt/manage-stock/{symbol}/"
                 logging.info("Navigating to "+per_stock_url)
-                per_stock_page = requests.get(
+                news_page = requests.get(
                     per_stock_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
-                if per_stock_page.status_code != 200:
+                if news_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. "+per_stock_url)
                 else:
@@ -94,7 +94,7 @@ def scrape_listed_equity_data():
                 equity_data = dict(symbol=symbol)
                 # use beautifulsoup to get the securityname, sector, status, financial year end, website
                 per_stock_page_soup = BeautifulSoup(
-                    per_stock_page.text, 'lxml')
+                    news_page.text, 'lxml')
                 equity_data['security_name'] = per_stock_page_soup.find(
                     text='Security:').find_parent("h2").find_next("h2").text
                 equity_sector = per_stock_page_soup.find(
@@ -119,7 +119,7 @@ def scrape_listed_equity_data():
                 else:
                     equity_data['currency'] = 'TTD'
                 # get a list of tables from the URL
-                dataframe_list = pd.read_html(per_stock_page.text)
+                dataframe_list = pd.read_html(news_page.text)
                 # use pandas to get the issued share capital and market cap
                 equity_data['market_capitalization'] = int(
                     float(dataframe_list[0]['Opening Price'][8]))
@@ -138,26 +138,55 @@ def scrape_listed_equity_data():
             except Exception as exc:
                 logging.warning(
                     f"Could not load page for equity:{symbol}. Here's what we know: {str(exc)}")
-        # Now write the data to the database
-        db_connection = DatabaseConnect()
-        listed_equities_table = Table(
-            'listed_equities', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
-        logging.debug("Inserting scraped data into listed_equities table")
-        listed_equities_insert_stmt = insert(listed_equities_table).values(
-            all_listed_equity_data)
-        listed_equities_upsert_stmt = listed_equities_insert_stmt.on_duplicate_key_update(
-            {x.name: x for x in listed_equities_insert_stmt.inserted})
-        result = db_connection.dbcon.execute(listed_equities_upsert_stmt)
-        logging.info(
-            "Database update successful. Number of rows affected was "+str(result.rowcount))
+        # set up a dataframe with all our data
+        all_listed_equity_data_df = pd.DataFrame(all_listed_equity_data)
+        # now find the symbol ids? used for the news page for each symbol
+        logging.info('Now trying to fetch symbol ids for news')
+        news_url = 'https://www.stockex.co.tt/news/'
+        logging.info(f"Navigating to {news_url}")
+        news_page = requests.get(
+            news_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+        if news_page.status_code != 200:
+            raise requests.exceptions.HTTPError(
+                "Could not load URL. "+news_url)
+        logging.info("Successfully loaded webpage.")
+        # get all the options for the dropdown select, since these contain the ids
+        news_page_soup = BeautifulSoup(
+            news_page.text, 'lxml')
+        all_symbol_mappings = news_page_soup.find(id='symbol')
+        # now parse the soup and get the symbols and their ids
+        symbols = []
+        symbol_ids = []
+        for mapping in all_symbol_mappings:
+            if isinstance(mapping,Tag):
+                symbol = mapping.contents[0].split()[0]
+                symbol_id = mapping.attrs['value']
+                if symbol and symbol_id:
+                    symbols.append(symbol)
+                    symbol_ids.append(symbol_id)
+        # now set up a dataframe
+        symbol_id_df = pd.DataFrame(list(zip(symbols, symbol_ids)), 
+               columns =['symbol', 'symbol_id'])
+        # merge the two dataframes
+        all_listed_equity_data_df = pd.merge(all_listed_equity_data_df,symbol_id_df,
+            on='symbol',how='left')
+         # Now write the data to the database
+        with DatabaseConnect() as db_obj:
+            listed_equities_table = Table(
+                'listed_equities', MetaData(), autoload=True, autoload_with=db_obj.dbengine)
+            logging.debug("Inserting scraped data into listed_equities table")
+            listed_equities_insert_stmt = insert(listed_equities_table).values(
+                all_listed_equity_data_df.to_dict('records'))
+            listed_equities_upsert_stmt = listed_equities_insert_stmt.on_duplicate_key_update(
+                {x.name: x for x in listed_equities_insert_stmt.inserted})
+            result = db_obj.dbcon.execute(listed_equities_upsert_stmt)
+            logging.info(
+                "Database update successful. Number of rows affected was "+str(result.rowcount))
         return 0
     except Exception as exc:
         logging.exception(
             f"Problem encountered while updating listed equities. Here's what we know: {str(exc)}")
         custom_logging.flush_smtp_logger()
-    finally:
-        if db_connection is not None:
-            db_connection.close()
 
 
 def check_num_equities_in_sector():

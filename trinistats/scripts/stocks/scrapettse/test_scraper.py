@@ -28,6 +28,9 @@ from . import scraper
 # Put your class definitions here. These should use the CapWords convention.
  
 # Put your function definitions here. These should be lowercase, separated by underscores.
+def test_scrape_listed_equity_data():
+    assert scraper.scrape_listed_equity_data() == 0
+
 def test_daily_trades():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f",

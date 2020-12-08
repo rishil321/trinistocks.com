@@ -369,28 +369,111 @@ def process_annual_reports():
                 raw_comprehensive_income_df = pd.DataFrame()
                 raw_equity_changes_df = pd.DataFrame()
                 raw_cash_flows_df = pd.DataFrame()
+                # set up indices to slice the read dataframes to the various statements
+                statement_indices = {
+                    'raw_financial_position_df_start':None,'raw_financial_position_df_end':None,
+                    'raw_income_df_start':None,'raw_income_df_end':None,
+                    'raw_comprehensive_income_df_start':None,'raw_comprehensive_income_df_end':None,
+                    'raw_equity_changes_df_start':None,'raw_equity_changes_df_end':None,
+                    'raw_cash_flows_df_start':None,'raw_cash_flows_df_end':None
+                    }
                 # find the columns and row indices that contain our important statements
-                statement_indices = {'statement_financial_position_index':None,'statement_income_index':None,
-                    'statement_comprehensive_income_index':None,'statement_changes_equity':None,
-                    'statement_cash_flows':None}
                 for table in all_tables:
                     table_df = table.df
                     for column in table_df.columns:
-                        # go through each column in each table read, and slice the tables to create our raw dataframes
-                        if 'statementoffinancialposition' in series_to_clean_string(table_df[column]):
-                            logging.info("Statement of financial position found.")
-                            # get the first index and the last index for this table
-                            start_index = None
-                            end_index = None
-                            for index,element in enumerate(table_df[column]):
-                                if 'statementoffinancialposition' in clean_and_lower_string(element) and "$'000" in table_df[column][index+1]:
-                                    start_index=index
-                                elif 'totalequity' in clean_and_lower_string(element) and "statementofincome" in clean_and_lower_string(table_df[column][index+2]):
-                                    end_index=index
-                            if not start_index or not end_index:
-                                raise RuntimeError('Could not get indices for financial position dataframe.')
-                            raw_financial_position_df = table_df.iloc[start_index:end_index].copy(deep=True)[column].to_frame()
-                # raise an error if we were not able to locate the financial position df
+                        # go through each column and row in each table read, and slice the tables to create our raw dataframes
+                        for index,element in enumerate(table_df[column]):
+                            # ignore all empty strings
+                            if clean_and_lower_string(element):
+                                # first find the indices
+                                if not statement_indices['raw_financial_position_df_start'] and \
+                                clean_and_lower_string(element) == 'summaryconsolidatedstatementoffinancialposition':
+                                    logging.info("Statement of financial position found.")
+                                    # get the first index and the last index for this table
+                                    statement_indices['raw_financial_position_df_start'] = index
+                                if not statement_indices['raw_financial_position_df_end'] and \
+                                clean_and_lower_string(element) == 'summaryconsolidatedstatementofincome':
+                                    statement_indices['raw_financial_position_df_end'] = index-1
+                                    statement_indices['raw_income_df_start'] = index
+                                if not statement_indices['raw_income_df_end'] and \
+                                clean_and_lower_string(element) == "summaryconsolidatedstatementofcomprehensiveincome":
+                                    statement_indices['raw_income_df_end'] = index -1
+                                    statement_indices['raw_comprehensive_income_df_start'] = index
+                                if not statement_indices['raw_comprehensive_income_df_end'] and \
+                                (clean_and_lower_string(element) == "reportoftheindependentauditoronthesummaryconsolidatedfinancialstatementstotheshareholdersofagostini'slimited" \
+                                or clean_and_lower_string(element) == "summaryconsolidatedstatementofchangesinequity" or \
+                                clean_and_lower_string(element) == "opinionsummaryconsolidatedfinancialstatements"):
+                                    statement_indices['raw_comprehensive_income_df_end'] = index -1
+                                if not statement_indices['raw_equity_changes_df_start'] and \
+                                clean_and_lower_string(element) == "summaryconsolidatedstatementofchangesinequity":
+                                    statement_indices['raw_equity_changes_df_start'] = index
+                                # if we haven't found the end of the equity changes statement and
+                                # we find the statement of cash flows, or we've reached the end of the current column and
+                                # we already found the start of the equity changes statement in this column
+                                # then end it at the end of this column (assume that the equity statement ends here)
+                                if not statement_indices['raw_equity_changes_df_end'] and \
+                                (clean_and_lower_string(element) == "summaryconsolidatedstatementofcashflows" or \
+                                ((index == len(table_df[column])-1) and statement_indices['raw_equity_changes_df_start'])):
+                                    statement_indices['raw_equity_changes_df_end'] = index -1
+                                if not statement_indices['raw_cash_flows_df_start'] and \
+                                clean_and_lower_string(element) == "summaryconsolidatedstatementofcashflows":
+                                    statement_indices['raw_cash_flows_df_start'] = index
+                                if not statement_indices['raw_cash_flows_df_end'] and \
+                                clean_and_lower_string(element) == "notes":
+                                    statement_indices['raw_cash_flows_df_end'] = index-1
+                                # then if we have found our required indices, set up our dataframe one time
+                                # note that column 0 has all data aligned, but other columns do not, so we need to modify the column numbers
+                                if raw_financial_position_df.empty and \
+                                statement_indices['raw_financial_position_df_start'] and statement_indices['raw_financial_position_df_end']:
+                                    if column == 0:
+                                        raw_financial_position_df = table_df.iloc[statement_indices['raw_financial_position_df_start']: \
+                                        statement_indices['raw_financial_position_df_end']].copy(deep=True)[column].to_frame()
+                                    elif column == 2:
+                                        raw_financial_position_df = table_df.iloc[statement_indices['raw_financial_position_df_start']: \
+                                        statement_indices['raw_financial_position_df_end']].copy(deep=True)[column+1].to_frame()
+                                    else:
+                                        raise RuntimeError('Statement of financial position was found in a weird position.')
+                                if raw_income_df.empty and \
+                                statement_indices['raw_income_df_start'] and statement_indices['raw_income_df_end']:
+                                    if column == 0:
+                                        raw_income_df = table_df.iloc[statement_indices['raw_income_df_start']: \
+                                        statement_indices['raw_income_df_end']].copy(deep=True)[column].to_frame()
+                                    elif column == 2:
+                                        raw_income_df = table_df.iloc[statement_indices['raw_income_df_start']: \
+                                        statement_indices['raw_income_df_end']].copy(deep=True)[column+1].to_frame()
+                                    else:
+                                        raise RuntimeError('Statement of income was found in a weird position.')
+                                if raw_comprehensive_income_df.empty and \
+                                statement_indices['raw_comprehensive_income_df_start'] and statement_indices['raw_comprehensive_income_df_end']:
+                                    if column == 0:
+                                        raw_comprehensive_income_df = table_df.iloc[statement_indices['raw_comprehensive_income_df_start']: \
+                                        statement_indices['raw_comprehensive_income_df_end']].copy(deep=True)[column].to_frame()
+                                    elif column == 2:
+                                        raw_comprehensive_income_df = table_df.iloc[statement_indices['raw_comprehensive_income_df_start']: \
+                                        statement_indices['raw_comprehensive_income_df_end']].copy(deep=True)[column+1].to_frame()
+                                    else:
+                                        raise RuntimeError('Statement of comprehensive income was found in a weird position.')
+                                if raw_equity_changes_df.empty and \
+                                statement_indices['raw_equity_changes_df_start'] and statement_indices['raw_equity_changes_df_end']:
+                                    if column == 0:
+                                        raw_equity_changes_df = table_df.iloc[statement_indices['raw_equity_changes_df_start']: \
+                                        statement_indices['raw_equity_changes_df_end']].copy(deep=True)[column].to_frame()
+                                    elif column == 2:
+                                        raw_equity_changes_df = table_df.iloc[statement_indices['raw_equity_changes_df_start']: \
+                                        statement_indices['raw_equity_changes_df_end']].copy(deep=True)[column+1].to_frame()
+                                    else:
+                                        raise RuntimeError('Statement of equity changes was found in a weird position.')
+                                if raw_cash_flows_df.empty and \
+                                statement_indices['raw_cash_flows_df_start'] and statement_indices['raw_cash_flows_df_end']:
+                                    if column == 0:
+                                        raw_cash_flows_df = table_df.iloc[statement_indices['raw_cash_flows_df_start']: \
+                                        statement_indices['raw_cash_flows_df_end']].copy(deep=True)[column].to_frame()
+                                    elif column == 2:
+                                        raw_cash_flows_df = table_df.iloc[statement_indices['raw_cash_flows_df_start']: \
+                                        statement_indices['raw_cash_flows_df_end']].copy(deep=True)[column+1].to_frame()
+                                    else:
+                                        raise RuntimeError('Statement of cash flows was found in a weird position.')
+                # raise an error if we were not able to locate any of the dataframes
                 if raw_financial_position_df.empty:
                     raise RuntimeError('We were not able to locate the Statement of Financial Position.')
                 # set up the df to store the parsed data
