@@ -122,9 +122,9 @@ def scrape_listed_equity_data():
                 dataframe_list = pd.read_html(news_page.text)
                 # use pandas to get the issued share capital and market cap
                 equity_data['market_capitalization'] = int(
-                    float(dataframe_list[0]['Opening Price'][8]))
+                    float(dataframe_list[0]['Closing Price'][8]))
                 equity_data['issued_share_capital'] = float(
-                    re.sub('[ |$|,]', '', dataframe_list[0]['Closing Price'][8]))
+                    re.sub('[ |$|,]', '', dataframe_list[0]['Opening Price'][8]))
                 # Now we have all the important information for this equity
                 # So we can add the dictionary object to our global list
                 # But first we check that this symbol has not been added already

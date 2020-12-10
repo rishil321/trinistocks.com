@@ -28,6 +28,10 @@ from . import updater
 # Put your class definitions here. These should use the CapWords convention.
  
 # Put your function definitions here. These should be lowercase, separated by underscores.
+
+def test_calculate_fundamental_analysis_ratios():
+    assert updater.calculate_fundamental_analysis_ratios(21.33,0.15,0.29) == 0
+    
 def test_update_portfolio_summary_book_costs():
     assert updater.update_portfolio_summary_book_costs() == 0
 

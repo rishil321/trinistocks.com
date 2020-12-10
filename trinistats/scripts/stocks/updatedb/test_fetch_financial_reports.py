@@ -27,8 +27,16 @@ from . import fetch_financial_reports
 # Put your class definitions here. These should use the CapWords convention.
  
 # Put your function definitions here. These should be lowercase, separated by underscores.
-def test_fetch_annual_statements():
-    assert fetch_financial_reports.fetch_annual_statements() == 0
+def test_fetch_annual_reports():
+    assert fetch_financial_reports.fetch_annual_reports() == 0
+    
+
+def test_fetch_audited_statements():
+    assert fetch_financial_reports.fetch_audited_statements() == 0
+
+
+def test_fetch_quarterly_statements():
+    assert fetch_financial_reports.fetch_quarterly_statements() == 0
  
 def main():
     """Docstring description for each function"""
