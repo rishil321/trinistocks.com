@@ -116,13 +116,14 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;", db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
                 # then get the share price for each listed stock at this date
                 share_price_df = pd.io.sql.read_sql(
-                    f"SELECT symbol,close_price FROM {daily_stock_summary_table_name} WHERE date='{latest_stock_date}';", db_connect.dbengine)
+                    f"SELECT {daily_stock_summary_table_name}.symbol,{daily_stock_summary_table_name}.close_price, listed_equities.currency \
+                    FROM {daily_stock_summary_table_name}, listed_equities WHERE \
+                    {daily_stock_summary_table_name}.symbol = listed_equities.symbol AND {daily_stock_summary_table_name}.date='{latest_stock_date}';", db_connect.dbengine)
+                share_price_df['share_price_conversion_rates'] =  share_price_df.apply(lambda x: 1/TTD_USD if 
+                                x.currency == 'USD' else (1/TTD_JMD if x.currency == 'JMD' else (1/TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
                 # create a merged df to calculate the p/e
                 price_to_earnings_df = pd.merge(
                     raw_annual_data_df, share_price_df, how='inner', on='symbol')
-                # calculate a conversion rate for the stock price
-                price_to_earnings_df['share_price_conversion_rates'] =  price_to_earnings_df.apply(lambda x: 1/TTD_USD if 
-                                x.currency == 'USD' else (1/TTD_JMD if x.currency == 'JMD' else (1/TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
                 calculated_fundamental_ratios_df['price_to_earnings_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
                     price_to_earnings_df['basic_earnings_per_share']
                 # now calculate the price to dividend per share ratio
@@ -132,9 +133,6 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                 # merge this df with the share_price_df
                 dividends_df = pd.merge(
                     share_price_df, dividends_df, how='inner', on='symbol')
-                # calculate the price to dividend per share ratio
-                calculated_fundamental_ratios_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
-                    (dividends_df['dividend_amount']*dividends_df['dividend_conversion_rates'])
                 # calculate dividend yield and dividend payout ratio
                 # add the dividend conversion rates for this df as well
                 symbols_list = price_to_earnings_df['symbol'].to_list()
@@ -170,6 +168,9 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                         conversion_rates.append(1.00)
                 # now add this new series to our df
                 dividends_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=dividends_df.index)
+                # calculate the price to dividend per share ratio
+                calculated_fundamental_ratios_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
+                    (dividends_df['dividend_amount']*dividends_df['dividend_conversion_rates'])
                 # now calculate the eps growth rate
                 calculated_fundamental_ratios_df['EPS_growth_rate'] = raw_annual_data_df['basic_earnings_per_share'].diff(
                 )*100
@@ -297,75 +298,69 @@ def update_portfolio_summary_book_costs():
     (shares_remaining, average_cost, book_cost)
     """
     logging.info("Now trying to update the book value in all portfolios.")
-    db_connect = None
-    try:
         # set up the db connection
-        db_connect = DatabaseConnect()
-        # set up our dataframe from the portfolio_transactions table
-        transactions_df = pd.io.sql.read_sql(f"SELECT user_id, symbol_id, num_shares, share_price, bought_or_sold \
-            FROM portfolio_transactions;", db_connect.dbengine)
-        # get the number of shares remaining in the portfolio for each user
-        # first get the total shares bought
-        total_shares_bought_df = transactions_df[transactions_df.bought_or_sold == "Bought"].groupby(['user_id','symbol_id']).sum().reset_index()
-        total_shares_bought_df.drop(['share_price'], axis=1, inplace=True)
-        total_shares_bought_df.rename(columns={'num_shares':'shares_bought'}, inplace=True)
-        # then get the total shares sold
-        total_shares_sold_df = transactions_df[transactions_df.bought_or_sold == "Sold"].groupby(['user_id','symbol_id']).sum().reset_index()
-        total_shares_sold_df.drop(['share_price'], axis=1, inplace=True)
-        total_shares_sold_df.rename(columns={'num_shares':'shares_sold'}, inplace=True)
-        # first merge both dataframes
-        total_bought_sold_df = total_shares_bought_df.merge(total_shares_sold_df, how='outer',on=['user_id','symbol_id'])
-        # then fill the shares_sold column with 0
-        total_bought_sold_df['shares_sold'] = total_bought_sold_df['shares_sold'].replace(np.NaN, 0)
-        # then find the difference to get our number of shares remaining for each user
-        total_bought_sold_df['shares_remaining'] = total_bought_sold_df['shares_bought'] - total_bought_sold_df['shares_sold']
-        # set up a new df to hold the summary data that we are interested in
-        summary_df = total_bought_sold_df[['user_id','symbol_id','shares_remaining']].copy()
-        # get the average cost for each share
-        avg_cost_df = transactions_df[transactions_df.bought_or_sold == "Bought"].copy()
-        # calculate the total book cost for shares purchased 
-        avg_cost_df['book_cost'] = avg_cost_df['num_shares'] * avg_cost_df['share_price']
-        avg_cost_df = avg_cost_df.groupby(['user_id','symbol_id']).sum()
-        avg_cost_df.drop(['share_price'], axis=1, inplace=True)
-        avg_cost_df = avg_cost_df.reset_index()
-        # calculate the average cost for each share purchased
-        avg_cost_df['average_cost'] = avg_cost_df['book_cost'] / avg_cost_df['num_shares']
-        # add these two new fields to our dataframe to be written to the db
-        summary_df = summary_df.merge(avg_cost_df, how='outer', on=['user_id','symbol_id'])
-        summary_df.drop(['num_shares'], axis=1, inplace=True)
-        # now write the df to the database
-        logging.info("Now writing portfolio book value data to database.")
-        execute_completed_successfully = False
-        execute_failed_times = 0
-        portfolio_summary_table = Table(
-            'portfolio_summary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        while not execute_completed_successfully and execute_failed_times < 5:
-            try:
-                insert_stmt = insert(
-                    portfolio_summary_table).values(summary_df.to_dict('records'))
-                upsert_stmt = insert_stmt.on_duplicate_key_update(
-                    {x.name: x for x in insert_stmt.inserted})
-                result = db_connect.dbcon.execute(
-                    upsert_stmt)
-                execute_completed_successfully = True
-                logging.info(
-                    "Successfully wrote portfolio book value data to db.")
-                logging.info(
-                    "Number of rows affected in the portfolio_summary table was "+str(result.rowcount))
-            except sqlalchemy.exc.OperationalError as operr:
-                logging.warning(str(operr))
-                time.sleep(1)
-                execute_failed_times += 1
-        return 0
+    try:
+        with DatabaseConnect() as db_connect:
+            # set up our dataframe from the portfolio_transactions table
+            transactions_df = pd.io.sql.read_sql(f"SELECT user_id, symbol_id, num_shares, share_price, bought_or_sold \
+                FROM portfolio_transactions;", db_connect.dbengine)
+            # get the number of shares remaining in the portfolio for each user
+            # first get the total shares bought
+            total_shares_bought_df = transactions_df[transactions_df.bought_or_sold == "Bought"].groupby(['user_id','symbol_id']).sum().reset_index()
+            total_shares_bought_df.drop(['share_price'], axis=1, inplace=True)
+            total_shares_bought_df.rename(columns={'num_shares':'shares_bought'}, inplace=True)
+            # then get the total shares sold
+            total_shares_sold_df = transactions_df[transactions_df.bought_or_sold == "Sold"].groupby(['user_id','symbol_id']).sum().reset_index()
+            total_shares_sold_df.drop(['share_price'], axis=1, inplace=True)
+            total_shares_sold_df.rename(columns={'num_shares':'shares_sold'}, inplace=True)
+            # first merge both dataframes
+            total_bought_sold_df = total_shares_bought_df.merge(total_shares_sold_df, how='outer',on=['user_id','symbol_id'])
+            # then fill the shares_sold column with 0
+            total_bought_sold_df['shares_sold'] = total_bought_sold_df['shares_sold'].replace(np.NaN, 0)
+            # then find the difference to get our number of shares remaining for each user
+            total_bought_sold_df['shares_remaining'] = total_bought_sold_df['shares_bought'] - total_bought_sold_df['shares_sold']
+            # set up a new df to hold the summary data that we are interested in
+            summary_df = total_bought_sold_df[['user_id','symbol_id','shares_remaining']].copy()
+            # get the average cost for each share
+            avg_cost_df = transactions_df[transactions_df.bought_or_sold == "Bought"].copy()
+            # calculate the total book cost for shares purchased 
+            avg_cost_df['book_cost'] = avg_cost_df['num_shares'] * avg_cost_df['share_price']
+            avg_cost_df = avg_cost_df.groupby(['user_id','symbol_id']).sum()
+            avg_cost_df.drop(['share_price'], axis=1, inplace=True)
+            avg_cost_df = avg_cost_df.reset_index()
+            # calculate the average cost for each share purchased
+            avg_cost_df['average_cost'] = avg_cost_df['book_cost'] / avg_cost_df['num_shares']
+            # add these two new fields to our dataframe to be written to the db
+            summary_df = summary_df.merge(avg_cost_df, how='outer', on=['user_id','symbol_id'])
+            summary_df.drop(['num_shares'], axis=1, inplace=True)
+            # now write the df to the database
+            logging.info("Now writing portfolio book value data to database.")
+            execute_completed_successfully = False
+            execute_failed_times = 0
+            portfolio_summary_table = Table(
+                'portfolio_summary', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+            while not execute_completed_successfully and execute_failed_times < 5:
+                try:
+                    insert_stmt = insert(
+                        portfolio_summary_table).values(summary_df.to_dict('records'))
+                    upsert_stmt = insert_stmt.on_duplicate_key_update(
+                        {x.name: x for x in insert_stmt.inserted})
+                    result = db_connect.dbcon.execute(
+                        upsert_stmt)
+                    execute_completed_successfully = True
+                    logging.info(
+                        "Successfully wrote portfolio book value data to db.")
+                    logging.info(
+                        "Number of rows affected in the portfolio_summary table was "+str(result.rowcount))
+                except sqlalchemy.exc.OperationalError as operr:
+                    logging.warning(str(operr))
+                    time.sleep(1)
+                    execute_failed_times += 1
+            return 0
     except Exception as exc:
         logging.exception(
-            "Could not complete portfolio summary data update.")
+            "Could not complete portfolio summary book costs data update.")
         custom_logging.flush_smtp_logger()
-    finally:
-        # Always close the database connection
-        if db_connect is not None:
-            db_connect.close()
-            logging.info("Successfully closed database connection.")
 
 
 def update_portfolio_summary_market_values():
@@ -455,25 +450,26 @@ def main(args):
                     # get the latest conversion rates
                     TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(fetch_latest_currency_conversion_rates,())
                     # update the fundamental analysis stock data
-                    multipool.apply_async(
+                    multipool.apply(
                             calculate_fundamental_analysis_ratios, (TTD_JMD, TTD_USD, TTD_BBD))
+                    multipool.apply(
+                            update_dividend_yields, (TTD_JMD, TTD_USD, TTD_BBD))
                     # update the portfolio data for all users
-                    multipool.apply(update_portfolio_summary_book_costs(), ())
+                    multipool.apply(update_portfolio_summary_book_costs, ())
+                    multipool.apply(update_portfolio_summary_market_values, ())
                 multipool.close()
                 multipool.join()
                 logging.info(os.path.basename(__file__) +
-                             " executed successfully.")
+                    " executed successfully.")
                 q_listener.stop()
-                return 0
+        return 0
     except Exception:
         logging.exception("Error in script "+os.path.basename(__file__))
-        sys.exit(1)
  
 # If this script is being run from the command-line, then run the main() function
 if __name__ == "__main__":
     # first check the arguements given to this script
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m",
-                        "--daily_update", help="Update the portfolio market data with the latest values", action="store_true")
+    parser.add_argument("--daily_update", help="Update the portfolio market data with the latest values", action="store_true")
     args = parser.parse_args()
     main(args)

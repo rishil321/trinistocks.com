@@ -40,6 +40,12 @@ def test_update_portfolio_summary_book_costs():
 
 def test_update_portfolio_summary_market_values():
     assert updater.update_portfolio_summary_market_values() == 0
+    
+def test_main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--daily_update", help="Update the portfolio market data with the latest values", action="store_true")
+    args = parser.parse_args([])
+    assert updater.main(args) == 0
  
 def main():
     """Docstring description for each function"""
