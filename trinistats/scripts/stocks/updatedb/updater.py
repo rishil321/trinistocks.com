@@ -7,7 +7,8 @@ Description of this module/script goes here
 :returns: Whatever your script returns when called
 :raises Exception if any issues are encountered
 """
- 
+#region IMPORTS
+# 
 # Put all your imports here, one per line. 
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
@@ -33,18 +34,25 @@ import sqlalchemy.exc
 from ...database_ops import DatabaseConnect
 from ... import custom_logging
 from ..crosslisted_symbols import USD_DIVIDEND_SYMBOLS,JMD_DIVIDEND_SYMBOLS,BBD_DIVIDEND_SYMBOLS
- 
-# Put your constants here. These should be named in CAPS.
 
+# endregion IMPORTS
+
+# region CONSTANTS
+# Put your constants here. These should be named in CAPS.
+LOGGERNAME = 'updater.py'
+
+# endregion CONSTANTS 
 # Put your global variables here. 
  
 # Put your class definitions here. These should use the CapWords convention.
- 
+
+# region FUNCTION DEFINITIONS
 # Put your function definitions here. These should be lowercase, separated by underscores.
 
 
 def fetch_latest_currency_conversion_rates():
-    logging.debug("Now trying to fetch latest currency conversions.")
+    logger = logging.getLogger(LOGGERNAME)
+    logger.debug("Now trying to fetch latest currency conversions.")
     api_response_ttd = requests.get(
             url="https://fcsapi.com/api-v2/forex/base_latest?symbol=TTD&type=forex&access_key=o9zfwlibfXciHoFO4LQU2NfTwt2vEk70DAiOH1yb2ao4tBhNmm")
     if (api_response_ttd.status_code == 200):
@@ -52,16 +60,17 @@ def fetch_latest_currency_conversion_rates():
         TTD_JMD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['JMD'])
         TTD_USD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['USD'])
         TTD_BBD = float(json.loads(api_response_ttd.content.decode('utf-8'))['response']['BBD'])
-        logging.debug("Currency conversions fetched correctly.")
+        logger.debug("Currency conversions fetched correctly.")
         return TTD_JMD, TTD_USD, TTD_BBD
     else:
-        logging.exception(f"Cannot load URL for currency conversions.{api_response_ttd.status_code},{api_response_ttd.reason},{api_response_ttd.url}")
+        logger.exception(f"Cannot load URL for currency conversions.{api_response_ttd.status_code},{api_response_ttd.reason},{api_response_ttd.url}")
 
 
 def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
     """
     Calculate the important ratios for fundamental analysis, based off our manually entered data from the financial statements
     """
+    logger = logging.getLogger(LOGGERNAME)
     raw_data_table_names = ['raw_annual_data','raw_quarterly_data']
     calculated_fundamental_ratios_table_name = 'calculated_fundamental_ratios'
     daily_stock_summary_table_name = 'daily_stock_summary'
@@ -69,8 +78,8 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
     try:
         for raw_data_table_name in raw_data_table_names:
             with DatabaseConnect() as db_connect:
-                logging.info("Successfully connected to database")
-                logging.info(f"Now reading raw data from {raw_data_table_name}")
+                logger.info("Successfully connected to database")
+                logger.info(f"Now reading raw data from {raw_data_table_name}")
                 calculated_fundamental_ratios_table = Table(
                     calculated_fundamental_ratios_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
                 # set date column name
@@ -190,7 +199,7 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                 calculated_fundamental_ratios_df = calculated_fundamental_ratios_df.where(
                     pd.notnull(calculated_fundamental_ratios_df), None)
                 # now write the df to the database
-                logging.info("Now writing fundamental data to database.")
+                logger.info("Now writing fundamental data to database.")
                 execute_completed_successfully = False
                 execute_failed_times = 0
                 while not execute_completed_successfully and execute_failed_times < 5:
@@ -202,16 +211,16 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                         result = db_connect.dbcon.execute(
                             upsert_stmt)
                         execute_completed_successfully = True
-                        logging.info(f"Successfully wrote calculated fundamental ratios to db from {raw_data_table_name}")
-                        logging.info(
+                        logger.info(f"Successfully wrote calculated fundamental ratios to db from {raw_data_table_name}")
+                        logger.info(
                             "Number of rows affected in the calculated table was "+str(result.rowcount))
                     except sqlalchemy.exc.OperationalError as operr:
-                        logging.warning(str(operr))
+                        logger.warning(str(operr))
                         time.sleep(1)
                         execute_failed_times += 1
         return 0
     except Exception:
-        logging.exception(
+        logger.exception(
             "Could not complete fundamental data update.")
         custom_logging.flush_smtp_logger()
 
@@ -220,10 +229,12 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
     """Use the historical dividend info table 
     to calculate dividend yields per year
     """
+    logger = logging.getLogger(LOGGERNAME)
     daily_stock_summary_table_name = 'daily_stock_summary'
     historical_dividend_info_table_name = 'historical_dividend_info'
     historical_dividend_yield_table_name = 'historical_dividend_yield'
     with DatabaseConnect() as db_connect:
+        logger.info("Now calculating dividend yields.")
         # first get the dividends per share
         dividends_df = pd.io.sql.read_sql(
             f"SELECT symbol,record_date,dividend_amount FROM {historical_dividend_info_table_name};", db_connect.dbengine)
@@ -236,7 +247,6 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
                 FROM {daily_stock_summary_table_name}, listed_equities WHERE \
                 {daily_stock_summary_table_name}.symbol = listed_equities.symbol AND {daily_stock_summary_table_name}.date='{latest_stock_date}';", db_connect.dbengine)
         # now go through each symbol and calculate the yields
-        dividend_yields = []
         groupby_symbol_year = dividends_df.groupby(['symbol',dividends_df['record_date'].map(lambda x: x.year)])['dividend_amount']
         yearly_dividends_df = groupby_symbol_year.sum().reset_index()
          # add the dividend conversion rates for this df
@@ -267,7 +277,7 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
         yearly_dividends_df.rename(columns = {'record_date':'date'},inplace=True)
         yearly_dividends_df['date'] =  yearly_dividends_df['date'].apply(lambda x: f'{x}-12-31')
         # now write the data to the db
-        logging.info("Now writing fundamental data to database.")
+        logger.info("Now writing dividend yield data to database.")
         execute_completed_successfully = False
         execute_failed_times = 0
         while not execute_completed_successfully and execute_failed_times < 5:
@@ -281,11 +291,11 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
                 result = db_connect.dbcon.execute(
                     upsert_stmt)
                 execute_completed_successfully = True
-                logging.info(f"Successfully wrote dividend yield data from table.")
-                logging.info(
+                logger.info(f"Successfully wrote dividend yield data from table.")
+                logger.info(
                     "Number of rows affected in the calculated table was "+str(result.rowcount))
             except sqlalchemy.exc.OperationalError as operr:
-                logging.warning(str(operr))
+                logger.warning(str(operr))
                 time.sleep(1)
                 execute_failed_times += 1
     return 0
@@ -297,7 +307,8 @@ def update_portfolio_summary_book_costs():
     calculate and upsert the following fields in the portfolio_summary table
     (shares_remaining, average_cost, book_cost)
     """
-    logging.info("Now trying to update the book value in all portfolios.")
+    logger = logging.getLogger(LOGGERNAME)
+    logger.info("Now trying to update the book value in all portfolios.")
         # set up the db connection
     try:
         with DatabaseConnect() as db_connect:
@@ -334,7 +345,7 @@ def update_portfolio_summary_book_costs():
             summary_df = summary_df.merge(avg_cost_df, how='outer', on=['user_id','symbol_id'])
             summary_df.drop(['num_shares'], axis=1, inplace=True)
             # now write the df to the database
-            logging.info("Now writing portfolio book value data to database.")
+            logger.info("Now writing portfolio book value data to database.")
             execute_completed_successfully = False
             execute_failed_times = 0
             portfolio_summary_table = Table(
@@ -348,17 +359,17 @@ def update_portfolio_summary_book_costs():
                     result = db_connect.dbcon.execute(
                         upsert_stmt)
                     execute_completed_successfully = True
-                    logging.info(
+                    logger.info(
                         "Successfully wrote portfolio book value data to db.")
-                    logging.info(
+                    logger.info(
                         "Number of rows affected in the portfolio_summary table was "+str(result.rowcount))
                 except sqlalchemy.exc.OperationalError as operr:
-                    logging.warning(str(operr))
+                    logger.warning(str(operr))
                     time.sleep(1)
                     execute_failed_times += 1
             return 0
     except Exception as exc:
-        logging.exception(
+        logger.exception(
             "Could not complete portfolio summary book costs data update.")
         custom_logging.flush_smtp_logger()
 
@@ -369,7 +380,8 @@ def update_portfolio_summary_market_values():
     calculate and upsert the following fields in the portfolio_summary table
     (current_market_prices, market_value, total_gain_loss)
     """
-    logging.info("Now trying to update the market value in all portfolios.")
+    logger = logging.getLogger(LOGGERNAME)
+    logger.info("Now trying to update the market value in all portfolios.")
     db_connect = None
     try:
         # set up the db connection
@@ -392,7 +404,7 @@ def update_portfolio_summary_market_values():
         # calculate the total gain or loss 
         portfolio_summary_df['total_gain_loss'] = portfolio_summary_df['market_value'] - portfolio_summary_df['book_cost']
         # now write the df to the database
-        logging.info("Now writing portfolio book value data to database.")
+        logger.info("Now writing portfolio book value data to database.")
         execute_completed_successfully = False
         execute_failed_times = 0
         portfolio_summary_table = Table(
@@ -406,33 +418,33 @@ def update_portfolio_summary_market_values():
                 result = db_connect.dbcon.execute(
                     portfolio_summary_upsert_stmt)
                 execute_completed_successfully = True
-                logging.info(
+                logger.info(
                     "Successfully wrote portfolio market value data to db.")
-                logging.info(
+                logger.info(
                     "Number of rows affected in the portfolio_summary table was "+str(result.rowcount))
             except sqlalchemy.exc.OperationalError as operr:
-                logging.warning(str(operr))
+                logger.warning(str(operr))
                 time.sleep(1)
                 execute_failed_times += 1
         return 0
     except Exception as exc:
-        logging.exception(
+        logger.exception(
             "Could not complete portfolio summary data update.")
         custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
         if db_connect is not None:
             db_connect.close()
-            logging.info("Successfully closed database connection.")
+            logger.info("Successfully closed database connection.")
 
 
 def main(args):
     """Main function for updating portfolio data"""
     try:
         # set up logging
-        q_listener, q = custom_logging.setup_logging(
+        q_listener, q, logger = custom_logging.setup_logging(
             logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
-            logfilestandardname=os.path.basename(__file__),
+            loggername=LOGGERNAME,
             stdoutlogginglevel=logging.DEBUG,
             smtploggingenabled=True,
             smtplogginglevel=logging.ERROR,
@@ -442,7 +454,7 @@ def main(args):
             smtpsubj='Automated report from Python script: '+os.path.basename(__file__))
         with PidFile(piddir=tempfile.gettempdir()):
             with multiprocessing.Pool(os.cpu_count(), custom_logging.logging_worker_init, [q]) as multipool:
-                logging.info("Now starting trinistats stocks updater module.")
+                logger.info("Now starting trinistats stocks updater module.")
                 if args.daily_update:
                     multipool.apply(
                         update_portfolio_summary_market_values, ())
@@ -459,13 +471,15 @@ def main(args):
                     multipool.apply(update_portfolio_summary_market_values, ())
                 multipool.close()
                 multipool.join()
-                logging.info(os.path.basename(__file__) +
+                logger.info(os.path.basename(__file__) +
                     " executed successfully.")
                 q_listener.stop()
         return 0
     except Exception:
         logging.exception("Error in script "+os.path.basename(__file__))
- 
+
+# endregion FUNCTION DEFINITIONS
+
 # If this script is being run from the command-line, then run the main() function
 if __name__ == "__main__":
     # first check the arguements given to this script

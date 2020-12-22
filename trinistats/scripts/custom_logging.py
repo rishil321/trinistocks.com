@@ -15,6 +15,7 @@ from pathlib import Path
 from datetime import datetime
 import logging.handlers
 import smtplib
+import sys
 
 # CONSTANTS. These should be all in upper case
 
@@ -57,7 +58,7 @@ class BufferingSMTPHandler(logging.handlers.BufferingHandler):
 # Put your function definitions here. These should be lower-case, separated by underscores.
 
 
-def setup_logging(logfilestandardname = 'log',
+def setup_logging(loggername = __name__,
                   logdirparent = str(os.getcwd()),
                   filelogginglevel = logging.DEBUG,
                   stdoutlogginglevel = logging.DEBUG,
@@ -69,8 +70,8 @@ def setup_logging(logfilestandardname = 'log',
                   smtpsubj = 'Test Python Email'):
     """Setup the logging module to write logs to several different streams
 
-    :param logfilestandardname: [description], defaults to 'log'
-    :type logfilestandardname: str, optional
+    :param modulename: [The name of the module calling this function], defaults to 'log'
+    :type modulename: str, optional
     :param logdirparent: [description], defaults to str(os.getcwd())
     :type logdirparent: [type], optional
     :param filelogginglevel: [description], defaults to logging.DEBUG
@@ -95,25 +96,23 @@ def setup_logging(logfilestandardname = 'log',
     # Set up a queue to take in logging messages from multiple threads
     q = multiprocessing.Queue()
     # set up a stream handler for stdout
-    stdout_handler = logging.StreamHandler()
+    stdout_handler = logging.StreamHandler(sys.stdout)
     # Set the format of the messages for logs
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     stdout_handler.setFormatter(formatter)
-    # ql gets records from the queue and sends them to the handler
-    ql = logging.handlers.QueueListener(q, stdout_handler)
-    ql.start()
-    mainlogger = logging.getLogger(__name__)
+    stdout_handler.setLevel(stdoutlogginglevel)
+    mainlogger = logging.getLogger(loggername)
+    mainlogger.setLevel(logging.DEBUG)
     # add the handler to the logger so records from this process are handled
     mainlogger.addHandler(stdout_handler)
-    mainlogger.setLevel(stdoutlogginglevel)
     # Check the current working directory for a 'logs' folder to store our logfiles
     logdirectory = logdirparent+os.path.sep+'logs'
     # Create the directory if it doesn't already exist
     Path(logdirectory).mkdir(parents=True, exist_ok=True)
     # Now add a log handler to output to a file
     # And set the name for the logfile to be created
-    logfilename = logdirectory+os.path.sep+logfilestandardname + \
+    logfilename = logdirectory+os.path.sep+loggername + \
         f"{datetime.now():%Y-%m-%d-%H-%M-%S}"+'.log'
     logfilehandler = logging.FileHandler(logfilename)
     # Set the format for file log output messages
@@ -122,13 +121,17 @@ def setup_logging(logfilestandardname = 'log',
     logfilehandler.setLevel(filelogginglevel)
     # Add the log handler for files
     mainlogger.addHandler(logfilehandler)
+    # ql gets records from the queue and sends them to the handler
+    ql = logging.handlers.QueueListener(q, stdout_handler,logfilehandler)
+    ql.start()
     # Now set up the SMTP log handler
     if smtploggingenabled:
         smtploghandler = BufferingSMTPHandler(
             smtpmailhost, smtpfromaddr, smtptoaddr, smtpsubj)
         smtploghandler.setLevel(smtplogginglevel)
         mainlogger.addHandler(smtploghandler)
-    return ql, q
+    mainlogger.info("Logging setup successfully!")
+    return ql, q, mainlogger
 
 
 def flush_smtp_logger():

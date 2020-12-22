@@ -30,12 +30,13 @@ class DatabaseConnect:
         :return: [description]
         :rtype: [type]
         """
-        logging.debug("Creating a new DatabaseConnect object.")
+        self.logger = logging.getLogger(__name__)
+        self.logger.debug("Creating a new DatabaseConnect object.")
         self.dbengine = create_engine("mysql://"+dbuser+":"+dbpass+"@"+dbaddress+"/" +
                                       dbschema, echo=False)
         self.dbcon = self.dbengine.connect()
         if self.dbcon:
-            logging.info("Connected to database successfully")
+            self.logger.info("Connected to database successfully")
         else:
             raise ConnectionError(
                 "Could not connect to database at "+dbaddress)
@@ -54,10 +55,10 @@ class DatabaseConnect:
         """
         if self.dbengine:
             self.dbengine.dispose()
-            logging.debug("Database connection closed successfully.")
+            self.logger.debug("Database connection closed successfully.")
             return 0
         else:
-            logging.debug("Database connection not established. Ignoring request to close.")
+            self.logger.debug("Database connection not established. Ignoring request to close.")
             return 0
 
     def __enter__(self):
@@ -68,5 +69,5 @@ class DatabaseConnect:
         """
         return self
   
-    def __exit__(self,exc_type, exc_value, exc_traceback): 
+    def __exit__(self,exc_type, exc_value, exc_traceback):
         self.close()

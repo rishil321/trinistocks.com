@@ -660,7 +660,7 @@ def main():
         # Set up logging for this module
         q_listener, q = custom_logging.setup_logging(
             logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
-            logfilestandardname=os.path.basename(__file__),
+            modulename=os.path.basename(__file__),
             stdoutlogginglevel=logging.DEBUG,
             smtploggingenabled=True,
             smtplogginglevel=logging.ERROR,
