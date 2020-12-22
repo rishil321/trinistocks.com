@@ -36,15 +36,6 @@ class DividendHistoryFilter(django_filters.FilterSet):
         }
 
 
-class DividendYieldFilter(django_filters.FilterSet):
-    class Meta:
-        model = models.DividendYield
-        fields = {
-            'symbol': ['exact', ],
-            'date': ['gte', 'lte', ],
-        }
-
-
 class MarketIndexHistoryFilter(django_filters.FilterSet):
     class Meta:
         model = models.HistoricalIndicesInfo

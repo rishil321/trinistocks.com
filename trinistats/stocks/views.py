@@ -41,6 +41,7 @@ from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
+from django.template import Context
 # Imports from local machine
 from stocks import models, filters
 from stocks import tables as stocks_tables
@@ -255,7 +256,7 @@ class FundamentalAnalysisSummary( ExportMixin, tables2.views.SingleTableMixin, T
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
                     'stocks:fundamentalanalysis', current_app="stocks")
-                query_string = urlencode({'sort': '-sector'})
+                query_string = urlencode({'sort': 'symbol'})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(FundamentalAnalysisSummary, self).get(request)
@@ -264,12 +265,14 @@ class FundamentalAnalysisSummary( ExportMixin, tables2.views.SingleTableMixin, T
     def get_queryset(self):
         return models.FundamentalAnalysisSummary.objects.raw(
             '''
-            SELECT id, latest_id
-            FROM (
-                SELECT id, symbol, MAX(date) AS latest_id
-                FROM audited_fundamental_calculated_data
-                GROUP BY symbol DESC) as ids
-            ORDER BY symbol;
+            select t.symbol, t.date, t.id
+            from calculated_fundamental_ratios t
+            inner join (
+                select symbol, max(date) as MaxDate
+                from calculated_fundamental_ratios
+                where report_type = 'annual'
+                group by symbol
+            ) tm on t.symbol = tm.symbol and t.date = tm.MaxDate
             ''')
 
     def get_context_data(self, *args, **kwargs):
@@ -290,39 +293,453 @@ class FundamentalAnalysisSummary( ExportMixin, tables2.views.SingleTableMixin, T
         return context
 
 
-class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
     """
-    A generic class for displaying a line chart using ChartJS and a table using djangotables2
+    The class for displaying the stock history view website
     """
+    template_name = 'base_stockhistory.html'
+    model = models.DailyStockSummary  # models.something
+    table_class = stocks_tables.HistoricalStockInfoTable  # tables.something
+    filterset_class = filters.StockHistoryFilter  # filters.something
+    page_name = 'Stock History'  # a string representing the name of the page
+    selected_chart_type = 'candlestick'
+    request = None
 
-    template_name = ''
-    model = None  # models.something
-    table_class = None  # tables.something
-    filterset_class = None  # filters.something
-    page_name = ''  # a string representing the name of the page
-    historical_records = None
-    selected_symbol = None
-    selected_stock = None
-    graph_dataset = []  # the list of dictionary of objects to display in the graph
-    symbol_needed = True
-    os_parameter_needed = False
-    os_parameter = None
-    os_parameter_string = None
-    index_name = None
-    index_name_needed = False
-    index_parameter = None
-    index_parameter_string = None
-    entered_start_date = None
-    entered_end_date = None
-    order_by = None
+    def get(self, request, *args, **kwargs):
+        logger.debug(f"GET request submitted for: {request.build_absolute_uri()}")
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['symbol', 'date__gte',
+                               'date__lte', 'chart_type', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+                # check that the sort parameter is valid
+                if self.request.GET['sort'].replace('-','') not in ['date','open_price','close_price','high','low','volume_traded','change_price']:
+                    raise MultiValueDictKeyError("Incorrect value submitted for sorting.") 
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Stock history page requested without all proper parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:stockhistory', current_app="stocks")
+                query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
+                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
+                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'chart_type': 'candlestick', 'sort': '-date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(StockHistoryView, self).get(request)
+
+    def get_context_data(self, *args, **kwargs):
+        # get the current context
+        context = super().get_context_data(
+            *args, **kwargs)
+        try:
+            listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
+            # check the chart type selected if the configure button was clicked
+            self.selected_chart_type = self.request.GET.get('chart_type')
+            # store the session variable
+            self.request.session['chart_type'] = self.selected_chart_type
+            if 'symbol' in self.request.GET:
+                self.selected_symbol = self.request.GET.get('symbol')
+                self.request.session['selected_symbol'] = self.selected_symbol
+            if self.request.GET.get('configure_button'):
+                self.entered_start_date = datetime.strptime(
+                    self.request.GET.get('date__gte'), "%Y-%m-%d")
+                # store the date as a session variable to be reused
+                self.request.session['entered_start_date'] = self.entered_start_date.strftime(
+                    '%Y-%m-%d')
+            # else look for the starting date in the GET variables
+            elif self.request.GET.get('date__gte'):
+                self.entered_start_date = datetime.strptime(
+                    self.request.GET.get('date__gte'), "%Y-%m-%d")
+                self.request.session['entered_start_date'] = self.entered_start_date.strftime(
+                    '%Y-%m-%d')
+            else:
+                # else raise an error
+                raise ValueError(
+                    " Please ensure that you have included a starting date in the URL! For example: ?date__gte=2019-05-12")
+            # check if the configuration button was clicked
+            if self.request.GET.get("configure_button"):
+                self.entered_end_date = datetime.strptime(
+                    self.request.GET.get('date__lte'), "%Y-%m-%d")
+                self.request.session['entered_end_date'] = self.entered_end_date.strftime(
+                    '%Y-%m-%d')
+            # else look for the ending date in the GET variables
+            elif self.request.GET.get('date__lte'):
+                self.entered_end_date = datetime.strptime(
+                    self.request.GET.get('date__lte'), "%Y-%m-%d")
+                self.request.session['entered_end_date'] = self.entered_end_date.strftime(
+                    '%Y-%m-%d')
+            else:
+                raise ValueError(
+                    " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
+            # check if the configuration button was clicked
+            if self.request.GET.get('sort'):
+                self.order_by = self.request.GET.get('sort')
+            else:
+                raise ValueError(
+                    " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
+            self.selected_stock = models.ListedEquities.objects.get(
+                    symbol=self.selected_symbol)
+            # store the context variable
+            context['chart_type'] = self.selected_chart_type
+            context['listed_stocks'] = listed_stocks
+            context['selected_symbol'] = self.selected_symbol
+            context['selected_stock_name'] = self.selected_stock.security_name.title()
+            context['selected_stock_symbol'] = self.selected_stock.symbol
+            context['entered_start_date'] = self.entered_start_date.strftime(
+                '%Y-%m-%d')
+            context['entered_end_date'] = self.entered_end_date.strftime('%Y-%m-%d')
+            context['chart_dates'] = []
+            context['open_prices'] = []
+            context['close_prices'] = []
+            context['highs'] = []
+            context['lows'] = []
+            if self.selected_chart_type == 'line':
+                self.historical_records = self.model.objects.filter(
+                    symbol=self.selected_symbol).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).order_by(self.order_by)
+                context['graph_labels'] = [obj.date
+                    for obj in self.historical_records]
+                context['graph_dataset_1'] = [float(obj.close_price)
+                              for obj in self.historical_records]
+            elif self.selected_chart_type == 'candlestick':
+                # query and filter the records from the db
+                selected_records = models.DailyStockSummary.objects.filter(
+                    symbol=self.selected_symbol).filter(date__gte=self.entered_start_date)\
+                    .filter(date__lte=self.entered_end_date).order_by(self.order_by)
+                # store the required values for the chart
+                context['chart_dates'] = [d.strftime('%Y-%m-%d') for d in selected_records.values_list(
+                    'date', flat=True)]
+                context['open_prices'] = [float(num) for num in selected_records.values_list(
+                    'open_price', flat=True)]
+                context['close_prices'] = [float(num) for num in selected_records.values_list(
+                    'close_price', flat=True)]
+                context['lows'] = [float(num) for num in selected_records.values_list(
+                    'low', flat=True)]
+                context['highs'] = [float(num) for num in selected_records.values_list(
+                    'high', flat=True)]
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            logger.warning(
+                "Got a value error while loading this page: "+str(verr))
+        except Exception as ex:
+            logger.exception(
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
+
+
+class DividendHistoryView(FilterView):
+    """
+    The class for displaying the dividend history view website
+    """
+    template_name = 'base_dividendhistory.html'
+    filterset_class = filters.DividendHistoryFilter  # filters.something
+    page_name = 'Dividend History'  # a string representing the name of the page
+
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['symbol', 'record_date__gte',
+                               'record_date__lte', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+                logging.debug("All required parameters included in dividend history URL.")
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Dividend history page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:dividendhistory', current_app="stocks")
+                query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
+                                          'record_date__gte': stocks_template_tags.get_5_yr_back(),
+                                          'record_date__lte': stocks_template_tags.get_today(),
+                                          'sort': '-record_date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(DividendHistoryView, self).get(request)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(
+                *args, **kwargs)
+        try:
+            logging.debug("Now loading context data.")
+            logger.debug("Now loading all listed equities.")
+            listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
+            # else look for the starting date in the GET variables
+            if 'record_date__gte' in self.request.GET:
+                self.entered_start_date = datetime.strptime(
+                    self.request.GET.get('record_date__gte'), "%Y-%m-%d")
+                self.request.session['entered_start_date'] = self.entered_start_date.strftime(
+                    '%Y-%m-%d')
+            else:
+                # else raise an error
+                raise ValueError(
+                    " Please ensure that you have included a starting date in the URL! For example: ?record_date__gte=2019-05-12")
+            # else look for the ending date in the GET variables
+            if 'record_date__lte' in self.request.GET:
+                self.entered_end_date = datetime.strptime(
+                    self.request.GET.get('record_date__lte'), "%Y-%m-%d")
+                self.request.session['entered_end_date'] = self.entered_end_date.strftime(
+                    '%Y-%m-%d')
+                self.entered_end_date = self.entered_end_date
+            else:
+                raise ValueError(
+                    " Please ensure that you have included an ending date in the URL! For example: ?record_date__lte=2020-05-12")
+            if 'symbol' in self.request.GET:
+                self.selected_symbol = self.request.GET.get('symbol')
+                self.request.session['selected_symbol'] = self.selected_symbol
+            else:
+                raise ValueError(
+                    " Please ensure that you have included a symbol in the URL! For example: ?symbol=ACL")
+            if 'sort' in self.request.GET:
+                self.order_by = self.request.GET.get('sort')
+            else:
+                self.order_by = '-record_date'
+            # validate input data
+            if self.entered_start_date >= self.entered_end_date:
+                raise ValueError("Your starting date must be before your ending date. Please recheck.")
+            # Fetch the records
+            self.selected_stock = models.ListedEquities.objects.get(
+                symbol=self.selected_symbol)
+            self.historical_dividends_paid = models.HistoricalDividendInfo.objects.filter(
+                symbol=self.selected_symbol).filter(record_date__gte=self.entered_start_date).filter(record_date__lte=self.entered_end_date).order_by(self.order_by)
+            self.historical_dividend_yields = models.HistoricalDividendYield.objects.filter(
+                symbol=self.selected_symbol).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).order_by('-date')
+            # Set up our graph
+            self.graph_labels_1 = [obj.record_date
+                            for obj in self.historical_dividends_paid]
+            self.graph_dataset_1 = [
+            float(obj.dividend_amount) for obj in self.historical_dividends_paid]
+            self.graph_labels_2 = [obj.date
+                for obj in self.historical_dividend_yields]
+            self.graph_dataset_2 = [
+            float(obj.dividend_yield) for obj in self.historical_dividend_yields]
+            # add the context keys
+            logger.debug("Loading context keys.")
+            context['listed_stocks'] = listed_stocks
+            context['selected_symbol'] = self.selected_symbol
+            context['selected_stock_name'] = self.selected_stock.security_name.title()
+            context['selected_stock_symbol'] = self.selected_stock.symbol
+            context['entered_start_date'] = self.entered_start_date.strftime(
+                '%Y-%m-%d')
+            context['entered_end_date'] = self.entered_end_date.strftime('%Y-%m-%d')
+            context['graph_labels_1'] = self.graph_labels_1
+            context['graph_dataset_1'] = self.graph_dataset_1
+            context['graph_labels_2'] = self.graph_labels_2
+            context['graph_dataset_2'] = self.graph_dataset_2
+            logger.info("Successfully loaded page.")
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            logger.warning(
+                "Got a value error while loading this page"+str(verr))
+        except Exception as ex:
+            logger.exception(
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
+
+
+class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+    """
+    Set up the data for the market indices history page
+    """
+    template_name = 'stocks/base_marketindexhistory.html'
+    model = models.HistoricalIndicesInfo
+    table_class = stocks_tables.HistoricalIndicesSummaryTable
+    filterset_class = filters.MarketIndexHistoryFilter
 
     def __init__(self):
-        super(BasicLineChartAndTableView, self).__init__()
-        logger.debug("Now loading template: "+self.template_name)
+        super(MarketIndexHistoryView, self).__init__()
+        self.symbol_needed = False
+        self.index_name_needed = True
+
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['index_name', 'index_parameter', 'date__gte',
+                               'date__lte', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Market history page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:marketindexhistory', current_app="stocks")
+                query_string = urlencode({'index_name': 'Composite Totals', 'index_parameter': 'index_value',
+                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
+                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'sort': '-date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(MarketIndexHistoryView, self).get(request)
+    
+    
+    def get_context_data(self, *args, **kwargs):
+        try:
+            errors = ""
+            # get the current context
+            context = super().get_context_data(
+                *args, **kwargs)
+            logger.debug("Now loading all listed equities.")
+            listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
+            # now load all the data for the subclasses (pages)
+            # note that different pages require different data, so we check which data is needed for the page
+            # check if the configuration button was clicked
+            logger.debug(
+                "Checking which GET parameters were included in the request.")
+            if self.request.GET.get('configure_button'):
+                entered_start_date = datetime.strptime(
+                    self.request.GET.get('date__gte'), "%Y-%m-%d")
+                # store the date as a session variable to be reused
+                self.request.session['entered_start_date'] = entered_start_date.strftime(
+                    '%Y-%m-%d')
+                self.entered_start_date = entered_start_date
+            # else look for the starting date in the GET variables
+            elif self.request.GET.get('date__gte'):
+                entered_start_date = datetime.strptime(
+                    self.request.GET.get('date__gte'), "%Y-%m-%d")
+                self.request.session['entered_start_date'] = entered_start_date.strftime(
+                    '%Y-%m-%d')
+                self.entered_start_date = entered_start_date
+            else:
+                # else raise an error
+                raise ValueError(
+                    " Please ensure that you have included a starting date in the URL! For example: ?date__gte=2019-05-12")
+            # check if the configuration button was clicked
+            if self.request.GET.get("configure_button"):
+                entered_end_date = datetime.strptime(
+                    self.request.GET.get('date__lte'), "%Y-%m-%d")
+                self.request.session['entered_end_date'] = entered_end_date.strftime(
+                    '%Y-%m-%d')
+                self.entered_end_date = entered_end_date
+            # else look for the ending date in the GET variables
+            elif self.request.GET.get('date__lte'):
+                entered_end_date = datetime.strptime(
+                    self.request.GET.get('date__lte'), "%Y-%m-%d")
+                self.request.session['entered_end_date'] = entered_end_date.strftime(
+                    '%Y-%m-%d')
+                self.entered_end_date = entered_end_date
+            else:
+                raise ValueError(
+                    " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
+            # check if the configuration button was clicked
+            if self.request.GET.get('sort'):
+                self.order_by = self.request.GET.get('sort')
+            else:
+                raise ValueError(
+                    " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
+            if self.index_name_needed:
+                if self.request.GET.get('index_name'):
+                    self.index_name = self.request.GET.get('index_name')
+                else:
+                    raise ValueError(
+                        "Please ensure that you have an index_name included in your URL! eg. &index_name=Composite Totals")
+                if self.request.GET.get('index_parameter'):
+                    self.index_parameter = self.request.GET.get(
+                        'index_parameter')
+                    self.index_parameter_string = models.HistoricalIndicesInfo._meta.get_field(
+                        self.index_parameter).verbose_name
+                else:
+                    raise ValueError(
+                        "Please ensure that you have an index_parameter included in your URL! eg. &index_parameter=index_value")
+            # validate input data
+            if entered_start_date >= entered_end_date:
+                errors += "Your starting date must be before your ending date. Please recheck."
+            # Fetch the records
+            if self.index_name_needed:
+                self.historical_records = self.model.objects.filter(
+                    date__gt=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(index_name=self.index_name).order_by(self.order_by)
+            else:
+                self.historical_records = self.model.objects.filter(
+                    date__gt=self.entered_start_date).filter(date__lte=self.entered_end_date).order_by(self.order_by)
+            logger.debug(
+                "Finished parsing GET parameters. Now loading graph data.")
+            # Set up our graph
+            graph_labels = [obj.date
+                            for obj in self.historical_records]
+            # Store the variables for the subclasses to calculate the required dict
+            self.set_graph_dataset()
+            # add the context keys
+            logger.debug("Loading context keys.")
+            context['errors'] = errors
+            context['listed_stocks'] = listed_stocks
+            if self.index_name_needed:
+                context['index_parameter'] = self.index_parameter
+                context['index_parameter_string'] = self.index_parameter_string
+                context['index_name'] = self.index_name
+            context['entered_start_date'] = entered_start_date.strftime(
+                '%Y-%m-%d')
+            context['entered_end_date'] = entered_end_date.strftime('%Y-%m-%d')
+            context['graph_labels'] = graph_labels
+            context['graph_dataset'] = self.graph_dataset
+            logger.info("Successfully loaded page.")
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            logger.warning(
+                "Got a value error while loading this page"+str(verr))
+        except Exception as ex:
+            logger.exception(
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
+    
 
     def set_graph_dataset(self,):
-        self.graph_dataset = []
+        self.graph_dataset = [float(obj[self.index_parameter])
+                              for obj in self.historical_records.values()]
 
+
+class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+    """
+    Set up the data for the outstanding trades history page
+    """
+    template_name = 'stocks/base_ostradeshistory.html'
+    model = models.DailyStockSummary
+    table_class = stocks_tables.OSTradesHistoryTable
+    filterset_class = filters.OSTradesHistoryFilter
+
+    def __init__(self):
+        super(OSTradesHistoryView, self).__init__()
+        self.symbol_needed = True
+        self.index_name_needed = False
+        self.os_parameter_needed = True
+
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['symbol', 'date__gte',
+                               'date__lte', 'os_parameter', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                logger.warning(
+                    "Outstanding history page requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:ostradeshistory', current_app="stocks")
+                query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
+                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
+                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'os_parameter': 'os_offer_vol', 'sort': '-date'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(OSTradesHistoryView, self).get(request)
+    
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
@@ -461,376 +878,14 @@ class BasicLineChartAndTableView(ExportMixin, tables2.views.SingleTableMixin, Fi
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
-
-
-class StockHistoryView(BasicLineChartAndTableView):
-    """
-    The class for displaying the stock history view website
-    """
-    template_name = 'base_stockhistory.html'
-    model = models.DailyStockSummary  # models.something
-    table_class = stocks_tables.HistoricalStockInfoTable  # tables.something
-    filterset_class = filters.StockHistoryFilter  # filters.something
-    page_name = 'Stock History'  # a string representing the name of the page
-    selected_chart_type = 'candlestick'
-    request = None
-
-    def get(self, request, *args, **kwargs):
-        logger.debug(f"GET request submitted for: {request.build_absolute_uri()}")
-        # get the filters included in the URL.
-        # If the required filters are not present, return a redirect
-        required_parameters = ['symbol', 'date__gte',
-                               'date__lte', 'chart_type', 'sort']
-        for parameter in required_parameters:
-            try:
-                # check that each parameter has a value
-                if self.request.GET[parameter]:
-                    pass
-                # check that the sort parameter is valid
-                if self.request.GET['sort'].replace('-','') not in ['date','open_price','close_price','high','low','volume_traded','change_price']:
-                    raise MultiValueDictKeyError("Incorrect value submitted for sorting.") 
-            except MultiValueDictKeyError:
-                logger.warning(
-                    "Stock history page requested without all proper parameters. Sending redirect.")
-                # if we are missing any parameters, return a redirect
-                base_url = reverse(
-                    'stocks:stockhistory', current_app="stocks")
-                query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
-                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
-                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
-                                          'chart_type': 'candlestick', 'sort': '-date'})
-                url = '{}?{}'.format(base_url, query_string)
-                return redirect(url)
-        return super(StockHistoryView, self).get(request)
-
-    def get_context_data(self, *args, **kwargs):
-        try:
-            # get the current context
-            context = super().get_context_data(
-                *args, **kwargs)
-            # check the chart type selected if the configure button was clicked
-            self.selected_chart_type = self.request.GET.get('chart_type')
-            # store the session variable
-            self.request.session['chart_type'] = self.selected_chart_type
-            # store the context variable
-            context['chart_type'] = self.selected_chart_type
-            context['chart_dates'] = []
-            context['open_prices'] = []
-            context['close_prices'] = []
-            context['highs'] = []
-            context['lows'] = []
-            if self.selected_chart_type == 'candlestick':
-                # query and filter the records from the db
-                selected_records = models.DailyStockSummary.objects.filter(
-                    symbol=self.selected_symbol).filter(date__gte=self.entered_start_date)\
-                    .filter(date__lte=self.entered_end_date).order_by(self.order_by)
-                # store the required values for the chart
-                context['chart_dates'] = [d.strftime('%Y-%m-%d') for d in selected_records.values_list(
-                    'date', flat=True)]
-                context['open_prices'] = [float(num) for num in selected_records.values_list(
-                    'open_price', flat=True)]
-                context['close_prices'] = [float(num) for num in selected_records.values_list(
-                    'close_price', flat=True)]
-                context['lows'] = [float(num) for num in selected_records.values_list(
-                    'low', flat=True)]
-                context['highs'] = [float(num) for num in selected_records.values_list(
-                    'high', flat=True)]
-        except ValueError as verr:
-            context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
-                "Got a value error while loading this page: "+str(verr))
-        except Exception as ex:
-            logger.exception(
-                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
-            context['errors'] = ALERTMESSAGE+str(ex)
-        return context
-
-    def set_symbol_needed(self, bool_input_arg):
-        self.symbol = True
-
-    def set_graph_dataset(self,):
-        self.graph_dataset = [float(obj.close_price)
-                              for obj in self.historical_records]
-
-
-class DividendHistoryView(BasicLineChartAndTableView):
-    """
-    The class for displaying the dividend history view website
-    """
-    template_name = 'base_dividendhistory.html'
-    model = models.HistoricalDividendInfo  # models.something
-    table_class = stocks_tables.HistoricalDividendInfoTable  # tables.something
-    filterset_class = filters.DividendHistoryFilter  # filters.something
-    page_name = 'Dividend History'  # a string representing the name of the page
-
-    def get(self, request, *args, **kwargs):
-        # get the filters included in the URL.
-        # If the required filters are not present, return a redirect
-        required_parameters = ['symbol', 'record_date__gte',
-                               'record_date__lte', 'sort']
-        for parameter in required_parameters:
-            try:
-                # check that each parameter has a value
-                if self.request.GET[parameter]:
-                    pass
-            except MultiValueDictKeyError:
-                logger.warning(
-                    "Dividend history page requested without all parameters. Sending redirect.")
-                # if we are missing any parameters, return a redirect
-                base_url = reverse(
-                    'stocks:dividendhistory', current_app="stocks")
-                query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
-                                          'record_date__gte': stocks_template_tags.get_5_yr_back(),
-                                          'record_date__lte': stocks_template_tags.get_today(),
-                                          'sort': '-record_date'})
-                url = '{}?{}'.format(base_url, query_string)
-                return redirect(url)
-        return super(DividendHistoryView, self).get(request)
-
-    def get_context_data(self, *args, **kwargs):
-        try:
-            errors = ""
-            context = super().get_context_data(**kwargs)
-            logger.debug("Now loading all listed equities.")
-            listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
-            # now load all the data for the subclasses (pages)
-            # note that different pages require different data, so we check which data is needed for the page
-            # check if the configuration button was clicked
-            logger.debug(
-                "Checking which GET parameters were included in the request.")
-            if self.request.GET.get("configure_button"):
-                entered_start_date = datetime.strptime(
-                    self.request.GET.get('record_date__gte'), "%Y-%m-%d")
-                # store the date as a session variable to be reused
-                self.request.session['entered_start_date'] = entered_start_date.strftime(
-                    '%Y-%m-%d')
-                self.entered_start_date = entered_start_date
-            # else look for the starting date in the GET variables
-            elif self.request.GET.get('record_date__gte'):
-                entered_start_date = datetime.strptime(
-                    self.request.GET.get('record_date__gte'), "%Y-%m-%d")
-                self.request.session['entered_start_date'] = entered_start_date.strftime(
-                    '%Y-%m-%d')
-                self.entered_start_date = entered_start_date
-            else:
-                # else raise an error
-                raise ValueError(
-                    " Please ensure that you have included a starting date in the URL! For example: ?record_date__gte=2019-05-12")
-            # check if the configuration button was clicked
-            if self.request.GET.get("configure_button"):
-                entered_end_date = datetime.strptime(
-                    self.request.GET.get('record_date__lte'), "%Y-%m-%d")
-                self.request.session['entered_end_date'] = entered_end_date.strftime(
-                    '%Y-%m-%d')
-                self.entered_end_date = entered_end_date
-            # else look for the ending date in the GET variables
-            elif self.request.GET.get('record_date__lte'):
-                entered_end_date = datetime.strptime(
-                    self.request.GET.get('record_date__lte'), "%Y-%m-%d")
-                self.request.session['entered_end_date'] = entered_end_date.strftime(
-                    '%Y-%m-%d')
-                self.entered_end_date = entered_end_date
-            else:
-                raise ValueError(
-                    " Please ensure that you have included an ending date in the URL! For example: ?record_date__lte=2020-05-12")
-            # check if the configuration button was clicked
-            if self.symbol_needed:
-                if self.request.GET.get("configure_button"):
-                    selected_symbol = self.request.GET.get('symbol')
-                    self.selected_symbol = selected_symbol
-                    self.request.session['selected_symbol'] = selected_symbol
-                # else look for the stock code in the GET variables
-                elif self.request.GET.get('symbol'):
-                    selected_symbol = self.request.GET.get('symbol')
-                    self.selected_symbol = selected_symbol
-                    self.request.session['selected_symbol'] = selected_symbol
-                else:
-                    raise ValueError(
-                        " Please ensure that you have included a symbol in the URL! For example: ?symbol=ACL")
-            if self.request.GET.get('sort'):
-                self.order_by = self.request.GET.get('sort')
-            else:
-                raise ValueError(
-                    " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
-            # validate input data
-            if entered_start_date >= entered_end_date:
-                errors += "Your starting date must be before your ending date. Please recheck."
-            # Fetch the records
-            if self.symbol_needed:
-                self.selected_stock = models.ListedEquities.objects.get(
-                    symbol=self.selected_symbol)
-                self.historical_records = self.model.objects.filter(
-                    symbol=self.selected_symbol).filter(record_date__gte=self.entered_start_date).filter(record_date__lte=self.entered_end_date).order_by(self.order_by)
-            logger.debug(
-                "Finished parsing GET parameters. Now loading graph data.")
-            # Set up our graph
-            graph_labels = [obj.record_date
-                            for obj in self.historical_records]
-            # Store the variables for the subclasses to calculate the required dict
-            self.set_graph_dataset()
-            # add the context keys
-            logger.debug("Loading context keys.")
-            context['errors'] = errors
-            context['listed_stocks'] = listed_stocks
-            if self.symbol_needed:
-                context['selected_symbol'] = selected_symbol
-                context['selected_stock_name'] = self.selected_stock.security_name.title()
-                context['selected_stock_symbol'] = self.selected_stock.symbol
-            context['entered_start_date'] = entered_start_date.strftime(
-                '%Y-%m-%d')
-            context['entered_end_date'] = entered_end_date.strftime('%Y-%m-%d')
-            context['graph_labels'] = graph_labels
-            context['graph_dataset'] = self.graph_dataset
-            logger.info("Successfully loaded page.")
-        except ValueError as verr:
-            context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
-                "Got a value error while loading this page"+str(verr))
-        except Exception as ex:
-            logger.exception(
-                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
-            context['errors'] = ALERTMESSAGE+str(ex)
-        return context
-
-    def set_symbol_needed(self, bool_input_arg):
-        self.symbol_needed = True
-
-    def set_graph_dataset(self,):
-        self.graph_dataset = [
-            float(obj.dividend_amount) for obj in self.historical_records]
-
-
-class DividendYieldHistoryView(BasicLineChartAndTableView):
-    """
-    The class for displaying the dividend history view website
-    """
-    template_name = 'base_dividendyieldhistory.html'
-    model = models.DividendYield  # models.something
-    table_class = stocks_tables.HistoricalDividendYieldTable  # tables.something
-    filterset_class = filters.DividendYieldFilter  # filters.something
-    # a string representing the name of the page
-    page_name = 'Dividend Yield History'
-
-    def get(self, request, *args, **kwargs):
-        # get the filters included in the URL.
-        # If the required filters are not present, return a redirect
-        required_parameters = ['symbol', 'date__gte',
-                               'date__lte', 'sort']
-        for parameter in required_parameters:
-            try:
-                # check that each parameter has a value
-                if self.request.GET[parameter]:
-                    pass
-            except MultiValueDictKeyError:
-                logger.warning(
-                    "Dividend yield history page requested without all parameters. Sending redirect.")
-                # if we are missing any parameters, return a redirect
-                base_url = reverse(
-                    'stocks:dividendyieldhistory', current_app="stocks")
-                query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
-                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
-                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
-                                          'sort': 'date'})
-                url = '{}?{}'.format(base_url, query_string)
-                return redirect(url)
-        return super(DividendYieldHistoryView, self).get(request)
-
-    def set_symbol_needed(self, bool_input_arg):
-        self.symbol_needed = True
-
-    def set_graph_dataset(self,):
-        self.graph_dataset = [float(obj.yield_percent)
-                              for obj in self.historical_records]
-
-
-class MarketIndexHistoryView(BasicLineChartAndTableView):
-    """
-    Set up the data for the market indices history page
-    """
-    template_name = 'stocks/base_marketindexhistory.html'
-    model = models.HistoricalIndicesInfo
-    table_class = stocks_tables.HistoricalIndicesSummaryTable
-    filterset_class = filters.MarketIndexHistoryFilter
-
-    def __init__(self):
-        super(MarketIndexHistoryView, self).__init__()
-        self.symbol_needed = False
-        self.index_name_needed = True
-
-    def get(self, request, *args, **kwargs):
-        # get the filters included in the URL.
-        # If the required filters are not present, return a redirect
-        required_parameters = ['index_name', 'index_parameter', 'date__gte',
-                               'date__lte', 'sort']
-        for parameter in required_parameters:
-            try:
-                # check that each parameter has a value
-                if self.request.GET[parameter]:
-                    pass
-            except MultiValueDictKeyError:
-                logger.warning(
-                    "Market history page requested without all parameters. Sending redirect.")
-                # if we are missing any parameters, return a redirect
-                base_url = reverse(
-                    'stocks:marketindexhistory', current_app="stocks")
-                query_string = urlencode({'index_name': 'Composite Totals', 'index_parameter': 'index_value',
-                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
-                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
-                                          'sort': '-date'})
-                url = '{}?{}'.format(base_url, query_string)
-                return redirect(url)
-        return super(MarketIndexHistoryView, self).get(request)
-
-    def set_graph_dataset(self,):
-        self.graph_dataset = [float(obj[self.index_parameter])
-                              for obj in self.historical_records.values()]
-
-
-class OSTradesHistoryView(BasicLineChartAndTableView):
-    """
-    Set up the data for the outstanding trades history page
-    """
-    template_name = 'stocks/base_ostradeshistory.html'
-    model = models.DailyStockSummary
-    table_class = stocks_tables.OSTradesHistoryTable
-    filterset_class = filters.OSTradesHistoryFilter
-
-    def __init__(self):
-        super(OSTradesHistoryView, self).__init__()
-        self.symbol_needed = True
-        self.index_name_needed = False
-        self.os_parameter_needed = True
-
-    def get(self, request, *args, **kwargs):
-        # get the filters included in the URL.
-        # If the required filters are not present, return a redirect
-        required_parameters = ['symbol', 'date__gte',
-                               'date__lte', 'os_parameter', 'sort']
-        for parameter in required_parameters:
-            try:
-                # check that each parameter has a value
-                if self.request.GET[parameter]:
-                    pass
-            except MultiValueDictKeyError:
-                logger.warning(
-                    "Outstanding history page requested without all parameters. Sending redirect.")
-                # if we are missing any parameters, return a redirect
-                base_url = reverse(
-                    'stocks:ostradeshistory', current_app="stocks")
-                query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
-                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
-                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
-                                          'os_parameter': 'os_offer_vol', 'sort': '-date'})
-                url = '{}?{}'.format(base_url, query_string)
-                return redirect(url)
-        return super(OSTradesHistoryView, self).get(request)
+    
 
     def set_graph_dataset(self,):
         self.graph_dataset = [obj[self.os_parameter]
                               for obj in self.historical_records.values()]
 
 
-class FundamentalHistoryView(BasicLineChartAndTableView):
+class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
     """
     Set up the data for the fundamental history page
     """

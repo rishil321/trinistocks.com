@@ -15,6 +15,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
+
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 import argparse
@@ -121,10 +122,10 @@ def scrape_listed_equity_data():
                 # get a list of tables from the URL
                 dataframe_list = pd.read_html(news_page.text)
                 # use pandas to get the issued share capital and market cap
-                equity_data['market_capitalization'] = int(
-                    float(dataframe_list[0]['Closing Price'][8]))
-                equity_data['issued_share_capital'] = float(
-                    re.sub('[ |$|,]', '', dataframe_list[0]['Opening Price'][8]))
+                equity_data['issued_share_capital'] = int(
+                    float(dataframe_list[0]['Opening Price'][8]))
+                equity_data['market_capitalization'] = float(
+                    re.sub('[ |$|,]', '', dataframe_list[0]['Closing Price'][8]))
                 # Now we have all the important information for this equity
                 # So we can add the dictionary object to our global list
                 # But first we check that this symbol has not been added already
@@ -296,104 +297,98 @@ def scrape_dividend_data():
     """Use the requests and pandas libs to browse through 
     https://www.stockex.co.tt/manage-stock/<symbol> for each listed security
     """
-    db_connection = None
     try:
         logging.info("Now trying to scrape dividend data")
         # First read all symbols from the listed_equities table
         all_listed_symbols = []
-        db_connection = DatabaseConnect()
-        listed_equities_table = Table(
-            'listed_equities', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
-        selectstmt = select(
-            [listed_equities_table.c.symbol])
-        result = db_connection.dbcon.execute(selectstmt)
-        for row in result:
-            all_listed_symbols.append(row[0])
-        # now get get the tables listing dividend data for each symbol
-        for symbol in all_listed_symbols:
-            logging.info(
-                f"Now attempting to fetch dividend data for {symbol}")
-            try:
-                # Construct the full URL using the symbol
-                equity_dividend_url = f"https://www.stockex.co.tt/manage-stock/{symbol}"
-                logging.info("Navigating to "+equity_dividend_url)
-                equity_dividend_page = requests.get(
-                    equity_dividend_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
-                if equity_dividend_page.status_code != 200:
-                    raise requests.exceptions.HTTPError(
-                        "Could not load URL. "+equity_dividend_page)
-                else:
-                    logging.info("Successfully loaded webpage.")
-                # set up a dict to store the data for this equity
-                equity_dividend_data = dict(symbol=symbol)
-                # get the dataframes from the page
-                dataframe_list = pd.read_html(equity_dividend_page.text)
-                dividend_table = dataframe_list[1]
-                # check if dividend data is present
-                if len(dividend_table.index) > 1:
-                    logging.info(f"Dividend data present for {symbol}")
-                    # remove the columns we don't need
-                    dividend_table.drop(
-                        dividend_table.columns[[0, 2]], axis=1, inplace=True)
-                    # set the column names
-                    dividend_table.rename(
-                        {'Record Date': 'record_date', 'Dividend Amount': 'dividend_amount', 'Currency': 'currency'}, axis=1, inplace=True)
-                    # get the record date into the appropriate format
-                    dividend_table['record_date'] = dividend_table['record_date'].map(
-                        lambda x: datetime.strptime(x, '%d %b %Y'), na_action='ignore')
-                    # get the dividend amount into the appropriate format
-                    dividend_table['dividend_amount'] = pd.to_numeric(
-                        dividend_table['dividend_amount'].str.replace('$', ''), errors='coerce')
-                    # add a series for the symbol
-                    dividend_table['symbol'] = pd.Series(
-                        symbol, index=dividend_table.index)
-                    logging.info(
-                        "Successfully fetched dividend data for "+symbol)
-                    # check if currency is missing from column
-                    if dividend_table['currency'].isnull().values.any():
-                        logging.warning(
-                            f"Currency seems to be missing from the dividend table for {symbol}. We will autofill with TTD, but this may be incorrect.")
-                        dividend_table['currency'].fillna(
-                            'TTD', inplace=True)
-                    # now write the dataframe to the db
-                    logging.info(
-                        f"Now writing dividend data for {symbol} to db.")
-                    historical_dividend_info_table = Table(
-                        'historical_dividend_info', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
-                    # if we had any errors, the values will be written as their defaults (0 or null)
-                    # write the data to the db
-                    execute_completed_successfully = False
-                    execute_failed_times = 0
-                    while not execute_completed_successfully and execute_failed_times < 5:
-                        try:
-                            insert_stmt = insert(historical_dividend_info_table).values(
-                                dividend_table.to_dict('records'))
-                            upsert_stmt = insert_stmt.on_duplicate_key_update(
-                                {x.name: x for x in insert_stmt.inserted})
-                            result = db_connection.dbcon.execute(
-                                upsert_stmt)
-                            execute_completed_successfully = True
-                        except sqlalchemy.exc.OperationalError as operr:
-                            logging.warning(str(operr))
-                            time.sleep(2)
-                            execute_failed_times += 1
-                    logging.info(
-                        "Number of rows affected in the historical_dividend_info table was "+str(result.rowcount))
-                else:
-                    logging.info(
-                        f"No dividend data found for {symbol}. Skipping.")
-            except Exception as e:
-                logging.error(
-                    f"Unable to scrape dividend data for {symbol}", exc_info=e)
+        with DatabaseConnect() as db_connection:
+            listed_equities_table = Table(
+                'listed_equities', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
+            selectstmt = select(
+                [listed_equities_table.c.symbol])
+            result = db_connection.dbcon.execute(selectstmt)
+            for row in result:
+                all_listed_symbols.append(row[0])
+            # now get get the tables listing dividend data for each symbol
+            for symbol in all_listed_symbols:
+                logging.info(
+                    f"Now attempting to fetch dividend data for {symbol}")
+                try:
+                    # Construct the full URL using the symbol
+                    equity_dividend_url = f"https://www.stockex.co.tt/manage-stock/{symbol}"
+                    logging.info("Navigating to "+equity_dividend_url)
+                    equity_dividend_page = requests.get(
+                        equity_dividend_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                    if equity_dividend_page.status_code != 200:
+                        raise requests.exceptions.HTTPError(
+                            "Could not load URL. "+equity_dividend_page)
+                    else:
+                        logging.info("Successfully loaded webpage.")
+                    # set up a dict to store the data for this equity
+                    equity_dividend_data = dict(symbol=symbol)
+                    # get the dataframes from the page
+                    dataframe_list = pd.read_html(equity_dividend_page.text)
+                    dividend_table = dataframe_list[1]
+                    # check if dividend data is present
+                    if len(dividend_table.index) > 1:
+                        logging.info(f"Dividend data present for {symbol}")
+                        # remove the columns we don't need
+                        dividend_table.drop(
+                            dividend_table.columns[[0, 2]], axis=1, inplace=True)
+                        # set the column names
+                        dividend_table.rename(
+                            {'Record Date': 'record_date', 'Dividend Amount': 'dividend_amount', 'Currency': 'currency'}, axis=1, inplace=True)
+                        # get the record date into the appropriate format
+                        dividend_table['record_date'] = dividend_table['record_date'].map(
+                            lambda x: datetime.strptime(x, '%d %b %Y'), na_action='ignore')
+                        # get the dividend amount into the appropriate format
+                        dividend_table['dividend_amount'] = pd.to_numeric(
+                            dividend_table['dividend_amount'].str.replace('$', ''), errors='coerce')
+                        # add a series for the symbol
+                        dividend_table['symbol'] = pd.Series(
+                            symbol, index=dividend_table.index)
+                        logging.info(
+                            "Successfully fetched dividend data for "+symbol)
+                        # check if currency is missing from column
+                        if dividend_table['currency'].isnull().values.any():
+                            logging.warning(
+                                f"Currency seems to be missing from the dividend table for {symbol}. We will autofill with TTD, but this may be incorrect.")
+                            dividend_table['currency'].fillna(
+                                'TTD', inplace=True)
+                        # now write the dataframe to the db
+                        logging.info(
+                            f"Now writing dividend data for {symbol} to db.")
+                        historical_dividend_info_table = Table(
+                            'historical_dividend_info', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
+                        # if we had any errors, the values will be written as their defaults (0 or null)
+                        # write the data to the db
+                        execute_completed_successfully = False
+                        execute_failed_times = 0
+                        while not execute_completed_successfully and execute_failed_times < 5:
+                            try:
+                                insert_stmt = insert(historical_dividend_info_table).values(
+                                    dividend_table.to_dict('records'))
+                                upsert_stmt = insert_stmt.on_duplicate_key_update(
+                                    {x.name: x for x in insert_stmt.inserted})
+                                result = db_connection.dbcon.execute(
+                                    upsert_stmt)
+                                execute_completed_successfully = True
+                            except sqlalchemy.exc.OperationalError as operr:
+                                logging.warning(str(operr))
+                                time.sleep(2)
+                                execute_failed_times += 1
+                        logging.info(
+                            "Number of rows affected in the historical_dividend_info table was "+str(result.rowcount))
+                    else:
+                        logging.info(
+                            f"No dividend data found for {symbol}. Skipping.")
+                except Exception as e:
+                    logging.error(
+                        f"Unable to scrape dividend data for {symbol}", exc_info=e)
         return 0
     except Exception as ex:
         logging.exception("Error encountered while scraping dividend data.")
         custom_logging.flush_smtp_logger()
-    finally:
-        # Always close the database connection
-        if db_connection is not None:
-            db_connection.close()
-            logging.info("Successfully closed database connection")
 
 
 def scrape_equity_summary_data(dates_to_fetch, all_listed_symbols):

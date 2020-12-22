@@ -40,7 +40,7 @@ TTSE_NEWS_CATEGORIES = {'annual_reports':56,'articles':57,'annual_statements':58
 WEBPAGE_LOAD_TIMEOUT_SECS = 30
 REPORTS_DIRECTORY = 'financial_reports'
 IGNORE_SYMBOLS = ['CPFV','GMLP','LJWA','LJWP','MOV','PPMF','SFC']
-QUARTERLY_STATEMENTS_START_DATE = datetime.strptime('2020-12-01','%Y-%m-%d')
+QUARTERLY_STATEMENTS_START_DATE = datetime.strptime('2020-01-01','%Y-%m-%d')
 
 # Put your global variables here. 
  
@@ -289,9 +289,9 @@ def fetch_quarterly_statements():
         current_dir = Path(os.path.realpath(__file__)).parent
         reports_dir = current_dir.joinpath(REPORTS_DIRECTORY).joinpath(symbol_data['symbol'])
         if reports_dir.exists() and reports_dir.is_dir():
-            logging.info(f"Directory for {symbol_data['symbol']}'s annual statements found at {reports_dir}")
+            logging.info(f"Directory for {symbol_data['symbol']}'s quarterly statements found at {reports_dir}")
         else:
-            logging.info(f"Directory for {symbol_data['symbol']}'s annual statements not found at {reports_dir}. Trying to create.")
+            logging.info(f"Directory for {symbol_data['symbol']}'s quarterly statements not found at {reports_dir}. Trying to create.")
             reports_dir.mkdir()
             if not reports_dir.exists():
                 raise RuntimeError(f"Could not create directory at {reports_dir}")
@@ -312,7 +312,7 @@ def fetch_quarterly_statements():
         report_page_links = []
         for link in news_div.find_all('a', href=True):
             if link.attrs['href'] and \
-            'unaudited' in link.attrs['href'].lower():
+            ('unaudited' in link.attrs['href'].lower() or 'financial' in link.attrs['href'].lower()):
                 report_page_links.append(link.attrs['href'])
         # now navigate to each link
         # and get the actual links of the pdf files
@@ -350,7 +350,10 @@ def fetch_quarterly_statements():
                     raise RuntimeError(f'Could not find a release date for this report: {link}')
                 # now append our data
                 if pdf_release_date>QUARTERLY_STATEMENTS_START_DATE:
+                    logging.info("Report is new enough. Adding to download list.")
                     pdf_reports.append({'pdf_link':pdf_link,'release_date':pdf_release_date})
+                else:
+                    logging.info("Report is too old. Discarding.")
             except (requests.exceptions.HTTPError,RuntimeError) as exc:
                 logging.warning(f"Ran into an error while trying to get the download link for {link}. Skipping statement."
                                 ,exc_info=exc)

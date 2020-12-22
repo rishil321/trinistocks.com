@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load render_table from django_tables2 %}
 {% load static %}
 
     {% block description %}"Historical dividend payments from stocks listed on the Trinidad and Tobago Stock Exchange(TTSE),
@@ -47,56 +46,84 @@
         <!-- Chart -->
     <div id="chartdiv" class="chart-div">
     </div>
-        <br>
-        <div class="is-clearfix clearfix"></div>
-    <div class="tablediv_noscroll">
-        {% render_table table %}
-    </div>
     {% endblock mainblock %}
 
     {% block chartjs %}
-    {{ graph_labels|json_script:"graph_labels" }}
-    {{ graph_dataset|json_script:"graph_dataset" }}
+    {{ graph_labels_1|json_script:"graph_labels_1" }}
+    {{ graph_dataset_1|json_script:"graph_dataset_1" }}
+    {{ graph_labels_2|json_script:"graph_labels_2" }}
+    {{ graph_dataset_2|json_script:"graph_dataset_2" }}
     <script>
-    var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
-    var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
+    var graph_labels_1 = JSON.parse(document.getElementById('graph_labels_1').textContent);
+    var graph_dataset_1 = JSON.parse(document.getElementById('graph_dataset_1').textContent);
+    var graph_labels_2 = JSON.parse(document.getElementById('graph_labels_2').textContent);
+    var graph_dataset_2 = JSON.parse(document.getElementById('graph_dataset_2').textContent);
     var trace1 = {
-            x: graph_labels,
-            y: graph_dataset,
-            type: 'scatter'
-        };
-        var data = [trace1];
-        var layout = {
-        xaxis: {
-            automargin: true,
-            title: {text:'Date',
-            standoff: 20
-            },
-            titlefont: {
-            size: 20
-            },
-            showticklabels: true,
-            tickangle: 'auto',
-            tickfont: {
-            size: 16
-            },
-            exponentformat: 'SI',
-            showexponent: 'all'
+        name: 'Dividends($)/share',
+        x: graph_labels_1,
+        y: graph_dataset_1,
+        type: 'scatter'
+    };
+    var trace2 = {
+        name: 'Dividend Yield(%)',
+        x: graph_labels_2,
+        y: graph_dataset_2,
+        yaxis:'y2',
+        type: 'scatter'
+    };
+    var data = [trace1,trace2];
+    var layout = {
+    showlegend: true,
+    legend: {
+        x: 1,
+        xanchor: 'right',
+        y: 1.2
+    },
+    xaxis: {
+        automargin: true,
+        title: {text:'Date',
+        standoff: 20
         },
-        yaxis: {
-            title: 'Dividends Paid ($/share)',
-            titlefont: {
-            size: 20
-            },
-            showticklabels: true,
-            tickangle: 45,
-            tickfont: {
-            size: 16
-            },
-            exponentformat: 'SI',
-            showexponent: 'all'
-        }
-        };
+        titlefont: {
+        size: 20
+        },
+        showticklabels: true,
+        tickangle: 'auto',
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis: {
+        title: 'Dividends Paid ($/share)',
+        titlefont: {
+        size: 18
+        },
+        showticklabels: true,
+        tickangle: 45,
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis2: {
+        title: 'Dividend Yield (%)',
+        titlefont: {
+        size: 18
+        },
+        showticklabels: true,
+        tickangle: 45,
+        tickfont: {
+        size: 16
+        },
+        exponentformat: 'SI',
+        showexponent: 'all',
+        overlaying:'y',
+        side:'right'
+    }
+    };
     Plotly.newPlot('chartdiv', data, layout);
     </script>
     {% endblock chartjs %}

@@ -62,137 +62,232 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
     """
     Calculate the important ratios for fundamental analysis, based off our manually entered data from the financial statements
     """
-    audited_raw_table_name = 'audited_fundamental_raw_data'
-    audited_calculated_table_name = 'audited_fundamental_calculated_data'
-    listed_equities_table_name = 'listed_equities'
+    raw_data_table_names = ['raw_annual_data','raw_quarterly_data']
+    calculated_fundamental_ratios_table_name = 'calculated_fundamental_ratios'
     daily_stock_summary_table_name = 'daily_stock_summary'
     historical_dividend_info_table_name = 'historical_dividend_info'
-    db_connect = None
     try:
-        with DatabaseConnect() as db_connect:
-            logging.info("Successfully connected to database")
-            logging.info("Now reading raw fundamental data from db")
-            # load the audited raw data table
-            audited_raw_table = Table(
-                audited_raw_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-            listedequities_table = Table(
-                listed_equities_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-            audited_calculated_table = Table(
-                audited_calculated_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-            # read the audited raw table as a pandas df
-            audited_raw_df = pd.io.sql.read_sql(
-                f"SELECT * FROM {audited_raw_table_name} ORDER BY symbol,date;", db_connect.dbengine)
-            # create new dataframe for calculated ratios
-            audited_calculated_df = pd.DataFrame()
-            audited_calculated_df['symbol'] = audited_raw_df['symbol'].copy()
-            audited_calculated_df['date'] = audited_raw_df['date'].copy()
-            # calculate the average equity
-            average_equity_df = pd.DataFrame()
-            average_equity_df['symbol'] = audited_calculated_df['symbol'].copy()
-            average_equity_df['total_stockholders_equity'] = audited_raw_df['total_shareholders_equity'].copy(
-            )
-            average_equity_df['average_stockholders_equity'] = average_equity_df.groupby('symbol')['total_stockholders_equity'].apply(
-                lambda x: (x + x.shift(1))/2)
-            # calculate the return on equity
-            audited_calculated_df['RoE'] = audited_raw_df['net_income'] / \
-                average_equity_df['average_stockholders_equity']
-            # now calculate the return on invested capital
-            audited_calculated_df['RoIC'] = audited_raw_df['profit_after_tax'] / \
-                audited_raw_df['total_shareholders_equity']
-            # now calculate the working capital
-            audited_calculated_df['working_capital'] = audited_raw_df['total_assets'] / \
-                audited_raw_df['total_liabilities']
-            # copy basic earnings per share
-            audited_calculated_df['EPS'] = audited_raw_df['basic_earnings_per_share']
-            # calculate price to earnings ratio
-            # first get the latest share price data
-            # get the latest date from the daily stock table
-            latest_stock_date = pd.io.sql.read_sql(
-                f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;", db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
-            # then get the share price for each listed stock at this date
-            share_price_df = pd.io.sql.read_sql(
-                f"SELECT symbol,close_price FROM {daily_stock_summary_table_name} WHERE date='{latest_stock_date}';", db_connect.dbengine)
-            # create a merged df to calculate the p/e
-            price_to_earnings_df = pd.merge(
-                audited_raw_df, share_price_df, how='inner', on='symbol')
-            # calculate a conversion rate for the stock price
-            price_to_earnings_df['share_price_conversion_rates'] =  price_to_earnings_df.apply(lambda x: TTD_USD if 
-                            x.currency == 'USD' else (TTD_JMD if x.currency == 'JMD' else (TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
-            audited_calculated_df['price_to_earnings_ratio'] = price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates'] / \
-                price_to_earnings_df['basic_earnings_per_share']
-            # now calculate the price to dividend per share ratio
-            # first get the dividends per share
-            dividends_df = pd.io.sql.read_sql(
-                f"SELECT symbol,record_date,dividend_amount FROM {historical_dividend_info_table_name};", db_connect.dbengine)
-            # merge this df with the share_price_df
-            dividends_df = pd.merge(
-                share_price_df, dividends_df, how='inner', on='symbol')
-            # we need to set up a series with the conversion factors for different currencies
-            symbols_list = dividends_df['symbol'].to_list()
-            conversion_rates = []
-            for symbol in symbols_list:
-                if symbol in USD_DIVIDEND_SYMBOLS:
-                    conversion_rates.append(1/TTD_USD)
-                elif symbol in JMD_DIVIDEND_SYMBOLS:
-                    conversion_rates.append(1/TTD_JMD)
-                elif symbol in BBD_DIVIDEND_SYMBOLS:
-                    conversion_rates.append(1/TTD_BBD)
+        for raw_data_table_name in raw_data_table_names:
+            with DatabaseConnect() as db_connect:
+                logging.info("Successfully connected to database")
+                logging.info(f"Now reading raw data from {raw_data_table_name}")
+                calculated_fundamental_ratios_table = Table(
+                    calculated_fundamental_ratios_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+                # set date column name
+                if 'annual' in raw_data_table_name:
+                    date_column = 'year_end_date'
                 else:
-                    conversion_rates.append(1.00)
-            # now add this new series to our df
-            dividends_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=dividends_df.index)
-            # calculate the price to dividend per share ratio
-            audited_calculated_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
-                (dividends_df['dividend_amount']*dividends_df['dividend_conversion_rates'])
-            # now calculate the eps growth rate
-            audited_calculated_df['EPS_growth_rate'] = audited_raw_df['basic_earnings_per_share'].diff(
-            )*100
-            # now calculate the price to earnings-to-growth ratio
-            audited_calculated_df['PEG'] = audited_calculated_df['price_to_earnings_ratio'] / \
-                audited_calculated_df['EPS_growth_rate']
-            audited_calculated_df = audited_calculated_df.where(
-                pd.notnull(audited_calculated_df), None)
-            # calculate dividend yield and dividend payout ratio
-            # note that the price_to_earnings_df contains the share price
-            audited_calculated_df['dividend_yield'] = 100 * \
-                price_to_earnings_df['dividends_per_share'] / (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates'])
-            audited_calculated_df['dividend_payout_ratio'] = 100* price_to_earnings_df['total_dividends_paid'] / \
-                price_to_earnings_df['net_income']
-            # calculate the book value per share (BVPS)
-            audited_calculated_df['book_value_per_share'] = (audited_raw_df['total_assets'] - audited_raw_df['total_liabilities']) / \
-                                                            audited_raw_df['total_shares_outstanding']
-            # calculate the price to book ratio
-            audited_calculated_df['price_to_book_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
-                ((price_to_earnings_df['total_assets'] - price_to_earnings_df['total_liabilities']) / \
-                                                            price_to_earnings_df['total_shares_outstanding'])
-            # replace inf with None
-            audited_calculated_df = audited_calculated_df.replace([np.inf, -np.inf], None)
-            # now write the df to the database
-            logging.info("Now writing fundamental data to database.")
-            execute_completed_successfully = False
-            execute_failed_times = 0
-            while not execute_completed_successfully and execute_failed_times < 5:
-                try:
-                    insert_stmt = insert(
-                        audited_calculated_table).values(audited_calculated_df.to_dict('records'))
-                    upsert_stmt = insert_stmt.on_duplicate_key_update(
-                        {x.name: x for x in insert_stmt.inserted})
-                    result = db_connect.dbcon.execute(
-                        upsert_stmt)
-                    execute_completed_successfully = True
-                    logging.info(
-                        "Successfully scraped and wrote fundamental data to db.")
-                    logging.info(
-                        "Number of rows affected in the audited fundamental calculated table was "+str(result.rowcount))
-                except sqlalchemy.exc.OperationalError as operr:
-                    logging.warning(str(operr))
-                    time.sleep(1)
-                    execute_failed_times += 1
+                    date_column = 'quarter_end_date'
+                # read the audited raw table as a pandas df
+                raw_annual_data_df = pd.io.sql.read_sql(
+                    f"SELECT * FROM {raw_data_table_name} ORDER BY symbol,{date_column} DESC;", db_connect.dbengine)
+                # create new dataframe for calculated ratios
+                calculated_fundamental_ratios_df = pd.DataFrame()
+                calculated_fundamental_ratios_df['symbol'] = raw_annual_data_df['symbol'].copy()
+                calculated_fundamental_ratios_df['date'] = raw_annual_data_df[date_column].copy()
+                # set the report type
+                if 'annual' in raw_data_table_name:
+                    calculated_fundamental_ratios_df['report_type'] = 'annual'
+                else:
+                    calculated_fundamental_ratios_df['report_type'] = 'quarterly'
+                # calculate the average equity
+                average_equity_df = pd.DataFrame()
+                average_equity_df['symbol'] = calculated_fundamental_ratios_df['symbol'].copy()
+                average_equity_df['total_stockholders_equity'] = raw_annual_data_df['total_shareholders_equity'].copy(
+                )
+                # calculate the return on equity
+                calculated_fundamental_ratios_df['RoE'] = raw_annual_data_df['net_income'] / \
+                    average_equity_df['total_stockholders_equity']
+                # now calculate the return on invested capital
+                calculated_fundamental_ratios_df['RoIC'] = raw_annual_data_df['profit_after_tax'] / \
+                    raw_annual_data_df['total_shareholders_equity']
+                # now calculate the working capital
+                calculated_fundamental_ratios_df['working_capital'] = raw_annual_data_df['total_assets'] - \
+                    raw_annual_data_df['total_liabilities']
+                # and the current ratio
+                calculated_fundamental_ratios_df['current_ratio'] = raw_annual_data_df['total_assets'] / \
+                    raw_annual_data_df['total_liabilities']
+                # copy basic earnings per share
+                calculated_fundamental_ratios_df['EPS'] = raw_annual_data_df['basic_earnings_per_share']
+                # calculate price to earnings ratio
+                # first get the latest share price data
+                # get the latest date from the daily stock table
+                latest_stock_date = pd.io.sql.read_sql(
+                    f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;", db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
+                # then get the share price for each listed stock at this date
+                share_price_df = pd.io.sql.read_sql(
+                    f"SELECT symbol,close_price FROM {daily_stock_summary_table_name} WHERE date='{latest_stock_date}';", db_connect.dbengine)
+                # create a merged df to calculate the p/e
+                price_to_earnings_df = pd.merge(
+                    raw_annual_data_df, share_price_df, how='inner', on='symbol')
+                # calculate a conversion rate for the stock price
+                price_to_earnings_df['share_price_conversion_rates'] =  price_to_earnings_df.apply(lambda x: 1/TTD_USD if 
+                                x.currency == 'USD' else (1/TTD_JMD if x.currency == 'JMD' else (1/TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
+                calculated_fundamental_ratios_df['price_to_earnings_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
+                    price_to_earnings_df['basic_earnings_per_share']
+                # now calculate the price to dividend per share ratio
+                # first get the dividends per share
+                dividends_df = pd.io.sql.read_sql(
+                    f"SELECT symbol,record_date,dividend_amount FROM {historical_dividend_info_table_name};", db_connect.dbengine)
+                # merge this df with the share_price_df
+                dividends_df = pd.merge(
+                    share_price_df, dividends_df, how='inner', on='symbol')
+                # calculate the price to dividend per share ratio
+                calculated_fundamental_ratios_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
+                    (dividends_df['dividend_amount']*dividends_df['dividend_conversion_rates'])
+                # calculate dividend yield and dividend payout ratio
+                # add the dividend conversion rates for this df as well
+                symbols_list = price_to_earnings_df['symbol'].to_list()
+                conversion_rates = []
+                for symbol in symbols_list:
+                    if symbol in USD_DIVIDEND_SYMBOLS:
+                        conversion_rates.append(1/TTD_USD)
+                    elif symbol in JMD_DIVIDEND_SYMBOLS:
+                        conversion_rates.append(1/TTD_JMD)
+                    elif symbol in BBD_DIVIDEND_SYMBOLS:
+                        conversion_rates.append(1/TTD_BBD)
+                    else:
+                        conversion_rates.append(1.00)
+                price_to_earnings_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=price_to_earnings_df.index)
+                # note that the price_to_earnings_df contains the share price
+                calculated_fundamental_ratios_df['dividend_yield'] = 100 * \
+                    (price_to_earnings_df['dividends_per_share']*price_to_earnings_df['dividend_conversion_rates'])/ \
+                    (price_to_earnings_df['close_price'])
+                # now dividend payout ratio
+                calculated_fundamental_ratios_df['dividend_payout_ratio'] = 100* price_to_earnings_df['total_dividends_paid'] / \
+                    price_to_earnings_df['net_income']    
+                # we need to set up a series with the conversion factors for different currencies
+                symbols_list = dividends_df['symbol'].to_list()
+                conversion_rates = []
+                for symbol in symbols_list:
+                    if symbol in USD_DIVIDEND_SYMBOLS:
+                        conversion_rates.append(1/TTD_USD)
+                    elif symbol in JMD_DIVIDEND_SYMBOLS:
+                        conversion_rates.append(1/TTD_JMD)
+                    elif symbol in BBD_DIVIDEND_SYMBOLS:
+                        conversion_rates.append(1/TTD_BBD)
+                    else:
+                        conversion_rates.append(1.00)
+                # now add this new series to our df
+                dividends_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=dividends_df.index)
+                # now calculate the eps growth rate
+                calculated_fundamental_ratios_df['EPS_growth_rate'] = raw_annual_data_df['basic_earnings_per_share'].diff(
+                )*100
+                # now calculate the price to earnings-to-growth ratio
+                calculated_fundamental_ratios_df['PEG'] = calculated_fundamental_ratios_df['price_to_earnings_ratio'] / \
+                    calculated_fundamental_ratios_df['EPS_growth_rate']
+                # calculate the book value per share (BVPS)
+                calculated_fundamental_ratios_df['book_value_per_share'] = (raw_annual_data_df['total_assets'] - raw_annual_data_df['total_liabilities']) / \
+                                                                raw_annual_data_df['total_shares_outstanding']
+                # calculate the price to book ratio
+                calculated_fundamental_ratios_df['price_to_book_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
+                    ((price_to_earnings_df['total_assets'] - price_to_earnings_df['total_liabilities']) / \
+                                                                price_to_earnings_df['total_shares_outstanding'])
+                # replace inf with None
+                calculated_fundamental_ratios_df = calculated_fundamental_ratios_df.replace([np.inf, -np.inf], None)
+                # remove the null values
+                calculated_fundamental_ratios_df = calculated_fundamental_ratios_df.where(
+                    pd.notnull(calculated_fundamental_ratios_df), None)
+                # now write the df to the database
+                logging.info("Now writing fundamental data to database.")
+                execute_completed_successfully = False
+                execute_failed_times = 0
+                while not execute_completed_successfully and execute_failed_times < 5:
+                    try:
+                        insert_stmt = insert(
+                            calculated_fundamental_ratios_table).values(calculated_fundamental_ratios_df.to_dict('records'))
+                        upsert_stmt = insert_stmt.on_duplicate_key_update(
+                            {x.name: x for x in insert_stmt.inserted})
+                        result = db_connect.dbcon.execute(
+                            upsert_stmt)
+                        execute_completed_successfully = True
+                        logging.info(f"Successfully wrote calculated fundamental ratios to db from {raw_data_table_name}")
+                        logging.info(
+                            "Number of rows affected in the calculated table was "+str(result.rowcount))
+                    except sqlalchemy.exc.OperationalError as operr:
+                        logging.warning(str(operr))
+                        time.sleep(1)
+                        execute_failed_times += 1
         return 0
     except Exception:
         logging.exception(
             "Could not complete fundamental data update.")
         custom_logging.flush_smtp_logger()
+
+
+def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
+    """Use the historical dividend info table 
+    to calculate dividend yields per year
+    """
+    daily_stock_summary_table_name = 'daily_stock_summary'
+    historical_dividend_info_table_name = 'historical_dividend_info'
+    historical_dividend_yield_table_name = 'historical_dividend_yield'
+    with DatabaseConnect() as db_connect:
+        # first get the dividends per share
+        dividends_df = pd.io.sql.read_sql(
+            f"SELECT symbol,record_date,dividend_amount FROM {historical_dividend_info_table_name};", db_connect.dbengine)
+        # get the latest date from the daily stock table
+        latest_stock_date = pd.io.sql.read_sql(
+            f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;", db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
+        # then get the share price for each listed stock at this date
+        share_price_df = pd.io.sql.read_sql(
+            f"SELECT {daily_stock_summary_table_name}.symbol,{daily_stock_summary_table_name}.close_price, listed_equities.currency \
+                FROM {daily_stock_summary_table_name}, listed_equities WHERE \
+                {daily_stock_summary_table_name}.symbol = listed_equities.symbol AND {daily_stock_summary_table_name}.date='{latest_stock_date}';", db_connect.dbengine)
+        # now go through each symbol and calculate the yields
+        dividend_yields = []
+        groupby_symbol_year = dividends_df.groupby(['symbol',dividends_df['record_date'].map(lambda x: x.year)])['dividend_amount']
+        yearly_dividends_df = groupby_symbol_year.sum().reset_index()
+         # add the dividend conversion rates for this df
+        symbols_list = yearly_dividends_df['symbol'].to_list()
+        conversion_rates = []
+        for symbol in symbols_list:
+            if symbol in USD_DIVIDEND_SYMBOLS:
+                conversion_rates.append(1/TTD_USD)
+            elif symbol in JMD_DIVIDEND_SYMBOLS:
+                conversion_rates.append(1/TTD_JMD)
+            elif symbol in BBD_DIVIDEND_SYMBOLS:
+                conversion_rates.append(1/TTD_BBD)
+            else:
+                conversion_rates.append(1.00)
+        yearly_dividends_df['dividend_conversion_rates'] = pd.Series(conversion_rates,index=yearly_dividends_df.index)
+        # calculate a conversion rate for the stock price
+        share_price_df['share_price_conversion_rates'] =  share_price_df.apply(lambda x: 1/TTD_USD if 
+            x.currency == 'USD' else (1/TTD_JMD if x.currency == 'JMD' else (1/TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
+        # merge this df with the dividends df
+        yearly_dividends_df = pd.merge(
+            share_price_df, yearly_dividends_df, how='inner', on='symbol')
+        # now calculate the dividend yields
+        yearly_dividends_df['dividend_yield'] = 100 * (yearly_dividends_df['dividend_amount'] * yearly_dividends_df['dividend_conversion_rates'])/ \
+            (yearly_dividends_df['close_price'] * yearly_dividends_df['share_price_conversion_rates'] )
+        # drop the columns that we don't need
+        yearly_dividends_df.drop(columns=['close_price','currency','share_price_conversion_rates','dividend_amount','dividend_conversion_rates'],inplace=True)
+        # format the dates properly
+        yearly_dividends_df.rename(columns = {'record_date':'date'},inplace=True)
+        yearly_dividends_df['date'] =  yearly_dividends_df['date'].apply(lambda x: f'{x}-12-31')
+        # now write the data to the db
+        logging.info("Now writing fundamental data to database.")
+        execute_completed_successfully = False
+        execute_failed_times = 0
+        while not execute_completed_successfully and execute_failed_times < 5:
+            try:
+                historical_dividend_yield_table = Table(
+                    historical_dividend_yield_table_name, MetaData(), autoload=True, autoload_with=db_connect.dbengine)
+                insert_stmt = insert(
+                    historical_dividend_yield_table).values(yearly_dividends_df.to_dict('records'))
+                upsert_stmt = insert_stmt.on_duplicate_key_update(
+                    {x.name: x for x in insert_stmt.inserted})
+                result = db_connect.dbcon.execute(
+                    upsert_stmt)
+                execute_completed_successfully = True
+                logging.info(f"Successfully wrote dividend yield data from table.")
+                logging.info(
+                    "Number of rows affected in the calculated table was "+str(result.rowcount))
+            except sqlalchemy.exc.OperationalError as operr:
+                logging.warning(str(operr))
+                time.sleep(1)
+                execute_failed_times += 1
+    return 0
 
 
 def update_portfolio_summary_book_costs():

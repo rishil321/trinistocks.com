@@ -102,17 +102,17 @@ class HistoricalDividendInfo(models.Model):
         unique_together = (('record_date', 'symbol'),)
 
 
-class DividendYield(models.Model):
-    dividend_yield_id = models.AutoField(primary_key=True)
+class HistoricalDividendYield(models.Model):
+    yield_id = models.AutoField(primary_key=True)
     date = models.DateField(verbose_name='Date Yield Calculated')
-    yield_percent = models.DecimalField(
-        max_digits=20, decimal_places=5, verbose_name='Yield %')
     symbol = models.ForeignKey(
         ListedEquities, models.CASCADE, db_column='symbol')
+    dividend_yield = models.DecimalField(
+        max_digits=20, decimal_places=5, verbose_name='Yield %')
 
     class Meta:
         managed = False
-        db_table = 'dividend_yield'
+        db_table = 'historical_dividend_yield'
         unique_together = (('date', 'symbol'),)
 
 
@@ -187,6 +187,8 @@ class FundamentalAnalysisSummary(models.Model):
         max_digits=10, decimal_places=3, blank=True, null=True)
     working_capital = models.DecimalField(
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Working Capital")
+    current_ratio = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Current Ratio")
     price_to_earnings_ratio = models.DecimalField(
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="P/E")
     price_to_dividends_per_share_ratio = models.DecimalField(
@@ -202,7 +204,7 @@ class FundamentalAnalysisSummary(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'audited_fundamental_calculated_data'
+        db_table = 'calculated_fundamental_ratios'
 
 
 class PortfolioTransactions(models.Model):

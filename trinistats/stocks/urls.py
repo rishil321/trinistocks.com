@@ -25,8 +25,6 @@ urlpatterns = [
     path('stockhistory', views.StockHistoryView.as_view(), name='stockhistory'),
     path('dividendhistory', views.DividendHistoryView.as_view(),
         name='dividendhistory'),
-    path('dividendyieldhistory', views.DividendYieldHistoryView.as_view(),
-        name='dividendyieldhistory'),
     path('ostradeshistory', views.OSTradesHistoryView.as_view(),
         name='ostradeshistory'),
     path('about', views.AboutPageView.as_view(),

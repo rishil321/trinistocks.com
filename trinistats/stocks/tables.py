@@ -30,13 +30,6 @@ class HistoricalDividendInfoTable(tables.Table):
         export_formats = ['csv', 'xlsx']
 
 
-class HistoricalDividendYieldTable(tables.Table):
-    class Meta:
-        model = models.DividendYield
-        attrs = {"class": "djangotables"}
-        fields = ('date', 'yield_percent')
-
-
 class DailyTradingSummaryTable(tables.Table):
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
                                                                                     "td": {"class": "headcol"}}, linkify=(lambda record: render_symbol_link(value=record)))
@@ -169,18 +162,13 @@ class FundamentalAnalysisSummaryTable(tables.Table):
                                                                                     "td": {"class": "headcol"}}, linkify=(lambda record: render_fundamental_history_symbol_link(value=record)))
     sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
     date = tables.Column(verbose_name="Last Updated")
-    RoE = tables.Column()
-    EPS = tables.Column(verbose_name="EPS ($/share)")
-    EPS_growth_rate = tables.Column(verbose_name="EPS Growth Rate (%/year)")
-    PEG = tables.Column()
-    RoIC = tables.Column()
-    working_capital = tables.Column(verbose_name="Working Capital Ratio")
     price_to_earnings_ratio = tables.Column(verbose_name="P/E")
-    price_to_dividends_per_share_ratio = tables.Column(verbose_name="P/DPS")
+    RoE = tables.Column()
     dividend_yield = tables.Column(verbose_name="Dividend Yield (%)")
-    dividend_payout_ratio = tables.Column(verbose_name="Dividend Payout Ratio")
-    book_value_per_share = tables.Column(verbose_name="BVPS")
     price_to_book_ratio = tables.Column(verbose_name="P/B")
+    current_ratio = tables.Column(verbose_name="Current Ratio")
+    EPS = tables.Column(verbose_name="EPS ($/share)")
+    dividend_payout_ratio = tables.Column(verbose_name="Dividend Payout Ratio (%)") 
 
     class Meta:
         attrs = {'class': 'djangotables'}
