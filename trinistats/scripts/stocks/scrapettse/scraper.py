@@ -354,10 +354,6 @@ def scrape_dividend_data():
                             # compute the actual dividend value per share, based on the percentage and par value ($50)
                             dividend_table['dividend_amount'] = (50/100)*pd.to_numeric(
                                 dividend_table['dividend_amount'].str.replace('%', ''), errors='coerce')
-                        elif symbol == 'LJWP':
-                            # based on a $5 par value
-                            dividend_table['dividend_amount'] = (5/100)*pd.to_numeric(
-                                dividend_table['dividend_amount'].str.replace('%', ''), errors='coerce')
                         else:
                             dividend_table['dividend_amount'] = pd.to_numeric(
                                 dividend_table['dividend_amount'].str.replace('$', ''), errors='coerce')
