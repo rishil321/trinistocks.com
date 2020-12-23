@@ -70,7 +70,7 @@ displayed in a line/candlestick chart and table."
 
 {% block chartjs %}
 {{ graph_labels|json_script:"graph_labels" }}
-{{ graph_dataset|json_script:"graph_dataset" }}
+{{ graph_dataset_1|json_script:"graph_dataset_1" }}
 <script>
     // create a function to replace 0s with null
     function returnNull(numval) {
@@ -83,10 +83,10 @@ displayed in a line/candlestick chart and table."
     $("#chart_type").val(chart_type).change();
     if (chart_type == 'line') {
         var graph_labels = JSON.parse(document.getElementById('graph_labels').textContent);
-        var graph_dataset = JSON.parse(document.getElementById('graph_dataset').textContent);
+        var graph_dataset_1 = JSON.parse(document.getElementById('graph_dataset_1').textContent);
         var trace1 = {
             x: graph_labels,
-            y: graph_dataset,
+            y: graph_dataset_1,
             type: 'scatter'
         };
         var data = [trace1];
