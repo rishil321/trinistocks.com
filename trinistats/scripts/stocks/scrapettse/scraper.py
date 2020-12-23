@@ -350,8 +350,17 @@ def scrape_dividend_data():
                         dividend_table['record_date'] = dividend_table['record_date'].map(
                             lambda x: datetime.strptime(x, '%d %b %Y'), na_action='ignore')
                         # get the dividend amount into the appropriate format
-                        dividend_table['dividend_amount'] = pd.to_numeric(
-                            dividend_table['dividend_amount'].str.replace('$', ''), errors='coerce')
+                        if symbol == 'GMLP':
+                            # compute the actual dividend value per share, based on the percentage and par value ($50)
+                            dividend_table['dividend_amount'] = (50/100)*pd.to_numeric(
+                                dividend_table['dividend_amount'].str.replace('%', ''), errors='coerce')
+                        elif symbol == 'LJWP':
+                            # based on a $5 par value
+                            dividend_table['dividend_amount'] = (5/100)*pd.to_numeric(
+                                dividend_table['dividend_amount'].str.replace('%', ''), errors='coerce')
+                        else:
+                            dividend_table['dividend_amount'] = pd.to_numeric(
+                                dividend_table['dividend_amount'].str.replace('$', ''), errors='coerce')
                         # add a series for the symbol
                         dividend_table['symbol'] = pd.Series(
                             symbol, index=dividend_table.index)
