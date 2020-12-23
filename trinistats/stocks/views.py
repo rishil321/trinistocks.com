@@ -965,9 +965,13 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             # fetch data from the db
             listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
             historical_records_1 = self.model.objects.filter(
-                    symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date)
+                    symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='annual')
             historical_records_2 = self.model.objects.filter(
-                    symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date)
+                    symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='annual')
+            historical_quarterly_records_1 = self.model.objects.filter(
+                    symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='quarterly')
+            historical_quarterly_records_2 = self.model.objects.filter(
+                    symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='quarterly')
             historical_close_prices_1 = models.DailyStockSummary.objects.filter(symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date)
             historical_close_prices_2 = models.DailyStockSummary.objects.filter(symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date)
             # set up a list of all the valid indicators
@@ -981,6 +985,7 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                     if field.column == self.selected_indicator:
                         self.selected_indicator_verbose_name = field.verbose_name
             # Set up our graph
+            # set up the annual data 
             graph_labels_1 = [obj.date
                             for obj in historical_records_1]
             graph_labels_2 = [obj.date
@@ -989,6 +994,16 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                               for obj in historical_records_1.values()]
             graph_dataset_2 = [obj[self.selected_indicator]
                               for obj in historical_records_2.values()]
+            # set up the quarterly data
+            quarterly_dates_1 = [obj.date
+                            for obj in historical_quarterly_records_1]
+            quarterly_dates_2 = [obj.date
+                            for obj in historical_quarterly_records_2]
+            quarterly_dataset_1 = [obj[self.selected_indicator]
+                              for obj in historical_quarterly_records_1.values()]
+            quarterly_dataset_2 = [obj[self.selected_indicator]
+                              for obj in historical_quarterly_records_2.values()]
+            # also include the stock price below
             graph_labels_3 = [obj.date
                             for obj in historical_close_prices_1]
             graph_close_prices_1 = [obj['close_price']
@@ -1005,6 +1020,8 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             context['graph_labels_1'] = graph_labels_1
             context['graph_labels_2'] = graph_labels_2
             context['graph_labels_3'] = graph_labels_3
+            context['quarterly_dates_1'] = quarterly_dates_1
+            context['quarterly_dates_2'] = quarterly_dates_2
             context['symbol1'] = self.symbol1
             context['symbol2'] = self.symbol2
             context['all_indicators'] = all_indicators
@@ -1012,6 +1029,8 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             context['selected_indicator_verbose_name'] = self.selected_indicator_verbose_name
             context['graph_dataset_1'] = graph_dataset_1
             context['graph_dataset_2'] = graph_dataset_2
+            context['quarterly_dataset_1'] = quarterly_dataset_1
+            context['quarterly_dataset_2'] = quarterly_dataset_2
             context['graph_close_prices_1'] = graph_close_prices_1
             context['graph_close_prices_2'] = graph_close_prices_2
             logger.info("Successfully loaded page.")

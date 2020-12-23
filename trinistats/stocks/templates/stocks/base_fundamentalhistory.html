@@ -80,29 +80,71 @@
     {% block chartjs %}
     {{ graph_labels_1|json_script:"graph_labels_1" }}
     {{ graph_labels_2|json_script:"graph_labels_2" }}
+    {{ quarterly_dates_1|json_script:"quarterly_dates_1" }}
+    {{ quarterly_dates_2|json_script:"quarterly_dates_2" }}
     {{ graph_labels_3|json_script:"graph_labels_3" }}
     {{ graph_dataset_1|json_script:"graph_dataset_1" }}
     {{ graph_dataset_2|json_script:"graph_dataset_2" }}
+    {{ quarterly_dataset_1|json_script:"quarterly_dataset_1" }}
+    {{ quarterly_dataset_2|json_script:"quarterly_dataset_2" }}
     {{ graph_close_prices_1|json_script:"graph_close_prices_1" }}
     {{ graph_close_prices_2|json_script:"graph_close_prices_2" }}
     <script>
     var graph_labels_1 = JSON.parse(document.getElementById('graph_labels_1').textContent);
     var graph_labels_2 = JSON.parse(document.getElementById('graph_labels_2').textContent);
+    var quarterly_dates_1 = JSON.parse(document.getElementById('quarterly_dates_1').textContent);
+    var quarterly_dates_2 = JSON.parse(document.getElementById('quarterly_dates_2').textContent);
     var graph_dataset_1 = JSON.parse(document.getElementById('graph_dataset_1').textContent);
     var graph_dataset_2 = JSON.parse(document.getElementById('graph_dataset_2').textContent);
+    var quarterly_dataset_1 = JSON.parse(document.getElementById('quarterly_dataset_1').textContent);
+    var quarterly_dataset_2 = JSON.parse(document.getElementById('quarterly_dataset_2').textContent);
     var trace1 = {
         x: graph_labels_1,
         y: graph_dataset_1,
-        name :'{{symbol1}}',
-        type: 'scatter'
+        mode: 'lines+markers',
+        name :'{{symbol1}} annual',
+        type: 'scatter',
+        marker: {
+        color: 'rgb(219, 64, 82)',
+        size: 12,
+        symbol:'diamond'
+        }
     };
     var trace2 = {
-    x: graph_labels_2,
-    y: graph_dataset_2,
-    name :'{{symbol2}}',
-    type: 'scatter'
+        x: graph_labels_2,
+        y: graph_dataset_2,
+        name :'{{symbol2}} annual',
+        mode: 'lines+markers',
+        type: 'scatter',
+        marker: {
+        color: 'rgb(0, 51, 255)',
+        size: 12,
+        symbol:'diamond'
+        }
     };
-    var data = [trace1,trace2];
+    var trace3 = {
+        x: quarterly_dates_1,
+        y: quarterly_dataset_1,
+        name :'{{symbol1}} quarterly',
+        mode: 'lines+markers',
+        type: 'scatter',
+        marker: {
+        color: 'rgb(219, 64, 82)',
+        size: 12
+        }
+    };
+    var trace4 = {
+    x: quarterly_dates_2,
+    y: quarterly_dataset_2,
+    name :'{{symbol2}} quarterly',
+    mode: 'lines+markers',
+    type: 'scatter',
+    marker: {
+        color: 'rgb(0, 51, 255)',
+        size: 12
+    }
+    };
+    var data = [trace1,trace3,trace2,trace4];
     var layout = {
     xaxis: {
         automargin: true,

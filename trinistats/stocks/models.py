@@ -175,6 +175,7 @@ class FundamentalAnalysisSummary(models.Model):
     symbol = models.ForeignKey(
         ListedEquities, models.CASCADE, db_column='symbol')
     date = models.DateField(verbose_name="Date")
+    report_type = models.CharField(max_length=10)
     RoE = models.DecimalField(
         max_digits=10, decimal_places=3, blank=True, null=True)
     EPS = models.DecimalField(
@@ -187,8 +188,6 @@ class FundamentalAnalysisSummary(models.Model):
         max_digits=10, decimal_places=3, blank=True, null=True)
     working_capital = models.DecimalField(
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Working Capital")
-    current_ratio = models.DecimalField(
-        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Current Ratio")
     price_to_earnings_ratio = models.DecimalField(
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="P/E")
     price_to_dividends_per_share_ratio = models.DecimalField(
@@ -201,6 +200,8 @@ class FundamentalAnalysisSummary(models.Model):
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="BVPS")
     price_to_book_ratio = models.DecimalField(
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="P/B")
+    current_ratio = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Current Ratio")
 
     class Meta:
         managed = False
