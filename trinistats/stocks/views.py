@@ -326,8 +326,8 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                 base_url = reverse(
                     'stocks:stockhistory', current_app="stocks")
                 query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
-                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
-                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'date__gte': stocks_template_tags.get_1_yr_back(),
+                                          'date__lte': stocks_template_tags.get_today(),
                                           'chart_type': 'candlestick', 'sort': '-date'})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
@@ -362,23 +362,15 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                 # else raise an error
                 raise ValueError(
                     " Please ensure that you have included a starting date in the URL! For example: ?date__gte=2019-05-12")
-            # check if the configuration button was clicked
-            if self.request.GET.get("configure_button"):
-                self.entered_end_date = datetime.strptime(
-                    self.request.GET.get('date__lte'), "%Y-%m-%d")
-                self.request.session['entered_end_date'] = self.entered_end_date.strftime(
-                    '%Y-%m-%d')
             # else look for the ending date in the GET variables
-            elif self.request.GET.get('date__lte'):
+            if 'date__lte' in self.request.GET:
                 self.entered_end_date = datetime.strptime(
                     self.request.GET.get('date__lte'), "%Y-%m-%d")
-                self.request.session['entered_end_date'] = self.entered_end_date.strftime(
-                    '%Y-%m-%d')
             else:
                 raise ValueError(
                     " Please ensure that you have included an ending date in the URL! For example: ?date__lte=2020-05-12")
             # check if the configuration button was clicked
-            if self.request.GET.get('sort'):
+            if 'sort' in self.request.GET:
                 self.order_by = self.request.GET.get('sort')
             else:
                 raise ValueError(
@@ -487,9 +479,6 @@ class DividendHistoryView(FilterView):
             if 'record_date__lte' in self.request.GET:
                 self.entered_end_date = datetime.strptime(
                     self.request.GET.get('record_date__lte'), "%Y-%m-%d")
-                self.request.session['entered_end_date'] = self.entered_end_date.strftime(
-                    '%Y-%m-%d')
-                self.entered_end_date = self.entered_end_date
             else:
                 raise ValueError(
                     " Please ensure that you have included an ending date in the URL! For example: ?record_date__lte=2020-05-12")
@@ -578,8 +567,8 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                 base_url = reverse(
                     'stocks:marketindexhistory', current_app="stocks")
                 query_string = urlencode({'index_name': 'Composite Totals', 'index_parameter': 'index_value',
-                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
-                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'date__gte': stocks_template_tags.get_1_yr_back(),
+                                          'date__lte': stocks_template_tags.get_today(),
                                           'sort': '-date'})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
@@ -733,8 +722,8 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
                 base_url = reverse(
                     'stocks:ostradeshistory', current_app="stocks")
                 query_string = urlencode({'symbol': stocks_template_tags.get_session_symbol_or_default(self),
-                                          'date__gte': stocks_template_tags.get_session_start_date_or_1_yr_back(self),
-                                          'date__lte': stocks_template_tags.get_session_end_date_or_today(self),
+                                          'date__gte': stocks_template_tags.get_1_yr_back(),
+                                          'date__lte': stocks_template_tags.get_today(),
                                           'os_parameter': 'os_offer_vol', 'sort': '-date'})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)

@@ -45,13 +45,13 @@ h1 {
 
 .custom-red-button {
     background-color: red;
-    margin-top: 0.2em;
-    margin-bottom: 0.2em;
     border-width: 0em;
     border-radius: 0.2em;
     cursor: pointer;
-    padding-left: 1em;
-    padding-right: 1em;
+    padding-left:1em;
+    padding-right:1em;
+    padding-top:0.4em;
+    padding-bottom: 0.4em;
     color: #ffffff;
     font-size: 1.2rem;
 }
