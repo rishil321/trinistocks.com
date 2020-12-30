@@ -30,8 +30,8 @@ from django.contrib.auth import authenticate, password_validation
 from django.core import exceptions
 from django.contrib import messages
 from django.views.generic.edit import FormView
-from django.contrib.auth.views import LoginView 
-from django.contrib.auth import login,logout,get_user_model
+from django.contrib.auth.views import LoginView
+from django.contrib.auth import login, logout, get_user_model
 from django.db.utils import IntegrityError
 from django.contrib.auth.decorators import login_required
 import pandas as pd
@@ -232,7 +232,7 @@ class TechnicalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Filt
         return context
 
 
-class FundamentalAnalysisSummary( ExportMixin, tables2.views.SingleTableMixin, TemplateView):
+class FundamentalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, TemplateView):
     """
     Set up the data for the technical analysis summary page
     """
@@ -244,7 +244,7 @@ class FundamentalAnalysisSummary( ExportMixin, tables2.views.SingleTableMixin, T
     def get(self, request, *args, **kwargs):
         # get the filters included in the URL.
         # If the required filters are not present, return a redirect
-        required_parameters = ['sort',]
+        required_parameters = ['sort', ]
         for parameter in required_parameters:
             try:
                 # check that each parameter has a value
@@ -260,7 +260,6 @@ class FundamentalAnalysisSummary( ExportMixin, tables2.views.SingleTableMixin, T
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(FundamentalAnalysisSummary, self).get(request)
-
 
     def get_queryset(self):
         return models.FundamentalAnalysisSummary.objects.raw(
@@ -306,7 +305,8 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
     request = None
 
     def get(self, request, *args, **kwargs):
-        logger.debug(f"GET request submitted for: {request.build_absolute_uri()}")
+        logger.debug(
+            f"GET request submitted for: {request.build_absolute_uri()}")
         # get the filters included in the URL.
         # If the required filters are not present, return a redirect
         required_parameters = ['symbol', 'date__gte',
@@ -317,8 +317,9 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                 if self.request.GET[parameter]:
                     pass
                 # check that the sort parameter is valid
-                if self.request.GET['sort'].replace('-','') not in ['date','open_price','close_price','high','low','volume_traded','change_price']:
-                    raise MultiValueDictKeyError("Incorrect value submitted for sorting.") 
+                if self.request.GET['sort'].replace('-', '') not in ['date', 'open_price', 'close_price', 'high', 'low', 'volume_traded', 'change_price']:
+                    raise MultiValueDictKeyError(
+                        "Incorrect value submitted for sorting.")
             except MultiValueDictKeyError:
                 logger.warning(
                     "Stock history page requested without all proper parameters. Sending redirect.")
@@ -376,7 +377,7 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                 raise ValueError(
                     " Please ensure that you have included a sort order in the URL! For example: ?sort=date")
             self.selected_stock = models.ListedEquities.objects.get(
-                    symbol=self.selected_symbol)
+                symbol=self.selected_symbol)
             # store the context variable
             context['chart_type'] = self.selected_chart_type
             context['listed_stocks'] = listed_stocks
@@ -385,7 +386,8 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
             context['selected_stock_symbol'] = self.selected_stock.symbol
             context['entered_start_date'] = self.entered_start_date.strftime(
                 '%Y-%m-%d')
-            context['entered_end_date'] = self.entered_end_date.strftime('%Y-%m-%d')
+            context['entered_end_date'] = self.entered_end_date.strftime(
+                '%Y-%m-%d')
             context['chart_dates'] = []
             context['open_prices'] = []
             context['close_prices'] = []
@@ -395,9 +397,9 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                 self.historical_records = self.model.objects.filter(
                     symbol=self.selected_symbol).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).order_by(self.order_by)
                 context['graph_labels'] = [obj.date
-                    for obj in self.historical_records]
+                                           for obj in self.historical_records]
                 context['graph_dataset_1'] = [float(obj.close_price)
-                              for obj in self.historical_records]
+                                              for obj in self.historical_records]
             elif self.selected_chart_type == 'candlestick':
                 # query and filter the records from the db
                 selected_records = models.DailyStockSummary.objects.filter(
@@ -443,7 +445,8 @@ class DividendHistoryView(FilterView):
                 # check that each parameter has a value
                 if self.request.GET[parameter]:
                     pass
-                logging.debug("All required parameters included in dividend history URL.")
+                logging.debug(
+                    "All required parameters included in dividend history URL.")
             except MultiValueDictKeyError:
                 logger.warning(
                     "Dividend history page requested without all parameters. Sending redirect.")
@@ -460,7 +463,7 @@ class DividendHistoryView(FilterView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(
-                *args, **kwargs)
+            *args, **kwargs)
         try:
             logging.debug("Now loading context data.")
             logger.debug("Now loading all listed equities.")
@@ -494,7 +497,8 @@ class DividendHistoryView(FilterView):
                 self.order_by = '-record_date'
             # validate input data
             if self.entered_start_date >= self.entered_end_date:
-                raise ValueError("Your starting date must be before your ending date. Please recheck.")
+                raise ValueError(
+                    "Your starting date must be before your ending date. Please recheck.")
             # Fetch the records
             self.selected_stock = models.ListedEquities.objects.get(
                 symbol=self.selected_symbol)
@@ -504,13 +508,13 @@ class DividendHistoryView(FilterView):
                 symbol=self.selected_symbol).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).order_by('-date')
             # Set up our graph
             self.graph_labels_1 = [obj.record_date
-                            for obj in self.historical_dividends_paid]
+                                   for obj in self.historical_dividends_paid]
             self.graph_dataset_1 = [
-            float(obj.dividend_amount) for obj in self.historical_dividends_paid]
+                float(obj.dividend_amount) for obj in self.historical_dividends_paid]
             self.graph_labels_2 = [obj.date
-                for obj in self.historical_dividend_yields]
+                                   for obj in self.historical_dividend_yields]
             self.graph_dataset_2 = [
-            float(obj.dividend_yield) for obj in self.historical_dividend_yields]
+                float(obj.dividend_yield) for obj in self.historical_dividend_yields]
             # add the context keys
             logger.debug("Loading context keys.")
             context['listed_stocks'] = listed_stocks
@@ -519,7 +523,8 @@ class DividendHistoryView(FilterView):
             context['selected_stock_symbol'] = self.selected_stock.symbol
             context['entered_start_date'] = self.entered_start_date.strftime(
                 '%Y-%m-%d')
-            context['entered_end_date'] = self.entered_end_date.strftime('%Y-%m-%d')
+            context['entered_end_date'] = self.entered_end_date.strftime(
+                '%Y-%m-%d')
             context['graph_labels_1'] = self.graph_labels_1
             context['graph_dataset_1'] = self.graph_dataset_1
             context['graph_labels_2'] = self.graph_labels_2
@@ -573,8 +578,7 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(MarketIndexHistoryView, self).get(request)
-    
-    
+
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
@@ -683,7 +687,6 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
-    
 
     def set_graph_dataset(self,):
         self.graph_dataset = [float(obj[self.index_parameter])
@@ -728,7 +731,7 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(OSTradesHistoryView, self).get(request)
-    
+
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
@@ -867,7 +870,6 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
-    
 
     def set_graph_dataset(self,):
         self.graph_dataset = [obj[self.os_parameter]
@@ -892,7 +894,7 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
     def get(self, request, *args, **kwargs):
         # get the filters included in the URL.
         # If the required filters are not present, return a redirect
-        required_parameters = ['symbol1', 'symbol2','indicator', 'date__gte',
+        required_parameters = ['symbol1', 'symbol2', 'indicator', 'date__gte',
                                'date__lte']
         for parameter in required_parameters:
             try:
@@ -906,10 +908,10 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                 base_url = reverse(
                     'stocks:fundamentalhistory', current_app="stocks")
                 query_string = urlencode({'symbol1': stocks_template_tags.get_session_symbol_or_default(self),
-                                        'symbol2': 'WCO',
-                                        'indicator':'EPS',
-                                        'date__gte': stocks_template_tags.get_5_yr_back(),
-                                        'date__lte': stocks_template_tags.get_today()})
+                                          'symbol2': 'WCO',
+                                          'indicator': 'EPS',
+                                          'date__gte': stocks_template_tags.get_5_yr_back(),
+                                          'date__lte': stocks_template_tags.get_today()})
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(FundamentalHistoryView, self).get(request)
@@ -954,19 +956,21 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             # fetch data from the db
             listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
             historical_records_1 = self.model.objects.filter(
-                    symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='annual')
+                symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='annual')
             historical_records_2 = self.model.objects.filter(
-                    symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='annual')
+                symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='annual')
             historical_quarterly_records_1 = self.model.objects.filter(
-                    symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='quarterly')
+                symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='quarterly')
             historical_quarterly_records_2 = self.model.objects.filter(
-                    symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='quarterly')
-            historical_close_prices_1 = models.DailyStockSummary.objects.filter(symbol=self.symbol1).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date)
-            historical_close_prices_2 = models.DailyStockSummary.objects.filter(symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date)
+                symbol=self.symbol2).filter(date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date).filter(report_type='quarterly')
+            historical_close_prices_1 = models.DailyStockSummary.objects.filter(symbol=self.symbol1).filter(
+                date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date)
+            historical_close_prices_2 = models.DailyStockSummary.objects.filter(symbol=self.symbol2).filter(
+                date__gte=self.entered_start_date).filter(date__lte=self.entered_end_date)
             # set up a list of all the valid indicators
             all_indicators = []
             for field in self.model._meta.fields:
-                if field.column not in ['id','symbol','date']:
+                if field.column not in ['id', 'symbol', 'date']:
                     temp_indicator = dict()
                     temp_indicator['field_name'] = field.column
                     temp_indicator['verbose_name'] = field.verbose_name
@@ -974,31 +978,31 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                     if field.column == self.selected_indicator:
                         self.selected_indicator_verbose_name = field.verbose_name
             # Set up our graph
-            # set up the annual data 
+            # set up the annual data
             graph_labels_1 = [obj.date
-                            for obj in historical_records_1]
+                              for obj in historical_records_1]
             graph_labels_2 = [obj.date
-                            for obj in historical_records_2]
+                              for obj in historical_records_2]
             graph_dataset_1 = [obj[self.selected_indicator]
-                              for obj in historical_records_1.values()]
+                               for obj in historical_records_1.values()]
             graph_dataset_2 = [obj[self.selected_indicator]
-                              for obj in historical_records_2.values()]
+                               for obj in historical_records_2.values()]
             # set up the quarterly data
             quarterly_dates_1 = [obj.date
-                            for obj in historical_quarterly_records_1]
+                                 for obj in historical_quarterly_records_1]
             quarterly_dates_2 = [obj.date
-                            for obj in historical_quarterly_records_2]
+                                 for obj in historical_quarterly_records_2]
             quarterly_dataset_1 = [obj[self.selected_indicator]
-                              for obj in historical_quarterly_records_1.values()]
+                                   for obj in historical_quarterly_records_1.values()]
             quarterly_dataset_2 = [obj[self.selected_indicator]
-                              for obj in historical_quarterly_records_2.values()]
+                                   for obj in historical_quarterly_records_2.values()]
             # also include the stock price below
             graph_labels_3 = [obj.date
-                            for obj in historical_close_prices_1]
+                              for obj in historical_close_prices_1]
             graph_close_prices_1 = [obj['close_price']
-                              for obj in historical_close_prices_1.values()]
+                                    for obj in historical_close_prices_1.values()]
             graph_close_prices_2 = [obj['close_price']
-                              for obj in historical_close_prices_2.values()]
+                                    for obj in historical_close_prices_2.values()]
             # add the context keys
             logger.debug("Loading context keys.")
             context['errors'] = errors
@@ -1047,39 +1051,41 @@ class LoginPageView(FormView):
     """
     template_name = 'stocks/account/base_login.html'
     form_class = forms.LoginForm
-    success_url = reverse_lazy('stocks:login',current_app="stocks")
+    success_url = reverse_lazy('stocks:login', current_app="stocks")
 
     def get(self, request, *args, **kwargs):
         context = super(LoginPageView, self).get_context_data(**kwargs)
         # store a next URL if one is included
         if 'next' in self.request.GET:
-            self.request.session['next_URL'] = self.request.GET.get('next') 
+            self.request.session['next_URL'] = self.request.GET.get('next')
             context['next_URL_included'] = True
         return self.render_to_response(context)
 
-    def form_invalid(self,form, **kwargs):
+    def form_invalid(self, form, **kwargs):
         """This is called when the form is submitted with invalid data"""
         context = super(LoginPageView, self).get_context_data(**kwargs)
         context['form_submit_fail'] = True
         return self.render_to_response(context)
 
-    def form_valid(self,form, **kwargs):
+    def form_valid(self, form, **kwargs):
         """This is called when the form is submitted with all data valid"""
         # set up our context variables
         context = super(LoginPageView, self).get_context_data(**kwargs)
         context['form_submit_success'] = True
         # login the user
-        user = authenticate(self.request, username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+        user = authenticate(
+            self.request, username=form.cleaned_data['username'], password=form.cleaned_data['password'])
         if user is not None:
             login(self.request, user)
-            logger.info(f"{form.cleaned_data['username']} logged in successfully.")
+            logger.info(
+                f"{form.cleaned_data['username']} logged in successfully.")
             # if there is a 'next' URL included, move to it
             if 'next_URL' in self.request.session:
                 return redirect(self.request.session['next_URL'])
         return self.render_to_response(context)
 
 
-class LogoutPageView(LoginRequiredMixin,TemplateView):
+class LogoutPageView(LoginRequiredMixin, TemplateView):
     """
     User logout
     """
@@ -1107,15 +1113,15 @@ class RegisterPageView(FormView):
     """
     template_name = 'stocks/account/base_register.html'
     form_class = forms.RegisterForm
-    success_url = reverse_lazy('stocks:register',current_app="stocks")
-    
+    success_url = reverse_lazy('stocks:register', current_app="stocks")
+
     def get_context_data(self, **kwargs):
         """This is called when the form is called for the first time"""
         context = super(RegisterPageView, self).get_context_data(**kwargs)
         context['initial_form'] = True
         return context
 
-    def form_valid(self,form, **kwargs):
+    def form_valid(self, form, **kwargs):
         """This is called when the form is submitted with all data valid"""
         # set up our context variables
         context = super(RegisterPageView, self).get_context_data(**kwargs)
@@ -1134,14 +1140,14 @@ class RegisterPageView(FormView):
                 f'You have created a new account at www.trinistats.com! Your username is {new_username}.Please login and start monitoring and growing your portfolio with us today.',
                 'trinistats@gmail.com',
                 [f'{new_email}'],
-            fail_silently=False,
+                fail_silently=False,
             )
             logger.info(f"Sent email to {new_email}.")
         except Exception as exc:
             logging.exception("We could not create the user.")
         return self.render_to_response(context)
 
-    def form_invalid(self,form, **kwargs):
+    def form_invalid(self, form, **kwargs):
         """This is called when the form is submitted with invalid data"""
         context = super(RegisterPageView, self).get_context_data(**kwargs)
         context['form_submit_success'] = False
@@ -1149,23 +1155,25 @@ class RegisterPageView(FormView):
         return self.render_to_response(context)
 
 
-class PortfolioTransactionsView(LoginRequiredMixin,FormView):
+class PortfolioTransactionsView(LoginRequiredMixin, FormView):
     """
     Allow user to add new market transactions for their portfolio
     """
     template_name = 'stocks/base_portfoliotransactions.html'
     form_class = forms.PortfolioTransactionForm
-    success_url = reverse_lazy('stocks:portfoliotransactions',current_app="stocks")
-
+    success_url = reverse_lazy(
+        'stocks:portfoliotransactions', current_app="stocks")
 
     def get_context_data(self, **kwargs):
         """This is called when the form is called for the first time"""
-        context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
+        context = super(PortfolioTransactionsView,
+                        self).get_context_data(**kwargs)
         context['initial_form'] = True
         return context
 
-    def form_valid(self,form, **kwargs):
-        context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
+    def form_valid(self, form, **kwargs):
+        context = super(PortfolioTransactionsView,
+                        self).get_context_data(**kwargs)
         try:
             """This is called when the form is submitted with all data valid"""
             # set up our context variables
@@ -1182,26 +1190,30 @@ class PortfolioTransactionsView(LoginRequiredMixin,FormView):
             current_user = get_user_model().objects.get(username=self.request.user.username)
             # if the user is inserting a sell transaction, check that they have bought enough shares previously
             if form.data['bought_or_sold'] == "Sold":
-                remaining_shares = models.PortfolioSummary.objects.all().filter(user_id=current_user.id,symbol_id=form.data['symbol'])[0].shares_remaining
+                remaining_shares = models.PortfolioSummary.objects.all().filter(
+                    user_id=current_user.id, symbol_id=form.data['symbol'])[0].shares_remaining
                 if remaining_shares < int(form.data['num_shares']):
-                    raise ValidationError("You are trying to sell more shares than you have remaining! Did you forget to add some share purchases?")
-            transaction = models.PortfolioTransactions.objects.create(user = current_user, date = form.data['date'], symbol=models.ListedEquities.objects.get(symbol=form.data['symbol']), 
-                bought_or_sold = form.data['bought_or_sold'], share_price = form.data['price'], num_shares = form.data['num_shares'])
+                    raise ValidationError(
+                        "You are trying to sell more shares than you have remaining! Did you forget to add some share purchases?")
+            transaction = models.PortfolioTransactions.objects.create(user=current_user, date=form.data['date'], symbol=models.ListedEquities.objects.get(symbol=form.data['symbol']),
+                                                                      bought_or_sold=form.data['bought_or_sold'], share_price=form.data['price'], num_shares=form.data['num_shares'])
             # update the book values with this new transaction
             updater.update_portfolio_summary_book_costs()
-            # update the market values 
+            # update the market values
             updater.update_portfolio_summary_market_values()
         except IntegrityError as exc:
             context['general_error'] = "Sorry. It seems like that's a duplicate entry. Did you already add this transaction?"
         except ValidationError as exc:
             context['general_error'] = exc.message
         except Exception as exc:
-            context['general_error'] = f"Sorry. We ran into an error with your submission. Here's what we know: {exc}"
+            context[
+                'general_error'] = f"Sorry. We ran into an error with your submission. Here's what we know: {exc}"
         return self.render_to_response(context)
 
-    def form_invalid(self,form, **kwargs):
+    def form_invalid(self, form, **kwargs):
         """This is called when the form is submitted with invalid data"""
-        context = super(PortfolioTransactionsView, self).get_context_data(**kwargs)
+        context = super(PortfolioTransactionsView,
+                        self).get_context_data(**kwargs)
         context['form_submit_success'] = False
         context['initial_form'] = False
         # try to repopulate data
@@ -1214,9 +1226,9 @@ class PortfolioTransactionsView(LoginRequiredMixin,FormView):
         return self.render_to_response(context)
 
 
-class PortfolioSummaryView(LoginRequiredMixin,ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class PortfolioSummaryView(LoginRequiredMixin, ExportMixin, tables2.views.SingleTableMixin, FilterView):
     """
-    Set up the data for the technical analysis summary page
+    A page showing an overview of stocks in each user's portfolio, and allowing the user to delete stocks as required.
     """
     template_name = 'stocks/base_portfoliosummary.html'
     model = models.PortfolioSummary
@@ -1224,26 +1236,41 @@ class PortfolioSummaryView(LoginRequiredMixin,ExportMixin, tables2.views.SingleT
     table_pagination = False
     filterset_class = filters.PortfolioSummaryFilter
 
-
     def get_context_data(self, *args, **kwargs):
         logger.info(f"{self.template_name} was called")
         # get the current context
         context = super().get_context_data(
-             *args, **kwargs)
+            *args, **kwargs)
         try:
             logger.info("Successfully loaded page.")
             current_user = get_user_model().objects.get(username=self.request.user.username)
             current_data = self.model.objects.filter(user=current_user)
             context['current_username'] = self.request.user.username
-            # set up the data for the graphs 
+            # check which GET variables were included in the request
+            delete_request_message = None
+            if 'delete' in self.request.GET:
+                delete_request = self.request.GET['delete']
+                if delete_request == 'ALL':
+                    current_data.delete()
+                    delete_request_message = "All stocks deleted from portfolio successfully."
+                else:
+                    current_data.filter(symbol_id=delete_request).delete()
+                    delete_request_message = f"Stocks for {delete_request} deleted successfully."
+            # set up the data for the graphs
             # first get the symbols and their market values
             symbols = list(current_data.values_list('symbol_id', flat=True))
-            market_values = list(current_data.values_list('market_value', flat=True))
-            # convert the market values to float 
+            # if we have no symbols, send an error message to the user
+            if not symbols:
+                raise RuntimeError("No symbols in portfolio")
+            market_values = list(
+                current_data.values_list('market_value', flat=True))
+            # convert the market values to float
             symbol_market_values = [float(x) for x in market_values]
             # then get the sectors and their market values
-            sectors_df = pd.DataFrame.from_records(current_data.values_list('symbol_id__sector','market_value'))
-            sectors_df.rename(columns={0:'sector',1:'market_value'}, inplace=True)
+            sectors_df = pd.DataFrame.from_records(
+                current_data.values_list('symbol_id__sector', 'market_value'))
+            sectors_df.rename(
+                columns={0: 'sector', 1: 'market_value'}, inplace=True)
             # sum the market values for all symbols in the same sector
             sectors_df = sectors_df.groupby('sector').sum().reset_index()
             sectors = sectors_df['sector'].to_list()
@@ -1254,7 +1281,11 @@ class PortfolioSummaryView(LoginRequiredMixin,ExportMixin, tables2.views.SingleT
             context['symbol_market_values'] = symbol_market_values
             context['sectors'] = sectors
             context['sector_market_values'] = sector_market_values
-        except (ValueError,Exception) as ex:
+            # set up the context variables for the deletion
+            context['delete_request_message'] = delete_request_message
+        except RuntimeError:
+            context['no_symbols'] = True
+        except (ValueError, Exception) as ex:
             logger.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
@@ -1286,22 +1317,26 @@ class PasswordResetRequestView(FormView):
     """
     template_name = 'stocks/account/base_passwordreset.html'
     form_class = forms.PasswordResetForm
-    success_url = reverse_lazy('stocks:password_reset_request',current_app="stocks")
+    success_url = reverse_lazy(
+        'stocks:password_reset_request', current_app="stocks")
 
     def get(self, request, *args, **kwargs):
-        context = super(PasswordResetRequestView, self).get_context_data(**kwargs)
+        context = super(PasswordResetRequestView,
+                        self).get_context_data(**kwargs)
         return self.render_to_response(context)
 
-    def form_invalid(self,form, **kwargs):
+    def form_invalid(self, form, **kwargs):
         """This is called when the form is submitted with invalid data"""
-        context = super(PasswordResetRequestView, self).get_context_data(**kwargs)
+        context = super(PasswordResetRequestView,
+                        self).get_context_data(**kwargs)
         context['form_submit_fail'] = True
         return self.render_to_response(context)
 
-    def form_valid(self,form, **kwargs):
+    def form_valid(self, form, **kwargs):
         """This is called when the form is submitted with all data valid"""
         # set up our context variables
-        context = super(PasswordResetRequestView, self).get_context_data(**kwargs)
+        context = super(PasswordResetRequestView,
+                        self).get_context_data(**kwargs)
         context['form_submit_success'] = True
         # login the user
         user = models.User.objects.get(email=form.cleaned_data['email'])
@@ -1310,25 +1345,26 @@ class PasswordResetRequestView(FormView):
             subject = "trinistats: Password Reset"
             email_template_name = "stocks/account/password_reset_email.txt"
             email_body = {
-            "email":user.email,
-            'domain':'trinistats.com',
-            'site_name': 'stocks',
-            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
-            "user": user,
-            'token': default_token_generator.make_token(user),
-            'protocol': 'https',
+                "email": user.email,
+                'domain': 'trinistats.com',
+                'site_name': 'stocks',
+                "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                "user": user,
+                'token': default_token_generator.make_token(user),
+                'protocol': 'https',
             }
             email = render_to_string(email_template_name, email_body)
             send_mail(
-            subject,
-            email,
-            'trinistats@gmail.com',
-            [user.email],
-            fail_silently=False,
+                subject,
+                email,
+                'trinistats@gmail.com',
+                [user.email],
+                fail_silently=False,
             )
             logger.info(f"Sent password reset email to {user.email}.")
             context['reset_sent'] = True
         return self.render_to_response(context)
+
 
 # CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."

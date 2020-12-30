@@ -2,64 +2,120 @@
 {% load django_tables2 %}
 {% load static %}
 
-{% block description %} 
-A summary of your stock holdings on the Trinidad and Tobago stock exchange. 
-{% endblock description %} 
+{% block description %}
+A summary of your stock holdings on the Trinidad and Tobago stock exchange.
+{% endblock description %}
 
 {% block title %}
-trinistats | Stocks | Portfolio Summary 
-{% endblock title %} 
+trinistats | Stocks |Portfolio Summary
+{% endblock title %}
 
-{% block customizationbar %} 
-{% endblock customizationbar %} 
+{% block customizationbar %}
+{% endblock customizationbar %}
 
 {% block mainblock %}
 <h1 style="" id="charttitle">Portfolio Summary for {{current_username}}</h1>
+{% if no_symbols%}
+<br>
+<span style="color:red;text-align:center;" id="errormessage">You have no stocks currently in your portfolio! Click <a href='{% url "stocks:portfoliotransactions" %}'>here</a> to add some.</span>
+{% else %}
+<span style="color:red;text-align:center;" id="deletemessage"></span>
 <!-- Chart -->
-<br />
 <div id="chartdiv1" class="chart-div" style=""></div>
 <div id="chartdiv2" class="chart-div" style=""></div>
 <div class="is-clearfix clearfix"></div>
 <div class="tablediv_noscroll">{% render_table table %}</div>
-{% endblock mainblock %} {% block chartjs %}
+
+<div style="text-align:center;" class="box less-width">
+  <div class="columns">
+    <div class="column">
+      <div class="select">
+        <select style=""id="deletesymbol" name="deletesymbol" class="dropdown">
+          <!--Add options based on dictionary items returned-->
+          {% for stock in symbols %}
+            <option value="{{ stock }}">{{stock}}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="column">
+      <button id="delete_one_button" class="button is-warning is-size-6"
+        onclick="promptDeleteOne()" value="">Remove this symbol</button>
+    </div>
+    <div class="column">
+      <button id="delete_all_button" class="button is-danger is-size-6" onclick="promptDeleteAll()" value="">Remove all symbols</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock mainblock %}
+
+{% block chartjs %}
 <script>
   var data1 = [{
-      values: {{symbol_market_values|safe}},
-      labels: {{symbols|safe}},
-      type: 'pie',
-      textinfo: "label+percent",
-      hoverinfo:"label+percent",
-      textposition: "outside",
-      automargin: true
-  }];
-  var layout1 = {
-    title: 'Currents Stocks In Portfolio (By Market Value)',  
-    showlegend: false
-  };
-  Plotly.newPlot('chartdiv1', data1, layout1,{responsive: true});
-  var data2 = [{
-    values: {{sector_market_values|safe}},
-    labels: {{sectors|safe}},
+    values: {{symbol_market_values | safe}},
+    labels:{{symbols | safe}},
     type: 'pie',
     textinfo: "label+percent",
-    hoverinfo:"label+percent",
+    hoverinfo: "label+percent",
+    textposition: "outside",
+    automargin: true
+  }];
+  var layout1 = {
+    title: 'Currents Stocks In Portfolio (By Market Value)',
+    showlegend: false
+  };
+  Plotly.newPlot('chartdiv1', data1, layout1, {
+    responsive: true
+  });
+  var data2 = [{
+    values: {{sector_market_values | safe}},
+    labels: {{sectors | safe}},
+    type: 'pie',
+    textinfo: "label+percent",
+    hoverinfo: "label+percent",
     textposition: "outside",
     automargin: true
   }];
   var layout2 = {
-    title: 'Currents Sectors In Portfolio (By Market Value)',  
+    title: 'Currents Sectors In Portfolio (By Market Value)',
     showlegend: false
   };
-  Plotly.newPlot('chartdiv2', data2, layout2,{responsive: true});
+  Plotly.newPlot('chartdiv2', data2, layout2, {
+    responsive: true
+  });
+
 </script>
 {% endblock chartjs %}
 <!-- END MAIN -->
 
 <!--Javascript-->
 {% block activepagetoggle %}
-$("#portfoliosummarylink").toggleClass("has-background-red"); 
-{% endblock activepagetoggle%} 
+$("#portfoliosummarylink").toggleClass("has-background-red");
+{% endblock activepagetoggle%}
 
 {%block morejs%}
-<script></script>
+<script>
+// toggle error messages display
+{% if delete_request_message %}
+  $("#deletemessage").text('{{delete_request_message}}');
+  $("#deletemessage").css("display", "block");
+{% else %}
+  $("#deletemessage").css("display", "none");
+{% endif %}
+function promptDeleteOne() {
+  // get the current symbol chosen for deletion
+  let deletesymbol = $("#deletesymbol").val()
+  let confirmMessage = confirm(`Are you sure you want to delete the ${deletesymbol} stocks from your portfolio? You will have to re-add them manually!`);
+  if (confirmMessage) {
+    window.location.href=`{% url "stocks:portfoliosummary" %}?delete=${deletesymbol}`;
+  }
+}
+function promptDeleteAll() {
+  let confirmMessage = confirm("Are you sure you want to delete all the stocks from your portfolio? You will have to re-add them all manually!");
+  if (confirmMessage) {
+    window.location.href='{% url "stocks:portfoliosummary" %}?delete=ALL';
+  }
+}
+</script>
 {% endblock morejs%}

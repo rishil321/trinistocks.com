@@ -48,9 +48,9 @@ h1 {
     border-width: 0em;
     border-radius: 0.2em;
     cursor: pointer;
-    padding-left:1em;
-    padding-right:1em;
-    padding-top:0.4em;
+    padding-left: 1em;
+    padding-right: 1em;
+    padding-top: 0.4em;
     padding-bottom: 0.4em;
     color: #ffffff;
     font-size: 1.2rem;
@@ -149,6 +149,12 @@ h1 {
     color: black;
     text-align: left;
     max-width: 11.5em;
+}
+
+.custom-dropdown-large {
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: black;
 }
 
 .panellabel {
