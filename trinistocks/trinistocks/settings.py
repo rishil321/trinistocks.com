@@ -153,7 +153,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(
-    BASE_DIR, '/srv/trinistocks.com/djangomain/static')
+    BASE_DIR, '/srv/trinistocks.com/trinistocks/static')
 
 LOGGING = {
     'version': 1,
