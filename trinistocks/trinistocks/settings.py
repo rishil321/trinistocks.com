@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY', 'ti0b+f1@c4y3hxnk-q$z@sxkqrl$lka$552@(-+sh2%y1+r_c3')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', False)
+DEBUG = True
 
 ALLOWED_HOSTS = ["104.129.41.52", "104.129.41.55", "127.0.0.1",
                  "[2607:ff48:aa81:1600:0:1:1e4:e27b]", "trinistocks.com", "www.trinistocks.com"]
