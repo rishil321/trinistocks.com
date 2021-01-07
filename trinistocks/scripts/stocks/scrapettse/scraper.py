@@ -12,6 +12,18 @@
 # Put all your imports here, one per line.
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
+from ..crosslisted_symbols import USD_STOCK_SYMBOLS
+from ...database_ops import DatabaseConnect
+from ... import custom_logging
+from bs4.element import Tag
+from bs4 import BeautifulSoup
+import numpy as np
+import pandas as pd
+import sqlalchemy.exc
+from sqlalchemy.dialects.mysql import insert
+from sqlalchemy import create_engine, Table, select, MetaData, text, and_
+import requests
+from pid import PidFile
 import logging
 import os
 import sys
@@ -26,20 +38,8 @@ import tempfile
 import re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Imports from the cheese factory
-from pid import PidFile
-import requests
-from sqlalchemy import create_engine, Table, select, MetaData, text, and_
-from sqlalchemy.dialects.mysql import insert
-import sqlalchemy.exc
-import pandas as pd
-import numpy as np
-from bs4 import BeautifulSoup
-from bs4.element import Tag
 
 # Imports from the local filesystem
-from ... import custom_logging
-from ...database_ops import DatabaseConnect
-from ..crosslisted_symbols import USD_STOCK_SYMBOLS
 
 # endregion IMPORTS
 
@@ -167,19 +167,19 @@ def scrape_listed_equity_data():
         symbols = []
         symbol_ids = []
         for mapping in all_symbol_mappings:
-            if isinstance(mapping,Tag):
+            if isinstance(mapping, Tag):
                 symbol = mapping.contents[0].split()[0]
                 symbol_id = mapping.attrs['value']
                 if symbol and symbol_id:
                     symbols.append(symbol)
                     symbol_ids.append(symbol_id)
         # now set up a dataframe
-        symbol_id_df = pd.DataFrame(list(zip(symbols, symbol_ids)), 
-               columns =['symbol', 'symbol_id'])
+        symbol_id_df = pd.DataFrame(list(zip(symbols, symbol_ids)),
+                                    columns=['symbol', 'symbol_id'])
         # merge the two dataframes
-        all_listed_equity_data_df = pd.merge(all_listed_equity_data_df,symbol_id_df,
-            on='symbol',how='left')
-         # Now write the data to the database
+        all_listed_equity_data_df = pd.merge(all_listed_equity_data_df, symbol_id_df,
+                                             on='symbol', how='left')
+        # Now write the data to the database
         with DatabaseConnect() as db_obj:
             listed_equities_table = Table(
                 'listed_equities', MetaData(), autoload=True, autoload_with=db_obj.dbengine)
@@ -214,7 +214,8 @@ def check_num_equities_in_sector():
         # create a copy of the dataframe and drop the duplicates to get all sectors
         unique_listed_equities_df = listed_equities_df.copy().drop_duplicates()
         # get the number of times the sector occurs in the df
-        listed_equities_sector_counts_df = listed_equities_df['sector'].value_counts(dropna=False)
+        listed_equities_sector_counts_df = listed_equities_df['sector'].value_counts(
+            dropna=False)
         # map the counts to the unique df
         unique_listed_equities_df['num_listed'] = unique_listed_equities_df['sector'].map(
             listed_equities_sector_counts_df)
@@ -422,9 +423,9 @@ def scrape_equity_summary_data(dates_to_fetch,):
             "Now opening using pandas to fetch daily summary data"+pid_string)
         # set up the field names for the tables ( we will set the date column after)
         market_summary_data_keys = ['index_name', 'index_value', 'index_change', 'change_percent',
-            'volume_traded', 'value_traded', 'num_trades']
+                                    'volume_traded', 'value_traded', 'num_trades']
         daily_stock_data_keys = ['symbol', 'open_price', 'high', 'low', 'os_bid', 'os_bid_vol', 'os_offer',
-            'os_offer_vol', 'last_sale_price', 'was_traded_today', 'volume_traded', 'close_price', 'change_dollars']
+                                 'os_offer_vol', 'last_sale_price', 'was_traded_today', 'volume_traded', 'close_price', 'change_dollars']
         # set up the database connection to write data to the db
         db_connect = DatabaseConnect()
         logger.debug("Successfully connected to database"+pid_string)
@@ -509,7 +510,7 @@ def scrape_equity_summary_data(dates_to_fetch,):
                                 upsert_stmt)
                             execute_completed_successfully = True
                             logger.debug("Successfully scraped and wrote to db market indices data for " +
-                                 fetch_date+pid_string)
+                                         fetch_date+pid_string)
                             logger.debug(
                                 "Number of rows affected in the historical_indices_summary table was "+str(result.rowcount)+pid_string)
                         except sqlalchemy.exc.OperationalError as operr:
@@ -610,7 +611,7 @@ def scrape_equity_summary_data(dates_to_fetch,):
                                 upsert_stmt)
                             execute_completed_successfully = True
                             logger.debug("Successfully scraped and wrote to db daily equity/shares data for " +
-                                fetch_date+pid_string)
+                                         fetch_date+pid_string)
                             logger.debug(
                                 "Number of rows affected in the daily_stock_summary table was "+str(result.rowcount)+pid_string)
                         except sqlalchemy.exc.OperationalError as operr:
@@ -696,7 +697,7 @@ def update_equity_summary_data(start_date):
         logger.debug("This machine has "+str(num_cores)+" logical CPU cores.")
         list_length = len(dates_to_fetch)
         dates_to_fetch_sublists = [dates_to_fetch[i*list_length // num_cores: (i+1)*list_length // num_cores]
-            for i in range(num_cores)]
+                                   for i in range(num_cores)]
         logger.debug(
             "Lists split successfully.")
         return dates_to_fetch_sublists, all_listed_symbols
@@ -909,7 +910,7 @@ def update_technical_analysis_data():
                 stock_technical_data['high_52w'] = float(
                     technical_analysis_table['Change'][4].replace('$', ''))
                 # leaving out the 52w low because it is not correct from the ttse site
-                #stock_technical_data['low_52w'] = float(
+                # stock_technical_data['low_52w'] = float(
                 #    technical_analysis_table['Change%'][4].replace('$', ''))
                 stock_technical_data['wtd'] = float(
                     technical_analysis_table['Opening Price'][6].replace('%', ''))
@@ -953,7 +954,8 @@ def update_technical_analysis_data():
                 adtv_df = volume_traded_df.rolling(window=30).mean()
                 stock_technical_data['adtv'] = adtv_df['volume_traded'].iloc[-1]
                 # calculate the 52w low
-                stock_technical_data['low_52w'] = stock_change_df['close_price'].min()
+                stock_technical_data['low_52w'] = stock_change_df['close_price'].min(
+                )
                 # filter out nan from this dict
                 for key in stock_technical_data:
                     if pd.isna(stock_technical_data[key]):
@@ -1024,7 +1026,7 @@ def main(args):
                 start_date = START_DATE
             else:
                 start_date = (datetime.now() +
-                    relativedelta(months=-1)).strftime('%Y-%m-%d')
+                              relativedelta(months=-1)).strftime('%Y-%m-%d')
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(os.cpu_count(), custom_logging.logging_worker_init, [q]) as multipool:
                 logger.debug("Now starting TTSE scraper.")
@@ -1046,14 +1048,14 @@ def main(args):
                         async_results.append(multipool.apply_async(
                             scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
                     # update tShe technical analysis stock data
-                    multipool.apply_async(update_technical_analysis_data, ())
+                    #multipool.apply_async(update_technical_analysis_data, ())
                     # wait until all workers finish fetching data before continuing
                     for result in async_results:
                         result.wait()
                 multipool.close()
                 multipool.join()
                 logger.debug(os.path.basename(__file__) +
-                    " executed successfully.")
+                             " executed successfully.")
                 q_listener.stop()
                 return 0
     except Exception as exc:
@@ -1062,6 +1064,7 @@ def main(args):
         custom_logging.flush_smtp_logger()
 
 # endregion FUNCTION DEFINITIONS
+
 
 # If this script is being run from the command-line, then run the main() function
 if __name__ == "__main__":
