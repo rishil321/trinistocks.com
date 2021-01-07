@@ -5,13 +5,14 @@
 <html lang="en">
 <head>
     <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-162313143-1"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-R9J2M1E2WG"></script>
     <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'UA-162313143-1');
+    gtag('config', 'G-R9J2M1E2WG');
     </script>
+    <!--Google Adsense-->
     <script data-ad-client="ca-pub-6367544544740471" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
     <!--Metadata-->
     <meta charset="utf-8">
@@ -27,21 +28,18 @@
     <!-- Twitter Summary card images must be at least 120x120px -->
     <meta name="twitter:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE">
     <!-- Open Graph data -->
-    <meta property="og:title" content="trinistats:Stock Exchange" />
+    <meta property="og:title" content="trinistocks" />
     <meta property="og:type" content="graph" />
-    <meta property="og:url" content="http://www.trinistats.com/covid19" />
     <meta property="og:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE" />
     <meta property="og:description" content="Tabular/graphical data about T&T's stock exchange." />
-    <meta property="og:site_name" content="trinistats:Stocks" />
+    <meta property="og:site_name" content="trinistocks.com" />
     <!--End Metadata-->
-    <title>{% block title %}trinistats | Stocks | Stock data from the Trinidad and Tobago Stock Exchange (TTSE){% endblock title %}</title>
+    <title>{% block title %}{% endblock title %}</title>
     <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
     <!--Font Awesome 4 icons-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <!--Font Awesome 5 Icons-->
     <script src="https://kit.fontawesome.com/dbb1ac5feb.js" crossorigin="anonymous"></script>
-    <!--Ebay Ads-->
-    <script async src="https://epnt.ebay.com/static/epn-smart-tools.js"></script>
     <!--CSS sheets-->
     <link rel="stylesheet" href="{% static 'stocks/bulma.css' %}">
     <link rel="stylesheet" href="{% static 'stocks/styles.css' %}">
@@ -134,26 +132,6 @@
             {% endblock mainblock %}
         </div>
         <br>
-        {% block ebayads%}
-        <div id="ebayadsdiv" class="ebaybannerdiv" style="">
-            <ins class="epn-placement" data-config-id="5ee75b455da29225ccf11ed6"></ins>
-            <div id="adlessdiv" class="vertical-flex-container is-invisible">
-                <p style="margin-top:1em;flex-grow:3;margin-left:0.5em;" id="adlesstext">
-                    Looks like you're blocking our ads. Please consider whitelisting our site on your adblocker.
-                    We have minimal ads and you can easily help support this project through your regular Ebay purchases.
-                    If you prefer, you can donate through Paypal to support my work directly.
-                </p>
-                <form style="flex-grow:1;align-self:center;" action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-                    <input type="hidden" name="cmd" value="_donations" />
-                    <input type="hidden" name="business" value="CVJSJ47B4DVUC" />
-                    <input type="hidden" name="item_name" value="Keeping the trinistats servers online! :)" />
-                    <input type="hidden" name="currency_code" value="USD" />
-                    <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
-                    <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
-                </form>
-            </div>
-        </div>
-        {% endblock ebayads%}
     </div>
     <!-- END MAIN -->
     
