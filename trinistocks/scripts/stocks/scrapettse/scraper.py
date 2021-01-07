@@ -28,7 +28,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
-
+from numpy import inf
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 import argparse
@@ -949,9 +949,11 @@ def update_technical_analysis_data():
                 # calculate the 52w low
                 stock_technical_data['low_52w'] = stock_change_df['close_price'].min(
                 )
-                # filter out nan from this dict
+                # replace nan/na/inf in dict with None
                 for key in stock_technical_data:
                     if pd.isna(stock_technical_data[key]):
+                        stock_technical_data[key] = None
+                    if stock_technical_data[key] in [inf,-inf]:
                         stock_technical_data[key] = None
                 # add our dict for this stock to our large list
                 all_technical_data.append(stock_technical_data)
