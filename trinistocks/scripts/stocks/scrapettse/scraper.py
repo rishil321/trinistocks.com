@@ -668,13 +668,6 @@ def update_equity_summary_data(start_date):
         for row in result:
             # We only have a single element in each row tuple, which is the date
             dates_already_recorded.append(row[0])
-        # Also get a list of all valid symbols from the db
-        all_listed_symbols = []
-        select_stmt = select([listed_equities_table.c.symbol])
-        result = db_connect.dbcon.execute(select_stmt)
-        for row in result:
-            # We only have a single element in each row tuple, which is the symbol
-            all_listed_symbols.append(row[0])
         # We want to gather data on all trading days since the start date, so we create a list
         # of all dates that we need to gather still
         dates_to_fetch = []
@@ -700,7 +693,7 @@ def update_equity_summary_data(start_date):
                                    for i in range(num_cores)]
         logger.debug(
             "Lists split successfully.")
-        return dates_to_fetch_sublists, all_listed_symbols
+        return dates_to_fetch_sublists
     except Exception as ex:
         logging.exception(
             f"We ran into a problem while trying to build the list of dates to scrape market summary data for. Here's what we know: {str(ex)}")
@@ -1032,16 +1025,27 @@ def main(args):
                 logger.debug("Now starting TTSE scraper.")
                 # check if this is the daily update (run inside the trading day)
                 if args.daily_update:
-                    multipool.apply_async(
+                    result = multipool.apply_async(
                         update_daily_trades, ())
+                    logger.debug(
+                        f"update_daily_trades exited with code {result.get()}")
                 else:
                     # else this is a full update (run once a day)
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(check_num_equities_in_sector, ())
-                    multipool.apply_async(scrape_dividend_data, ())
+                    scrape_listed_equity_data_result = multipool.apply_async(
+                        scrape_listed_equity_data, ())
+                    check_num_equities_in_sector_result = multipool.apply_async(
+                        check_num_equities_in_sector, ())
+                    scrape_dividend_data_result = multipool.apply_async(
+                        scrape_dividend_data, ())
                     # block on the next function to wait until the dates are ready
-                    dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
+                    dates_to_fetch_sublists = multipool.apply(
                         update_equity_summary_data, (start_date,))
+                    logger.debug(
+                        f"scrape_listed_equity_data exited with code {scrape_listed_equity_data_result.get()}")
+                    logger.debug(
+                        f"check_num_equities_in_sector exited with code {check_num_equities_in_sector_result.get()}")
+                    logger.debug(
+                        f"scrape_dividend_data exited with code {scrape_dividend_data_result.get()}")
                     # now call the individual workers to fetch these dates
                     async_results = []
                     for core_date_list in dates_to_fetch_sublists:
@@ -1051,7 +1055,8 @@ def main(args):
                     multipool.apply_async(update_technical_analysis_data, ())
                     # wait until all workers finish fetching data before continuing
                     for result in async_results:
-                        result.wait()
+                        logger.debug(
+                            f"One process of scrape_equity_summary_data exited with code {result.get()}")
                 multipool.close()
                 multipool.join()
                 logger.debug(os.path.basename(__file__) +
