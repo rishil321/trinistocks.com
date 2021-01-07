@@ -1036,9 +1036,9 @@ def main(args):
                         update_daily_trades, ())
                 else:
                     # else this is a full update (run once a day)
-                    #multipool.apply_async(scrape_listed_equity_data, ())
-                    #multipool.apply_async(check_num_equities_in_sector, ())
-                    #multipool.apply_async(scrape_dividend_data, ())
+                    multipool.apply_async(scrape_listed_equity_data, ())
+                    multipool.apply_async(check_num_equities_in_sector, ())
+                    multipool.apply_async(scrape_dividend_data, ())
                     # block on the next function to wait until the dates are ready
                     dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
                         update_equity_summary_data, (start_date,))
@@ -1046,9 +1046,9 @@ def main(args):
                     async_results = []
                     for core_date_list in dates_to_fetch_sublists:
                         async_results.append(multipool.apply_async(
-                            scrape_equity_summary_data, (core_date_list, all_listed_symbols)))
+                            scrape_equity_summary_data, (core_date_list,)))
                     # update tShe technical analysis stock data
-                    #multipool.apply_async(update_technical_analysis_data, ())
+                    multipool.apply_async(update_technical_analysis_data, ())
                     # wait until all workers finish fetching data before continuing
                     for result in async_results:
                         result.wait()
