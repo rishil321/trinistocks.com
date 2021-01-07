@@ -26,8 +26,12 @@ trinistocks | Portfolio Summary
 <div class="is-clearfix clearfix"></div>
 <div class="tablediv_noscroll">{% render_table table %}</div>
 
-<div style="text-align:center;" class="box less-width">
+<div style="text-align:center;" class="box">
   <div class="columns">
+    <div class="column">
+      <input type="button" id="add_transaction_button" class="button is-success is-size-6"
+        onclick="window.location.href='{% url "stocks:portfoliotransactions" %}" value="Add new transaction"/>
+    </div>
     <div class="column">
       <div class="select">
         <select style=""id="deletesymbol" name="deletesymbol" class="dropdown">
@@ -37,8 +41,6 @@ trinistocks | Portfolio Summary
           {% endfor %}
         </select>
       </div>
-    </div>
-    <div class="column">
       <button id="delete_one_button" class="button is-warning is-size-6"
         onclick="promptDeleteOne()" value="">Remove this symbol</button>
     </div>
