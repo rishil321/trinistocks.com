@@ -1036,9 +1036,9 @@ def main(args):
                         update_daily_trades, ())
                 else:
                     # else this is a full update (run once a day)
-                    multipool.apply_async(scrape_listed_equity_data, ())
-                    multipool.apply_async(check_num_equities_in_sector, ())
-                    multipool.apply_async(scrape_dividend_data, ())
+                    #multipool.apply_async(scrape_listed_equity_data, ())
+                    #multipool.apply_async(check_num_equities_in_sector, ())
+                    #multipool.apply_async(scrape_dividend_data, ())
                     # block on the next function to wait until the dates are ready
                     dates_to_fetch_sublists, all_listed_symbols = multipool.apply(
                         update_equity_summary_data, (start_date,))
