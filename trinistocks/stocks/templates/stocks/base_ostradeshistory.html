@@ -113,6 +113,13 @@
     
     <!--Javascript-->
     {% block activepagetoggle %}
+    $("#historicaldropdown").toggleClass("has-background-red");
     $("#outstandingtradeslink").toggleClass("has-background-red");
-    $("#osparameter").val("{{ osparameter|safe }}").change();
     {% endblock %}
+
+     {% block morejs%}
+    <script>
+    // set the selected value for the configurations
+    $("#osparameter").val("{{ osparameter|safe }}").change();
+    </script>
+    {% endblock morejs%}

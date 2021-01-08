@@ -82,7 +82,7 @@
         <div class="navbar-menu" id="navbar_menu">
             <div class="navbar-start">
                 <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link has-text-weight-bold">Summarized</a>
+                    <a class="navbar-link has-text-weight-bold" id="summarizeddropdown">Summarized</a>
                     <div class="navbar-dropdown has-background-black">
                         {% get_latest_date_dailytradingsummary as latest_date %}
                         <a class="navbar-item" id="dailytradingsummarylink" href="{% url "stocks:dailytradingsummary" %}">Daily Trades</a>
@@ -92,7 +92,7 @@
                     </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link has-text-weight-bold">Historical</a>
+                    <a class="navbar-link has-text-weight-bold" id="historicaldropdown">Historical</a>
                     <div class="navbar-dropdown has-background-black">
                         <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock Prices</a>
                         <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}'>Dividends Paid</a>
@@ -102,7 +102,7 @@
                     </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link has-text-weight-bold">Portfolio</a>
+                    <a class="navbar-link has-text-weight-bold" id="portfoliodropdown">Portfolio</a>
                     <div class="navbar-dropdown has-background-black">
                         <a class="navbar-item" id="portfoliotransactionslink" href='{% url "stocks:portfoliotransactions" %}'>Transactions</a>
                         <a class="navbar-item" id="portfoliosummarylink" href='{% url "stocks:portfoliosummary" %}'>Summary</a>

@@ -111,13 +111,14 @@
     
     <!--Javascript-->
     {% block activepagetoggle %}
+    $("#historicaldropdown").toggleClass("has-background-red");
     $("#markethistorylink").toggleClass("has-background-red");
-    // set the selected value for the configurations
-    $("#index_name").val("{{ index_name|safe }}").change();
-    $("#index_parameter").val("{{ index_parameter|safe }}").change();
     {% endblock %}
 
      {% block morejs%}
     <script>
+    // set the selected value for the configurations
+    $("#index_name").val("{{ index_name|safe }}").change();
+    $("#index_parameter").val("{{ index_parameter|safe }}").change();
     </script>
     {% endblock morejs%}

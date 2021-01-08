@@ -167,6 +167,7 @@ h1 {
     display: inline;
     margin-top: auto;
     margin-bottom: auto;
+    margin-left: 0.1rem;
 }
 
 h2 {

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="Layer_1"
+   enable-background="new 0 0 512 512"
+   height="200"
+   viewBox="0 0 1200 200"
+   width="1200"
+   version="1.1"
+   sodipodi:docname="trinistocks_logo.svg"
+   inkscape:export-filename="/home/rishi/GitHub/trinistocks.com/trinistocks/stocks/static/stocks/trinistocks_horizontal_transparent.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
+  <metadata
+     id="metadata3811">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3809" />
+  <sodipodi:namedview
+     pagecolor="#000000"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1056"
+     id="namedview3807"
+     showgrid="true"
+     width="1000px"
+     showguides="false"
+     inkscape:zoom="1.6875"
+     inkscape:cx="129.22659"
+     inkscape:cy="137.48148"
+     inkscape:window-x="1366"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3813" />
+  </sodipodi:namedview>
+  <g
+     id="g3804"
+     transform="matrix(0.38162537,0,0,0.38836827,17.017353,1.6575758)">
+    <path
+       d="M 159.6,158.537 H 143.533 C 64.389,158.537 0,94.148 0,15.004 c 0,-8.284 6.716,-15 15,-15 h 16.067 c 79.145,0 143.533,64.389 143.533,143.533 0,8.284 -6.716,15 -15,15 z"
+       id="path3782"
+       inkscape:connector-curvature="0"
+       style="fill:#32b464" />
+    <path
+       d="M 174.6,143.537 C 174.6,64.392 110.211,0.004 31.067,0.004 H 15 c -3.87,0 -7.387,1.479 -10.048,3.885 L 159.6,158.537 c 8.284,0 15,-6.716 15,-15 z"
+       id="path3784"
+       inkscape:connector-curvature="0"
+       style="fill:#28825a" />
+    <path
+       d="m 497,238.87 h -16.066 c -96.863,0 -175.667,-78.796 -175.667,-175.65 0,-8.284 6.716,-15.016 15,-15.016 h 16.066 c 96.863,0 175.667,78.803 175.667,175.666 0,8.284 -6.716,15 -15,15 z"
+       id="path3786"
+       inkscape:connector-curvature="0"
+       style="fill:#32b464" />
+    <path
+       d="M 336.333,48.204 H 320.267 L 507.048,234.985 C 510.082,232.24 512,228.284 512,223.87 512,127.007 433.196,48.204 336.333,48.204 Z"
+       id="path3788"
+       inkscape:connector-curvature="0"
+       style="fill:#28825a" />
+    <path
+       d="m 256,158.537 c -8.284,0 -15,-6.716 -15,-15 v -48.2 c 0,-8.284 6.716,-15 15,-15 8.284,0 15,6.716 15,15 v 48.2 c 0,8.284 -6.716,15 -15,15 z"
+       id="path3790"
+       inkscape:connector-curvature="0"
+       style="fill:#1e000a" />
+    <path
+       d="m 81.917,182.378 c -3.705,-7.41 -0.701,-16.419 6.708,-20.125 L 409.959,1.587 c 7.41,-3.705 16.42,-0.702 20.124,6.708 3.705,7.41 0.702,16.419 -6.708,20.125 L 102.042,189.087 c -7.385,3.693 -16.408,0.725 -20.125,-6.709 z"
+       id="path3792"
+       inkscape:connector-curvature="0"
+       style="fill:#823200" />
+    <path
+       d="m 335.362,201.722 c 0,0 -68.44,-68.48 -68.761,-68.8 -2.929,-2.925 -6.765,-4.388 -10.602,-4.388 -3.837,0 -7.673,1.463 -10.602,4.388 -0.32,0.32 -68.761,68.8 -68.761,68.8 -31.693,31.632 -49.148,73.732 -49.148,118.545 0,44.813 17.455,86.913 49.148,118.545 0,0 68.44,68.48 68.761,68.8 2.93,2.925 6.766,4.388 10.603,4.388 3.837,0 7.673,-1.463 10.602,-4.388 0.32,-0.32 68.761,-68.8 68.761,-68.8 31.693,-31.632 49.148,-73.732 49.148,-118.545 0,-44.813 -17.455,-86.913 -49.149,-118.545 z"
+       id="path3794"
+       inkscape:connector-curvature="0"
+       style="fill:#823200" />
+    <path
+       d="m 335.362,201.722 c 0,0 -68.44,-68.48 -68.761,-68.8 -2.929,-2.925 -6.765,-4.388 -10.602,-4.388 V 512 c 3.837,0 7.673,-1.463 10.602,-4.388 0.32,-0.32 68.761,-68.8 68.761,-68.8 31.693,-31.632 49.148,-73.732 49.148,-118.545 0,-44.813 -17.454,-86.913 -49.148,-118.545 z"
+       id="path3796"
+       inkscape:connector-curvature="0"
+       style="fill:#4b1e0a" />
+    <path
+       d="m 269.139,136.288 c -2.555,-4.625 -7.481,-7.755 -13.139,-7.755 -5.658,0 -10.584,3.13 -13.139,7.755 -66.934,113.562 -66.907,254.521 0.066,368.066 2.573,4.561 7.463,7.646 13.073,7.646 5.61,0 10.5,-3.085 13.073,-7.646 66.973,-113.545 66.999,-254.504 0.066,-368.066 z"
+       id="path3798"
+       inkscape:connector-curvature="0"
+       style="fill:#af6432" />
+    <path
+       d="M 256,512 V 128.533 c 5.658,0 10.584,3.13 13.139,7.755 66.934,113.562 66.907,254.521 -0.066,368.066 C 266.499,508.915 261.609,512 256,512 Z"
+       id="path3800"
+       inkscape:connector-curvature="0"
+       style="fill:#823200" />
+    <path
+       d="M 409.959,1.587 256,78.567 v 33.541 L 423.375,28.42 c 7.41,-3.705 10.413,-12.715 6.708,-20.125 -3.704,-7.41 -12.714,-10.413 -20.124,-6.708 z"
+       id="path3802"
+       inkscape:connector-curvature="0"
+       style="fill:#4b1e0a" />
+  </g>
+  <flowRoot
+     xml:space="preserve"
+     id="flowRoot3815"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.00090027px;line-height:1.25;font-family:FreeSans;-inkscape-font-specification:'FreeSans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none"
+     transform="matrix(5.3931279,0,0,5.0581937,-1031.2891,-97.756467)"><flowRegion
+       id="flowRegion3817"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.00090027px;font-family:FreeSans;-inkscape-font-specification:'FreeSans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff"><rect
+         id="rect3819"
+         width="745"
+         height="170"
+         x="235"
+         y="15"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.00090027px;font-family:FreeSans;-inkscape-font-specification:'FreeSans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff" /></flowRegion><flowPara
+       id="flowPara3821">trinistocks</flowPara></flowRoot></svg>

@@ -118,8 +118,10 @@
     
     <!--Javascript-->
     {% block activepagetoggle %}
+    $("#portfoliodropdown").toggleClass("has-background-red");
     $("#portfoliotransactionslink").toggleClass("has-background-red");
     {% endblock %}
+
     {% block morejs%}
     <script>
     {% if initial_form %}
