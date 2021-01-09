@@ -30,8 +30,8 @@ import requests
 import glob
 from pathlib import Path
 from datetime import datetime
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
+from email.mime.text import MIMEText
+from subprocess import Popen, PIPE
 
 # Imports from the local filesystem
 from ... import custom_logging
@@ -796,17 +796,20 @@ def main(args):
         with PidFile(piddir=tempfile.gettempdir()):
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(os.cpu_count(), custom_logging.logging_worker_init, [q]) as multipool:
-                logging.debug("Downloading ")
-                # annual_reports_code = multipool.apply_async(
-                #     fetch_annual_reports, ())
-                # audited_statements_code = multipool.apply_async(
-                #     fetch_audited_statements, ())
-                # quarterly_statements_code = multipool.apply_async(
-                #     fetch_quarterly_statements, ())
-                # # now wait and ensure that all reports are downloaded
-                # annual_reports_code.get()
-                # audited_statements_code.get()
-                # quarterly_statements_code.get()
+                logging.debug(
+                    "Downloading latest fundamental reports from the TTSE site.")
+                annual_reports_code = multipool.apply_async(
+                    fetch_annual_reports, ())
+                audited_statements_code = multipool.apply_async(
+                    fetch_audited_statements, ())
+                quarterly_statements_code = multipool.apply_async(
+                    fetch_quarterly_statements, ())
+                # now wait and ensure that all reports are downloaded
+                annual_reports_code.get()
+                audited_statements_code.get()
+                quarterly_statements_code.get()
+                logging.debug(
+                    'Downloads complete. Now checking if any reports have not been processed.')
                 # now check if any reports are outstanding
                 res_new_annual_reports = multipool.apply_async(
                     alert_me_new_annual_reports, ())
@@ -821,24 +824,35 @@ def main(args):
                 multipool.close()
                 multipool.join()
                 # now send the email of outstanding reports
-                subject = "trinistocks: Outstanding Reports"
-                email_template_name = "outstanding_reports_email.txt"
-                email_body = {
-                    'new_annual_reports': new_annual_reports,
-                    'new_audited_statements': new_audited_statements,
-                    'new_quarterly_statements': new_quarterly_statements
-                }
-                email = render_to_string(email_template_name, email_body)
-                send_mail(
-                    subject,
-                    email,
-                    'trinistocks@gmail.com',
-                    OUTSTANDINGREPORTEMAIL,
-                    fail_silently=False,
-                )
-            logger.debug(
-                f"Sent password reset email to {OUTSTANDINGREPORTEMAIL}.")
-            print(0)
+                msg = MIMEText(f'''
+Hello,
+
+These are the outstanding fundamental reports that we found on the TTSE.
+
+New Annual Reports: {new_annual_reports}
+
+New Audited Statements: {new_audited_statements}
+
+New Quarterly Statements: {new_quarterly_statements}
+
+Please add the data for these reports into the raw_quarterly_data and raw_annual_data tables on the server.
+
+Sincerely,
+trinistocks.com
+                ''')
+                msg["From"] = "trinistocks@gmail.com"
+                msg["To"] = OUTSTANDINGREPORTEMAIL
+                msg["Subject"] = "This is the subject."
+                p = Popen(["sendmail", "-t", "-oi"],
+                          stdin=PIPE, universal_newlines=True)
+                p.communicate(msg.as_string())
+                return_code = p.returncode
+                if return_code == 0:
+                    logger.debug(
+                        f"Sent report to {OUTSTANDINGREPORTEMAIL} successfully.")
+                else:
+                    logger.error(
+                        "Could not send report to {OUTSTANDINGREPORTEMAIL}")
             logger.info(os.path.basename(__file__) +
                         " executed successfully.")
         q_listener.stop()
