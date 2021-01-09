@@ -1136,9 +1136,9 @@ class RegisterPageView(FormView):
             logger.info(f"Successfully created user: {new_username}.")
             # send an email to the user
             send_mail(
-                'trinistats: Account Creation',
-                f'You have created a new account at www.trinistats.com! Your username is {new_username}.Please login and start monitoring and growing your portfolio with us today.',
-                'trinistats@gmail.com',
+                'trinistocks: Account Creation',
+                f'You have created a new account at www.trinistocks.com! Your username is {new_username}.Please login and start monitoring and growing your portfolio with us today.',
+                'trinistocks@gmail.com',
                 [f'{new_email}'],
                 fail_silently=False,
             )
@@ -1342,11 +1342,11 @@ class PasswordResetRequestView(FormView):
         user = models.User.objects.get(email=form.cleaned_data['email'])
         if user is not None:
             # if we find a user with this email address, send them a password reset email
-            subject = "trinistats: Password Reset"
+            subject = "trinistocks: Password Reset"
             email_template_name = "stocks/account/password_reset_email.txt"
             email_body = {
                 "email": user.email,
-                'domain': 'trinistats.com',
+                'domain': 'trinistocks.com',
                 'site_name': 'stocks',
                 "uid": urlsafe_base64_encode(force_bytes(user.pk)),
                 "user": user,
@@ -1357,7 +1357,7 @@ class PasswordResetRequestView(FormView):
             send_mail(
                 subject,
                 email,
-                'trinistats@gmail.com',
+                'trinistocks@gmail.com',
                 [user.email],
                 fail_silently=False,
             )

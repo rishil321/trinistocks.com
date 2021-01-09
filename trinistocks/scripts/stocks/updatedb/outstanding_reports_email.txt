@@ -1,0 +1,17 @@
+{% autoescape off %}
+Hello,
+
+These are the outstanding fundamental reports that we found on the TTSE.
+
+New Annual Reports: {{ new_annual_reports }}
+
+New Audited Statements: {{ new_audited_statements }}
+
+New Quarterly Statements: {{ new_quarterly_statements }}
+
+Please add the data for these reports into the raw_quarterly_data and raw_annual_data tables on the server.
+
+Sincerely,
+trinistocks.com
+
+{% endautoescape %}
