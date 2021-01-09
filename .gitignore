@@ -141,3 +141,6 @@ Scripts/covid19/covid19_data_sources/
 Scripts/covid19/trinistatsconfig.py
 scripts/stocks/configs.py
 scripts/configs/*
+
+# the fundamental reports
+trinistocks/scripts/stocks/updatedb/financial_reports/*

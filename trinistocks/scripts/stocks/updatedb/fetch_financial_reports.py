@@ -796,6 +796,7 @@ def main(args):
         with PidFile(piddir=tempfile.gettempdir()):
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(os.cpu_count(), custom_logging.logging_worker_init, [q]) as multipool:
+                logging.debug("Downloading ")
                 # annual_reports_code = multipool.apply_async(
                 #     fetch_annual_reports, ())
                 # audited_statements_code = multipool.apply_async(
@@ -835,7 +836,7 @@ def main(args):
                     OUTSTANDINGREPORTEMAIL,
                     fail_silently=False,
                 )
-            logger.info(
+            logger.debug(
                 f"Sent password reset email to {OUTSTANDINGREPORTEMAIL}.")
             print(0)
             logger.info(os.path.basename(__file__) +
@@ -843,7 +844,7 @@ def main(args):
         q_listener.stop()
         return 0
     except Exception:
-        logger.error("Error in script "+os.path.basename(__file__))
+        logger.exception("Error in script "+os.path.basename(__file__))
         custom_logging.flush_smtp_logger()
 
 
