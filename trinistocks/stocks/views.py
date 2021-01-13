@@ -1,3 +1,4 @@
+# region IMPORTS
 # Imports from standard Python lib
 import logging
 from datetime import datetime
@@ -49,8 +50,7 @@ from .templatetags import stocks_template_tags
 from . import forms
 from django.conf import settings
 from scripts.stocks.updatedb import updater
-# Set up logging
-logger = logging.getLogger('root')
+# endregion
 
 # Class definitions
 
@@ -84,7 +84,7 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
                 if self.request.GET[parameter]:
                     pass
             except MultiValueDictKeyError:
-                logger.warning(
+                LOGGER.warning(
                     "Daily trading summary page requested without all parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
@@ -98,7 +98,7 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
-            logger.info("Daily trading summary page was called")
+            LOGGER.info("Daily trading summary page was called")
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
@@ -137,13 +137,13 @@ class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, Filte
             context['selected_date_parsed'] = selected_date_parsed
             context['graph_symbols'] = graph_symbols
             context['graph_value_traded'] = graph_value_traded
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a value error while loading this page"+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -173,7 +173,7 @@ class ListedStocksView(ExportMixin, tables2.MultiTableMixin, FilterView):
                 if self.request.GET[parameter]:
                     pass
             except MultiValueDictKeyError:
-                logger.warning(
+                LOGGER.warning(
                     "Listed stocks page requested without all parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
@@ -187,17 +187,17 @@ class ListedStocksView(ExportMixin, tables2.MultiTableMixin, FilterView):
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
-            logger.info("Listed stocks page was called")
+            LOGGER.info("Listed stocks page was called")
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -216,17 +216,17 @@ class TechnicalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Filt
     def get_context_data(self, *args, **kwargs):
         try:
             errors = ""
-            logger.info("Technical Analysis Summary Page was called")
+            LOGGER.info("Technical Analysis Summary Page was called")
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -251,7 +251,7 @@ class FundamentalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Te
                 if self.request.GET[parameter]:
                     pass
             except MultiValueDictKeyError:
-                logger.warning(
+                LOGGER.warning(
                     "Fundamental analysis page requested without all parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
@@ -276,17 +276,17 @@ class FundamentalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Te
 
     def get_context_data(self, *args, **kwargs):
         try:
-            logger.info("Fundamental Analysis Summary Page was called")
+            LOGGER.info("Fundamental Analysis Summary Page was called")
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -305,7 +305,7 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
     request = None
 
     def get(self, request, *args, **kwargs):
-        logger.debug(
+        LOGGER.debug(
             f"GET request submitted for: {request.build_absolute_uri()}")
         # get the filters included in the URL.
         # If the required filters are not present, return a redirect
@@ -321,7 +321,7 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                     raise MultiValueDictKeyError(
                         "Incorrect value submitted for sorting.")
             except MultiValueDictKeyError:
-                logger.warning(
+                LOGGER.warning(
                     "Stock history page requested without all proper parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
@@ -418,10 +418,10 @@ class StockHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                     'high', flat=True)]
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a value error while loading this page: "+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -448,7 +448,7 @@ class DividendHistoryView(FilterView):
                 logging.debug(
                     "All required parameters included in dividend history URL.")
             except MultiValueDictKeyError:
-                logger.warning(
+                LOGGER.warning(
                     "Dividend history page requested without all parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
@@ -466,7 +466,7 @@ class DividendHistoryView(FilterView):
             *args, **kwargs)
         try:
             logging.debug("Now loading context data.")
-            logger.debug("Now loading all listed equities.")
+            LOGGER.debug("Now loading all listed equities.")
             listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
             # else look for the starting date in the GET variables
             if 'record_date__gte' in self.request.GET:
@@ -516,7 +516,7 @@ class DividendHistoryView(FilterView):
             self.graph_dataset_2 = [
                 float(obj.dividend_yield) for obj in self.historical_dividend_yields]
             # add the context keys
-            logger.debug("Loading context keys.")
+            LOGGER.debug("Loading context keys.")
             context['listed_stocks'] = listed_stocks
             context['selected_symbol'] = self.selected_symbol
             context['selected_stock_name'] = self.selected_stock.security_name.title()
@@ -529,13 +529,13 @@ class DividendHistoryView(FilterView):
             context['graph_dataset_1'] = self.graph_dataset_1
             context['graph_labels_2'] = self.graph_labels_2
             context['graph_dataset_2'] = self.graph_dataset_2
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a value error while loading this page"+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -566,7 +566,7 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                 if self.request.GET[parameter]:
                     pass
             except MultiValueDictKeyError:
-                logger.warning(
+                LOGGER.warning(
                     "Market history page requested without all parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
@@ -585,12 +585,12 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            logger.debug("Now loading all listed equities.")
+            LOGGER.debug("Now loading all listed equities.")
             listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
             # now load all the data for the subclasses (pages)
             # note that different pages require different data, so we check which data is needed for the page
             # check if the configuration button was clicked
-            logger.debug(
+            LOGGER.debug(
                 "Checking which GET parameters were included in the request.")
             if self.request.GET.get('configure_button'):
                 entered_start_date = datetime.strptime(
@@ -657,7 +657,7 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             else:
                 self.historical_records = self.model.objects.filter(
                     date__gt=self.entered_start_date).filter(date__lte=self.entered_end_date).order_by(self.order_by)
-            logger.debug(
+            LOGGER.debug(
                 "Finished parsing GET parameters. Now loading graph data.")
             # Set up our graph
             graph_labels = [obj.date
@@ -665,7 +665,7 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             # Store the variables for the subclasses to calculate the required dict
             self.set_graph_dataset()
             # add the context keys
-            logger.debug("Loading context keys.")
+            LOGGER.debug("Loading context keys.")
             context['errors'] = errors
             context['listed_stocks'] = listed_stocks
             if self.index_name_needed:
@@ -677,13 +677,13 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             context['entered_end_date'] = entered_end_date.strftime('%Y-%m-%d')
             context['graph_labels'] = graph_labels
             context['graph_dataset'] = self.graph_dataset
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a value error while loading this page"+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -719,7 +719,7 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
                 if self.request.GET[parameter]:
                     pass
             except MultiValueDictKeyError:
-                logger.warning(
+                LOGGER.warning(
                     "Outstanding history page requested without all parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
@@ -738,12 +738,12 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            logger.debug("Now loading all listed equities.")
+            LOGGER.debug("Now loading all listed equities.")
             listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
             # now load all the data for the subclasses (pages)
             # note that different pages require different data, so we check which data is needed for the page
             # check if the configuration button was clicked
-            logger.debug(
+            LOGGER.debug(
                 "Checking which GET parameters were included in the request.")
             if self.request.GET.get('configure_button'):
                 entered_start_date = datetime.strptime(
@@ -833,7 +833,7 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
             else:
                 self.historical_records = self.model.objects.filter(
                     date__gt=self.entered_start_date).filter(date__lte=self.entered_end_date).order_by(self.order_by)
-            logger.debug(
+            LOGGER.debug(
                 "Finished parsing GET parameters. Now loading graph data.")
             # Set up our graph
             graph_labels = [obj.date
@@ -841,7 +841,7 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
             # Store the variables for the subclasses to calculate the required dict
             self.set_graph_dataset()
             # add the context keys
-            logger.debug("Loading context keys.")
+            LOGGER.debug("Loading context keys.")
             context['errors'] = errors
             context['listed_stocks'] = listed_stocks
             if self.symbol_needed:
@@ -860,13 +860,13 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
             context['entered_end_date'] = entered_end_date.strftime('%Y-%m-%d')
             context['graph_labels'] = graph_labels
             context['graph_dataset'] = self.graph_dataset
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a value error while loading this page"+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -902,7 +902,7 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
                 if self.request.GET[parameter]:
                     pass
             except MultiValueDictKeyError:
-                logger.warning(
+                LOGGER.warning(
                     "Fundamental indicators history page requested without all parameters. Sending redirect.")
                 # if we are missing any parameters, return a redirect
                 base_url = reverse(
@@ -922,7 +922,7 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             # get the current context
             context = super().get_context_data(
                 *args, **kwargs)
-            logger.debug(
+            LOGGER.debug(
                 "Checking which GET parameters were included in the request.")
             if self.request.GET.get('symbol1'):
                 self.symbol1 = self.request.GET.get('symbol1')
@@ -951,7 +951,7 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             # validate input data
             if entered_start_date >= entered_end_date:
                 errors += "Your starting date must be before your ending date. Please recheck."
-            logger.debug(
+            LOGGER.debug(
                 "Finished parsing GET parameters. Now loading graph data.")
             # fetch data from the db
             listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
@@ -970,7 +970,7 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             # set up a list of all the valid indicators
             all_indicators = []
             for field in self.model._meta.fields:
-                if field.column not in ['id', 'symbol', 'date']:
+                if field.column not in ['id', 'symbol', 'date', 'report_type']:
                     temp_indicator = dict()
                     temp_indicator['field_name'] = field.column
                     temp_indicator['verbose_name'] = field.verbose_name
@@ -1004,7 +1004,7 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             graph_close_prices_2 = [obj['close_price']
                                     for obj in historical_close_prices_2.values()]
             # add the context keys
-            logger.debug("Loading context keys.")
+            LOGGER.debug("Loading context keys.")
             context['errors'] = errors
             context['listed_stocks'] = listed_stocks
             context['entered_start_date'] = entered_start_date.strftime(
@@ -1026,13 +1026,13 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             context['quarterly_dataset_2'] = quarterly_dataset_2
             context['graph_close_prices_1'] = graph_close_prices_1
             context['graph_close_prices_2'] = graph_close_prices_2
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)
-            logger.warning(
+            LOGGER.warning(
                 "Got a value error while loading this page"+str(verr))
         except Exception as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -1077,7 +1077,7 @@ class LoginPageView(FormView):
             self.request, username=form.cleaned_data['username'], password=form.cleaned_data['password'])
         if user is not None:
             login(self.request, user)
-            logger.info(
+            LOGGER.info(
                 f"{form.cleaned_data['username']} logged in successfully.")
             # if there is a 'next' URL included, move to it
             if 'next_URL' in self.request.session:
@@ -1133,7 +1133,7 @@ class RegisterPageView(FormView):
             new_email = form.cleaned_data['email']
             new_password = form.cleaned_data['password']
             get_user_model().objects.create_user(new_username, new_email, new_password)
-            logger.info(f"Successfully created user: {new_username}.")
+            LOGGER.info(f"Successfully created user: {new_username}.")
             # send an email to the user
             send_mail(
                 'trinistocks: Account Creation',
@@ -1142,7 +1142,7 @@ class RegisterPageView(FormView):
                 [f'{new_email}'],
                 fail_silently=False,
             )
-            logger.info(f"Sent email to {new_email}.")
+            LOGGER.info(f"Sent email to {new_email}.")
         except Exception as exc:
             logging.exception("We could not create the user.")
         return self.render_to_response(context)
@@ -1237,12 +1237,12 @@ class PortfolioSummaryView(LoginRequiredMixin, ExportMixin, tables2.views.Single
     filterset_class = filters.PortfolioSummaryFilter
 
     def get_context_data(self, *args, **kwargs):
-        logger.info(f"{self.template_name} was called")
+        LOGGER.info(f"{self.template_name} was called")
         # get the current context
         context = super().get_context_data(
             *args, **kwargs)
         try:
-            logger.info("Successfully loaded page.")
+            LOGGER.info("Successfully loaded page.")
             current_user = get_user_model().objects.get(username=self.request.user.username)
             current_data = self.model.objects.filter(user=current_user)
             context['current_username'] = self.request.user.username
@@ -1252,9 +1252,11 @@ class PortfolioSummaryView(LoginRequiredMixin, ExportMixin, tables2.views.Single
                 delete_request = self.request.GET['delete']
                 if delete_request == 'ALL':
                     current_data.delete()
+                    models.PortfolioTransactions.objects.filter(user=current_user).delete()
                     delete_request_message = "All stocks deleted from portfolio successfully."
                 else:
                     current_data.filter(symbol_id=delete_request).delete()
+                    models.PortfolioTransactions.objects.filter(user=current_user).filter(symbol_id=delete_request).delete()
                     delete_request_message = f"Stocks for {delete_request} deleted successfully."
             # set up the data for the graphs
             # first get the symbols and their market values
@@ -1286,7 +1288,7 @@ class PortfolioSummaryView(LoginRequiredMixin, ExportMixin, tables2.views.Single
         except RuntimeError:
             context['no_symbols'] = True
         except (ValueError, Exception) as ex:
-            logger.exception(
+            LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
             context['errors'] = ALERTMESSAGE+str(ex)
         return context
@@ -1302,7 +1304,7 @@ class UserProfileView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         """Add context data for the page"""
         context = super(UserProfileView, self).get_context_data(**kwargs)
-        logger.debug("Now loading context data for UserProfileView...")
+        LOGGER.debug("Now loading context data for UserProfileView...")
         current_user = get_user_model().objects.get(username=self.request.user.username)
         context['current_username'] = self.request.user.username
         context['date_created'] = current_user.date_joined.strftime("%d-%m-%Y")
@@ -1361,13 +1363,15 @@ class PasswordResetRequestView(FormView):
                 [user.email],
                 fail_silently=False,
             )
-            logger.info(f"Sent password reset email to {user.email}.")
+            LOGGER.info(f"Sent password reset email to {user.email}.")
             context['reset_sent'] = True
         return self.render_to_response(context)
 
 
 # CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
+# Set up logging
+LOGGER = logging.getLogger('root')
 
 # Global variables
 

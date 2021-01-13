@@ -842,7 +842,7 @@ trinistocks.com
                 ''')
                 msg["From"] = "trinistocks@gmail.com"
                 msg["To"] = OUTSTANDINGREPORTEMAIL
-                msg["Subject"] = "This is the subject."
+                msg["Subject"] = "trinistocks: Outstanding Fundamental Reports"
                 p = Popen(["sendmail", "-t", "-oi"],
                           stdin=PIPE, universal_newlines=True)
                 p.communicate(msg.as_string())
