@@ -256,10 +256,10 @@ class FundamentalAnalysisSummaryTable(tables.Table):
     date = tables.Column(verbose_name="Last Updated")
     price_to_earnings_ratio = tables.Column(verbose_name="P/E")
     RoE = tables.Column(verbose_name="RoE")
-    dividend_yield = tables.Column(verbose_name="Dividend Yield")
     price_to_book_ratio = tables.Column(verbose_name="P/B")
     current_ratio = tables.Column(verbose_name="Current Ratio")
     EPS = tables.Column(verbose_name="EPS")
+    dividend_yield = tables.Column(verbose_name="Dividend Yield")
     dividend_payout_ratio = tables.Column(
         verbose_name="Payout Ratio")
 
@@ -283,10 +283,6 @@ class FundamentalAnalysisSummaryTable(tables.Table):
         column.attrs = {'td': {'data-label': column.verbose_name}}
         return "{:,.1f}".format(value)
 
-    def render_dividend_yield(self, value, column):
-        column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.1f}%".format(value)
-
     def render_price_to_book_ratio(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
         return "{:,.1f}".format(value)
@@ -298,6 +294,10 @@ class FundamentalAnalysisSummaryTable(tables.Table):
     def render_EPS(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
         return "{:,.1f} $/share".format(value)
+
+    def render_dividend_yield(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.1f}%".format(value)
 
     def render_dividend_payout_ratio(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
