@@ -259,9 +259,9 @@ class FundamentalAnalysisSummaryTable(tables.Table):
     dividend_yield = tables.Column(verbose_name="Dividend Yield")
     price_to_book_ratio = tables.Column(verbose_name="P/B")
     current_ratio = tables.Column(verbose_name="Current Ratio")
-    EPS = tables.Column(verbose_name="EPS ($/share)")
+    EPS = tables.Column(verbose_name="EPS")
     dividend_payout_ratio = tables.Column(
-        verbose_name="Dividend Payout Ratio (%)")
+        verbose_name="Payout Ratio")
 
     def render_symbol(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
