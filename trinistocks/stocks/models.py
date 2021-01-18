@@ -19,9 +19,9 @@ class ListedEquities(models.Model):
     status = models.CharField(max_length=20, blank=True, null=True)
     sector = models.CharField(max_length=100, blank=True, null=True)
     issued_share_capital = models.BigIntegerField(
-        blank=True, null=True, verbose_name="Issued Share Capital (shares)")
+        blank=True, null=True, verbose_name="Issued Share Capital")
     market_capitalization = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Market Capitalization ($)")
+        max_digits=23, decimal_places=2, blank=True, null=True, verbose_name="Market Capitalization")
     currency = models.CharField(max_length=3, blank=False, null=False)
     financial_year_end = models.CharField(max_length=45, blank=True, null=True)
     website_url = models.CharField(max_length=2083, blank=True, null=True)
@@ -144,25 +144,25 @@ class TechnicalAnalysisSummary(models.Model):
     symbol = models.ForeignKey(
         ListedEquities, models.CASCADE, db_column='symbol')
     last_close_price = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Last Close Quote($)")
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Last Close Quote")
     sma_20 = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SMA20($)")
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SMA20")
     sma_200 = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SMA200($)")
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="SMA200")
     beta = models.DecimalField(
         max_digits=4, decimal_places=2, blank=True, null=True, verbose_name="Beta(TTM)")
     adtv = models.PositiveIntegerField(
-        blank=True, null=True, verbose_name="ADTV(shares)(Trailing 30d)")
+        blank=True, null=True, verbose_name="ADTV(Trailing 30d)")
     high_52w = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="52W-high($)")
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="52W-high")
     low_52w = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="52W-low($)")
+        max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="52W-low")
     wtd = models.DecimalField(
-        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="WTD(%)")
+        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="WTD")
     mtd = models.DecimalField(
-        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="MTD(%)")
+        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="MTD")
     ytd = models.DecimalField(
-        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="YTD(%)")
+        max_digits=6, decimal_places=2, blank=True, null=True, verbose_name="YTD")
 
     class Meta:
         managed = False
@@ -222,7 +222,8 @@ class PortfolioTransactions(models.Model):
     class Meta:
         managed = True
         db_table = 'portfolio_transactions'
-        unique_together = [['user','date','symbol','num_shares', 'bought_or_sold']]
+        unique_together = [
+            ['user', 'date', 'symbol', 'num_shares', 'bought_or_sold']]
 
 
 class PortfolioSummary(models.Model):
@@ -232,16 +233,20 @@ class PortfolioSummary(models.Model):
     symbol = models.ForeignKey(
         ListedEquities, models.CASCADE, default='AGL')
     shares_remaining = models.IntegerField()
-    average_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    average_cost = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True)
     book_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True)
-    current_market_price = models.DecimalField(max_digits=12, decimal_places=2, null=True)
-    market_value = models.DecimalField(max_digits=20, decimal_places=2, null=True)
-    total_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    current_market_price = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True)
+    market_value = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True)
+    total_gain_loss = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True)
 
     class Meta:
         managed = True
         db_table = 'portfolio_summary'
-        unique_together = [['user','symbol']]
+        unique_together = [['user', 'symbol']]
 
 
 class User(AbstractUser):

@@ -1,4 +1,4 @@
-/* Mobile-first designs. Override with desktop-specifics later.*/
+/* Generic CSS for both mobile and desktops */
 
 * {
     font-family: "Open Sans", sans-serif;
@@ -175,49 +175,18 @@ h2 {
     font-size: x-large;
 }
 
-.tablediv_scroll {
-    margin-left: 5em;
-    overflow-x: scroll;
-}
-
-.tablediv_noscroll {
-    overflow-x: scroll;
-    margin: 0.2rem;
-}
-
-.djangotables {
-    font-size: 1rem;
-    width: 100%;
-}
-
 table {
-    border-collapse: collapse;
-    border-radius: 5px;
+    font-size: 1.0rem;
+    width: 95%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.headcol {
-    position: absolute;
-    width: 5rem;
-    left: 0;
-}
-
-th,
-th.headcol {
-    border: none;
+th {
     background-color: black;
     color: white;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-}
-
-td {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-}
-
-tr.odd,
-tr.odd td.headcol {
-    background-color: lightgrey;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 }
 
 .pagination {
@@ -316,8 +285,8 @@ tr.odd td.headcol {
 
 /* Tooltip text */
 .tooltip .tooltiptext {
+    width: 10rem;
     visibility: hidden;
-    width: 120px;
     background-color: black;
     color: #fff;
     text-align: center;
@@ -339,7 +308,6 @@ tr.odd td.headcol {
 }
 
 .tooltip .top {
-    width: 120px;
     bottom: 100%;
     left: 50%;
     margin-left: -60px;
@@ -347,7 +315,6 @@ tr.odd td.headcol {
 }
 
 .tooltip span.bottom {
-    width: 20rem;
     top: 100%;
     left: 50%;
     margin-left: -2rem;
@@ -395,6 +362,10 @@ tr.odd td.headcol {
         background-color: white;
     }
 
+    .tooltip .tooltiptext {
+        width: 20rem;
+    }
+
     .tooltip .left {
         top: -5px;
         right: 150%;
@@ -406,7 +377,6 @@ tr.odd td.headcol {
     }
 
     .tooltip .top {
-        width: 120px;
         bottom: 100%;
         left: 50%;
         margin-left: -60px;
@@ -414,10 +384,88 @@ tr.odd td.headcol {
     }
 
     .tooltip .bottom {
-        width: 20rem;
         top: 100%;
         left: 50%;
         margin-left: -2rem;
         /* Use half of the width (120/2 = 60), to center the tooltip */
+    }
+
+    td:first-child,
+    th:first-child {
+        padding-left: 0.5rem;
+    }
+
+    table {
+        font-size: 1.0rem;
+        width: 95%;
+        margin-left: auto;
+        margin-right: auto;
+        border-left: solid 0.1rem black;
+        border-right: solid 0.1rem black;
+        border-radius: 0.2rem;
+        border-collapse: separate;
+    }
+
+    td {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: solid 0.1rem black;
+    }
+
+    .limited_width_col {
+        max-width: 10rem;
+    }
+}
+
+/*Mobile View*/
+@media only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px) {
+
+    td,
+    tr {
+        display: block;
+    }
+
+    /* Hide table headers (but not display: none;, for accessibility) */
+
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    tr {
+        border-top: 0.1rem solid grey;
+        border-left: 0.1rem solid grey;
+        border-right: 0.1rem solid grey;
+        border-bottom: none;
+        border-radius: 0.2rem;
+    }
+
+    tr+tr {
+        margin-top: 1.5em;
+    }
+
+    td {
+        /* make like a "row" */
+        border: none;
+        border-bottom: 0.1rem solid grey;
+        position: relative;
+        padding-left: 50%;
+        text-align: left;
+    }
+
+    td .odd {
+        background-color: black;
+    }
+
+    td:before {
+        content: attr(data-label);
+        display: inline-block;
+        line-height: 1.0rem;
+        margin-left: -100%;
+        width: 100%;
+        white-space: nowrap;
+        color: black;
     }
 }

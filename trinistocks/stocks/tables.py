@@ -31,31 +31,58 @@ class HistoricalDividendInfoTable(tables.Table):
 
 
 class DailyTradingSummaryTable(tables.Table):
-    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                                    "td": {"class": "headcol"}}, linkify=(lambda record: render_symbol_link(value=record)))
-    volume_traded = tables.Column(verbose_name="Volume Traded (Shares)")
-    last_sale_price = tables.Column(verbose_name="Last Sale Price ($)")
+    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
+        lambda record: render_symbol_id_link(value=record)))
+    volume_traded = tables.Column(verbose_name="Volume Traded")
+    last_sale_price = tables.Column(verbose_name="Last Sale Price")
     currency = tables.Column(
         accessor="symbol__currency", verbose_name="Currency")
-    value_traded = tables.Column(verbose_name="Dollar Volume ($)")
-    low = tables.Column(verbose_name="Low ($)")
-    high = tables.Column(verbose_name="High ($)")
-    change_dollars = tables.Column(verbose_name="Price Change ($)")
+    value_traded = tables.Column(verbose_name="Dollar Volume Traded")
+    low = tables.Column(verbose_name="Low")
+    high = tables.Column(verbose_name="High")
+    change_dollars = tables.Column(verbose_name="Price Change")
+
+    # add the symbols to all other columns
+    def render_volume_traded(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,} shares".format(value)
+
+    def render_last_sale_price(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_currency(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_value_traded(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_low(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_high(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_symbol(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
 
     # make the cells green if prices are up, and red if prices are down
     def render_change_dollars(self, value, column):
         if value < 0:
-            column.attrs = {'td': {'bgcolor': '#ff9999'}}
+            column.attrs = {'td': {'style': 'color:red',
+                                   'data-label': column.verbose_name}}
+            return '-'+'$'+str(abs(value))
         elif value > 0:
-            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+            column.attrs = {'td': {'style': 'color:green',
+                                   'data-label': column.verbose_name}}
         else:
-            column.attrs = {'td': {}}
-        return value
-
-    # freeze the first column of the table
-    def render_symbol(self, value, column):
-        return value
-
+            column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
 
     class Meta:
         attrs = {"class": "djangotables"}
@@ -63,20 +90,47 @@ class DailyTradingSummaryTable(tables.Table):
 
 
 class ListedStocksTable(tables.Table):
-    symbol = tables.Column(attrs={"th": {"class": "headcol"},
-                                  "td": {"class": "headcol"}})
-    security_name = tables.Column()
-    status = tables.Column()
-    sector = tables.Column()
-    issued_share_capital = tables.Column()
-    market_capitalization = tables.Column()
-    currency = tables.Column()
+    symbol = tables.Column(verbose_name="Symbol", linkify=(
+        lambda record: render_symbol_link(value=record)))
+    security_name = tables.Column(verbose_name="Security Name")
+    status = tables.Column(verbose_name="Status")
+    sector = tables.Column(verbose_name="Sector")
+    issued_share_capital = tables.Column(verbose_name="Issued Share Capital")
+    market_capitalization = tables.Column(verbose_name="Market Capitalization")
+    currency = tables.Column(verbose_name="Currency")
+
+    def render_symbol(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_security_name(self, value, column):
+        column.attrs = {
+            'td': {'data-label': column.verbose_name, 'class': 'limited_width_col'}}
+        return value
 
     def render_status(self, value, column):
         if value == 'Suspended':
-            column.attrs = {'td': {'bgcolor': '#ff8080'}}
+            column.attrs = {'td': {'style': 'color:red'},
+                            'data-label': column.verbose_name}
         else:
-            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+            column.attrs = {'td': {'style': 'color:green',
+                                   'data-label': column.verbose_name}}
+        return value
+
+    def render_sector(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_issued_share_capital(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,} shares".format(value)
+
+    def render_market_capitalization(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_currency(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
         return value
 
     class Meta:
@@ -111,45 +165,83 @@ class OSTradesHistoryTable(tables.Table):
 
 
 class TechnicalAnalysisSummaryTable(tables.Table):
-    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                                    "td": {"class": "headcol"}},linkify=(lambda record: render_symbol_link(value=record)))
-    sma_200 = tables.Column()
-    sma_20 = tables.Column()
-    last_close_price = tables.Column()
-    high_52w = tables.Column()
-    low_52w = tables.Column()
-    ytd = tables.Column()
-    mtd = tables.Column()
-    wtd = tables.Column()
-    beta = tables.Column()
-    adtv = tables.Column()
+    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
+        lambda record: render_symbol_id_link(value=record)))
+    sma_200 = tables.Column(verbose_name="SMA200")
+    sma_20 = tables.Column(verbose_name="SMA20")
+    last_close_price = tables.Column(verbose_name="Latest Close Price")
+    high_52w = tables.Column(verbose_name="52W High")
+    low_52w = tables.Column(verbose_name="52W Low")
+    ytd = tables.Column(verbose_name="YTD")
+    mtd = tables.Column(verbose_name="MTD")
+    wtd = tables.Column(verbose_name="WTD")
+    beta = tables.Column(verbose_name="TTM Beta")
+    adtv = tables.Column(verbose_name="30d ADTV")
+
+    def render_symbol(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_sma_200(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_sma_20(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_last_close_price(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_high_52w(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_low_52w(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
 
     def render_ytd(self, value, column):
         if value < 0:
-            column.attrs = {'td': {'bgcolor': '#ff8080'}}
+            column.attrs = {'td': {'style': 'color:red',
+                                   'data-label': column.verbose_name}}
         elif value > 0:
-            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+            column.attrs = {'td': {'style': 'color:green',
+                                   'data-label': column.verbose_name}}
         else:
-            column.attrs = {'td': {}}
-        return value
+            column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.2f}%".format(value)
 
     def render_mtd(self, value, column):
         if value < 0:
-            column.attrs = {'td': {'bgcolor': '#ff8080'}}
+            column.attrs = {'td': {'style': 'color:red',
+                                   'data-label': column.verbose_name}}
         elif value > 0:
-            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+            column.attrs = {'td': {'style': 'color:green',
+                                   'data-label': column.verbose_name}}
         else:
-            column.attrs = {'td': {}}
-        return value
+            column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.2f}%".format(value)
 
     def render_wtd(self, value, column):
         if value < 0:
-            column.attrs = {'td': {'bgcolor': '#ff8080'}}
+            column.attrs = {'td': {'style': 'color:red',
+                                   'data-label': column.verbose_name}}
         elif value > 0:
-            column.attrs = {'td': {'bgcolor': '#80ff80'}}
+            column.attrs = {'td': {'style': 'color:green',
+                                   'data-label': column.verbose_name}}
         else:
-            column.attrs = {'td': {}}
-        return value
+            column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.2f}%".format(value)
+
+    def render_beta(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.2f}".format(value)
+
+    def render_adtv(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,} shares".format(value)
 
     class Meta:
         attrs = {'class': 'djangotables'}
@@ -158,49 +250,66 @@ class TechnicalAnalysisSummaryTable(tables.Table):
 
 class FundamentalAnalysisSummaryTable(tables.Table):
 
-    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", attrs={"th": {"class": "headcol"},
-                                                                                    "td": {"class": "headcol"}}, linkify=(lambda record: render_fundamental_history_symbol_link(value=record)))
+    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
+        lambda record: render_fundamental_history_symbol_link(value=record)))
     sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
     date = tables.Column(verbose_name="Last Updated")
     price_to_earnings_ratio = tables.Column(verbose_name="P/E")
-    RoE = tables.Column()
-    dividend_yield = tables.Column(verbose_name="Dividend Yield (%)")
+    RoE = tables.Column(verbose_name="RoE")
+    dividend_yield = tables.Column(verbose_name="Dividend Yield")
     price_to_book_ratio = tables.Column(verbose_name="P/B")
     current_ratio = tables.Column(verbose_name="Current Ratio")
     EPS = tables.Column(verbose_name="EPS ($/share)")
-    dividend_payout_ratio = tables.Column(verbose_name="Dividend Payout Ratio (%)") 
+    dividend_payout_ratio = tables.Column(
+        verbose_name="Dividend Payout Ratio (%)")
+
+    def render_symbol(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_sector(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_date(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_price_to_earnings_ratio(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.1f}".format(value)
+
+    def render_RoE(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.1f}".format(value)
+
+    def render_dividend_yield(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.1f}%".format(value)
+
+    def render_price_to_book_ratio(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.1f}".format(value)
+
+    def render_current_ratio(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.1f}".format(value)
+
+    def render_EPS(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.1f} $/share".format(value)
+
+    def render_dividend_payout_ratio(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.1f}%".format(value)
 
     class Meta:
         attrs = {'class': 'djangotables'}
         export_formats = ['csv', 'xlsx']
 
 
-# methods
-# render the URLs for the symbol column
-def render_fundamental_history_symbol_link(value):
-    base_url = reverse(
-            'stocks:fundamentalhistory', current_app="stocks")
-    query_string = urlencode({'symbol1': value.symbol_id,
-                            'symbol2': 'WCO',
-                            'indicator': 'EPS',
-                            'date__gte': stocks_template_tags.get_5_yr_back(),
-                            'date__lte': stocks_template_tags.get_today()})
-    url = '{}?{}'.format(base_url, query_string)
-    return url
-
-def render_symbol_link(value):
-    base_url = reverse(
-            'stocks:stockhistory', current_app="stocks")
-    query_string = urlencode({'symbol': value.symbol_id,
-                            'date__gte': stocks_template_tags.get_1_yr_back(),
-                            'date__lte': stocks_template_tags.get_today(),
-                            'chart_type': 'candlestick', 'sort': 'date'})
-    url = '{}?{}'.format(base_url, query_string)
-    return url
-
-
 class PortfolioSummaryTable(tables.Table):
-    
+
     symbol_id = tables.Column()
     sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
     shares_remaining = tables.Column(verbose_name='Number of Shares')
@@ -223,13 +332,50 @@ class PortfolioSummaryTable(tables.Table):
         return f"${value}"
 
     def render_total_gain_loss(self, value, column):
-        if value<0:
+        if value < 0:
             column.attrs = {'td': {'bgcolor': '#ff9999'}}
             return f"$({abs(value)})"
         else:
             column.attrs = {'td': {'bgcolor': '#80ff80'}}
             return f"${value}"
-    
+
     class Meta:
         attrs = {'class': 'djangotables'}
         export_formats = ['csv', 'xlsx']
+
+# methods
+# render the URLs for the symbol column
+
+
+def render_fundamental_history_symbol_link(value):
+    base_url = reverse(
+        'stocks:fundamentalhistory', current_app="stocks")
+    query_string = urlencode({'symbol1': value.symbol_id,
+                              'symbol2': 'WCO',
+                              'indicator': 'EPS',
+                              'date__gte': stocks_template_tags.get_5_yr_back(),
+                              'date__lte': stocks_template_tags.get_today()})
+    url = '{}?{}'.format(base_url, query_string)
+    return url
+
+
+def render_symbol_id_link(value):
+    base_url = reverse(
+        'stocks:stockhistory', current_app="stocks")
+    query_string = urlencode({'symbol': value.symbol_id,
+                              'date__gte': stocks_template_tags.get_1_yr_back(),
+                              'date__lte': stocks_template_tags.get_today(),
+                              'chart_type': 'candlestick', 'sort': 'date'})
+    url = '{}?{}'.format(base_url, query_string)
+    return url
+
+
+def render_symbol_link(value):
+    base_url = reverse(
+        'stocks:stockhistory', current_app="stocks")
+    query_string = urlencode({'symbol': value.symbol,
+                              'date__gte': stocks_template_tags.get_1_yr_back(),
+                              'date__lte': stocks_template_tags.get_today(),
+                              'chart_type': 'candlestick', 'sort': 'date'})
+    url = '{}?{}'.format(base_url, query_string)
+    return url

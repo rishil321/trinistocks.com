@@ -105,13 +105,38 @@ def scrape_listed_equity_data():
                 per_stock_page_soup = BeautifulSoup(
                     news_page.text, 'lxml')
                 equity_data['security_name'] = per_stock_page_soup.find(
-                    text='Security:').find_parent("h2").find_next("h2").text
+                    text='Security:').find_parent("h2").find_next("h2").text.title()
+                # apply some custom formatting to our names
+                if equity_data['security_name'] == "Agostini S Limited":
+                    equity_data['security_name'] = "Agostini's Limited"
+                elif equity_data['security_name'] == "Ansa Mcal Limited":
+                    equity_data['security_name'] = "ANSA McAL Limited"
+                elif equity_data['security_name'] == 'Ansa Merchant Bank Limited':
+                    equity_data['security_name'] = "ANSA Merchant Bank Limited"
+                elif equity_data['security_name'] == 'Cinemaone Limited':
+                    equity_data['security_name'] = "CinemaOne Limited"
+                elif equity_data['security_name'] == 'Clico Investment Fund':
+                    equity_data['security_name'] = 'CLICO Investment Fund'
+                elif equity_data['security_name'] == 'Firstcaribbean International Bank Limited':
+                    equity_data['security_name'] = "CIBC FirstCaribbean International Bank Limited"
+                elif equity_data['security_name'] == 'Gracekennedy Limited':
+                    equity_data['security_name'] = "GraceKennedy Limited"
+                elif equity_data['security_name'] == 'Jmmb Group Limited':
+                    equity_data['security_name'] = "JMMB Group Limited"
+                elif equity_data['security_name'] == 'Mpc Caribbean Clean Energy Limited':
+                    equity_data['security_name'] = "MPC Caribbean Clean Energy Limited"
+                elif equity_data['security_name'] == 'Ncb Financial Group Limited':
+                    equity_data['security_name'] = "NCB Financial Group Limited"
+                elif equity_data['security_name'] == 'Trinidad And Tobago Ngl Limited':
+                    equity_data['security_name'] = "Trinidad And Tobago NGL Limited"
                 equity_sector = per_stock_page_soup.find(
                     text='Sector:').find_parent("h2").find_next("h2").text.title()
                 if equity_sector != 'Status:':
                     equity_data['sector'] = equity_sector
                 else:
                     equity_data['sector'] = None
+                if equity_data['sector'] == 'Manufacturing Ii':
+                    equity_data['sector'] = "Manufacturing II"
                 equity_data['status'] = per_stock_page_soup.find(
                     text='Status:').find_parent("h2").find_next("h2").text.title()
                 equity_data['financial_year_end'] = per_stock_page_soup.find(
@@ -953,7 +978,7 @@ def update_technical_analysis_data():
                 for key in stock_technical_data:
                     if pd.isna(stock_technical_data[key]):
                         stock_technical_data[key] = None
-                    if stock_technical_data[key] in [inf,-inf]:
+                    if stock_technical_data[key] in [inf, -inf]:
                         stock_technical_data[key] = None
                 # add our dict for this stock to our large list
                 all_technical_data.append(stock_technical_data)
