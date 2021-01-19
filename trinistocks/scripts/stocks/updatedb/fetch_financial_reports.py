@@ -47,6 +47,7 @@ QUARTERLY_STATEMENTS_START_DATE_STRING = '2020-10-01'
 QUARTERLY_STATEMENTS_START_DATETIME = datetime.strptime(
     QUARTERLY_STATEMENTS_START_DATE_STRING, '%Y-%m-%d')
 ANNUAL_STATEMENTS_START_DATE_STRING = '2020-01-01'
+TODAY_DATE = datetime.strftime(datetime.date.now(), '%Y-%m-%d')
 LOGGERNAME = 'fetch_financial_reports.py'
 OUTSTANDINGREPORTEMAIL = 'latchmepersad@gmail.com'
 
@@ -94,7 +95,7 @@ def fetch_annual_reports():
         # now load the page with the reports
         logger.info(
             f"Now trying to fetch annual reports for {symbol_data['symbol']}")
-        annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}"
+        annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TODAY_DATE}"
         logger.info(f"Navigating to {annual_reports_url}")
         annual_reports_page = requests.get(
             annual_reports_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
@@ -218,7 +219,7 @@ def fetch_audited_statements():
         # now load the page with the reports
         logger.info(
             f"Now trying to fetch annual audited statements for {symbol_data['symbol']}")
-        annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}"
+        annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TODAY_DATE}"
         logger.info(f"Navigating to {annual_statements_url}")
         annual_statements_page = requests.get(
             annual_statements_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
@@ -342,7 +343,7 @@ def fetch_quarterly_statements():
         # now load the page with the reports
         logger.info(
             f"Now trying to fetch quarterly unaudited statements for {symbol_data['symbol']}")
-        quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}&date={QUARTERLY_STATEMENTS_START_DATE_STRING}"
+        quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}&date={QUARTERLY_STATEMENTS_START_DATE_STRING}&date_to={TODAY_DATE}"
         logger.info(f"Navigating to {quarterly_statements_url}")
         quarterly_statements_page = requests.get(
             quarterly_statements_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
