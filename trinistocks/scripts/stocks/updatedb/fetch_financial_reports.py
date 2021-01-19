@@ -792,11 +792,12 @@ def main(args):
         smtptoaddr=['latchmepersad@gmail.com'],
         smtpsubj='Automated report from Python script: '+os.path.basename(__file__))
     try:
+        logger = logging.getLogger(LOGGERNAME)
         # Set up a pidfile to ensure that only one instance of this script runs at a time
         with PidFile(piddir=tempfile.gettempdir()):
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(os.cpu_count(), custom_logging.logging_worker_init, [q]) as multipool:
-                logging.debug(
+                logger.debug(
                     "Downloading latest fundamental reports from the TTSE site.")
                 annual_reports_code = multipool.apply_async(
                     fetch_annual_reports, ())
@@ -805,9 +806,12 @@ def main(args):
                 quarterly_statements_code = multipool.apply_async(
                     fetch_quarterly_statements, ())
                 # now wait and ensure that all reports are downloaded
-                annual_reports_code.get()
-                audited_statements_code.get()
-                quarterly_statements_code.get()
+                logger.debug(
+                    f"Annual reports downloading function exited with code: {annual_reports_code.get()}")
+                logger.debug(
+                    f"Annual audited statements downloading function exited with code: {audited_statements_code.get()}")
+                logger.debug(
+                    f"Quarterly statements downloading function exited with code: {quarterly_statements_code.get()}")
                 logging.debug(
                     'Downloads complete. Now checking if any reports have not been processed.')
                 # now check if any reports are outstanding
@@ -819,8 +823,14 @@ def main(args):
                     alert_me_new_quarterly_statements, ())
                 # wait until the new report list is ready
                 new_annual_reports = res_new_annual_reports.get()
+                logger.debug(
+                    f"Annual reports processing check function exited with code: {new_annual_reports}")
                 new_audited_statements = res_new_audited_statements.get()
+                logger.debug(
+                    f"Audited statements processing check function exited with code: {new_audited_statements}")
                 new_quarterly_statements = res_new_quarterly_statements.get()
+                logger.debug(
+                    f"Quarterly statements processing check function exited with code: {new_quarterly_statements}")
                 multipool.close()
                 multipool.join()
                 # now send the email of outstanding reports

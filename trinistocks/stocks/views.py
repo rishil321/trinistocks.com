@@ -262,17 +262,23 @@ class FundamentalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Te
         return super(FundamentalAnalysisSummary, self).get(request)
 
     def get_queryset(self):
-        return models.FundamentalAnalysisSummary.objects.raw(
-            '''
-            select t.symbol, t.date, t.id
-            from calculated_fundamental_ratios t
-            inner join (
-                select symbol, max(date) as MaxDate
-                from calculated_fundamental_ratios
-                where report_type = 'annual'
-                group by symbol
-            ) tm on t.symbol = tm.symbol and t.date = tm.MaxDate
-            ''')
+        try:
+            dataset = self.model.objects.raw(
+                '''
+                SELECT * 
+                FROM calculated_fundamental_ratios WHERE (symbol,date) IN (
+                SELECT symbol, MAX(date)
+                FROM calculated_fundamental_ratios
+                WHERE report_type='annual'
+                GROUP BY symbol
+                )
+                AND report_type='annual'
+                '''
+            )
+            return dataset
+        except Exception as exc:
+            LOGGER.exception(
+                "Error found while fetching dataset.", exc_info=exc)
 
     def get_context_data(self, *args, **kwargs):
         try:
@@ -281,10 +287,6 @@ class FundamentalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Te
             context = super().get_context_data(
                 *args, **kwargs)
             LOGGER.info("Successfully loaded page.")
-        except ValueError as verr:
-            context['errors'] = ALERTMESSAGE+str(verr)
-            LOGGER.warning(
-                "Got a valueerror while loading this page"+str(verr))
         except Exception as ex:
             LOGGER.exception(
                 "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
@@ -1252,11 +1254,13 @@ class PortfolioSummaryView(LoginRequiredMixin, ExportMixin, tables2.views.Single
                 delete_request = self.request.GET['delete']
                 if delete_request == 'ALL':
                     current_data.delete()
-                    models.PortfolioTransactions.objects.filter(user=current_user).delete()
+                    models.PortfolioTransactions.objects.filter(
+                        user=current_user).delete()
                     delete_request_message = "All stocks deleted from portfolio successfully."
                 else:
                     current_data.filter(symbol_id=delete_request).delete()
-                    models.PortfolioTransactions.objects.filter(user=current_user).filter(symbol_id=delete_request).delete()
+                    models.PortfolioTransactions.objects.filter(
+                        user=current_user).filter(symbol_id=delete_request).delete()
                     delete_request_message = f"Stocks for {delete_request} deleted successfully."
             # set up the data for the graphs
             # first get the symbols and their market values
