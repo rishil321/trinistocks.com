@@ -29,7 +29,7 @@ import sqlalchemy.exc
 import requests
 import glob
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime,date
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
@@ -47,7 +47,7 @@ QUARTERLY_STATEMENTS_START_DATE_STRING = '2020-10-01'
 QUARTERLY_STATEMENTS_START_DATETIME = datetime.strptime(
     QUARTERLY_STATEMENTS_START_DATE_STRING, '%Y-%m-%d')
 ANNUAL_STATEMENTS_START_DATE_STRING = '2020-01-01'
-TODAY_DATE = datetime.strftime(datetime.date.now(), '%Y-%m-%d')
+TODAY_DATE = date.strftime(datetime.date.now(), '%Y-%m-%d')
 LOGGERNAME = 'fetch_financial_reports.py'
 OUTSTANDINGREPORTEMAIL = 'latchmepersad@gmail.com'
 
