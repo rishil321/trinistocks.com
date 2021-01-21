@@ -43,7 +43,7 @@ TTSE_NEWS_CATEGORIES = {'annual_reports': 56, 'articles': 57,
 WEBPAGE_LOAD_TIMEOUT_SECS = 30
 REPORTS_DIRECTORY = 'financial_reports'
 IGNORE_SYMBOLS = ['CPFV', 'GMLP', 'LJWA', 'LJWP', 'MOV', 'PPMF', 'SFC']
-QUARTERLY_STATEMENTS_START_DATE_STRING = '2020-10-01'
+QUARTERLY_STATEMENTS_START_DATE_STRING = '2020-01-01'
 QUARTERLY_STATEMENTS_START_DATETIME = datetime.strptime(
     QUARTERLY_STATEMENTS_START_DATE_STRING, '%Y-%m-%d')
 ANNUAL_STATEMENTS_START_DATE_STRING = '2020-01-01'
@@ -83,10 +83,10 @@ def fetch_annual_reports():
         reports_dir = current_dir.joinpath(
             REPORTS_DIRECTORY).joinpath(symbol_data['symbol'])
         if reports_dir.exists() and reports_dir.is_dir():
-            logger.info(
+            logger.debug(
                 f"Directory for {symbol_data['symbol']}'s annual reports found at {reports_dir}")
         else:
-            logger.info(
+            logger.debug(
                 f"Directory for {symbol_data['symbol']}'s annual reports not found at {reports_dir}. Trying to create.")
             reports_dir.mkdir()
             if not reports_dir.exists():
@@ -94,15 +94,15 @@ def fetch_annual_reports():
                     f"Could not create directory at {reports_dir}")
         # now load the page with the reports
         logger.info(
-            f"Now trying to fetch annual reports for {symbol_data['symbol']}")
+            f"Now trying to fetch annual reports for {symbol_data['symbol']} in PID {os.getpid()}")
         annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TODAY_DATE}"
-        logger.info(f"Navigating to {annual_reports_url}")
+        logger.debug(f"Navigating to {annual_reports_url}")
         annual_reports_page = requests.get(
             annual_reports_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
         if annual_reports_page.status_code != 200:
             raise requests.exceptions.HTTPError(
                 "Could not load URL. "+annual_reports_url)
-        logger.info("Successfully loaded webpage.")
+        logger.debug("Successfully loaded webpage.")
         # and search the page for the links to all annual reports
         annual_reports_page_soup = BeautifulSoup(
             annual_reports_page.text, 'lxml')
@@ -122,7 +122,7 @@ def fetch_annual_reports():
                 if report_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. "+annual_reports_url)
-                logger.info("Successfully loaded webpage.")
+                logger.debug("Successfully loaded webpage.")
                 # and search the page for the link to the actual pdf report
                 report_soup = BeautifulSoup(
                     report_page.text, 'lxml')
@@ -163,22 +163,23 @@ def fetch_annual_reports():
             # check if file was already downloaded
             full_local_path = reports_dir.joinpath(local_filename)
             if full_local_path.is_file():
-                logger.info(
+                logger.debug(
                     f"PDF file {local_filename} was already downloaded. Skipping.")
             else:
                 # else download this new pdf report
                 # get the http response
                 http_response_obj = requests.get(pdf['pdf_link'], stream=True)
                 # save contents of response (pdf report) to the local file
-                logger.info(
+                logger.debug(
                     f"Now downloading file {local_filename}. Please wait.")
                 with open(full_local_path, "wb") as local_pdf_file:
                     for chunk in http_response_obj.iter_content(chunk_size=1024):
                         # save chunks of pdf to local file
                         if chunk:
                             local_pdf_file.write(chunk)
-                logger.info("Finished download file.")
-    logger.info("Finished downloading all annual reports.")
+                logger.debug("Finished download file.")
+        logger.info(
+            f"Finished downloading all annual reports for {symbol_data['symbol']} in PID {os.getpid()}")
     return 0
 
 
@@ -207,10 +208,10 @@ def fetch_audited_statements():
         reports_dir = current_dir.joinpath(
             REPORTS_DIRECTORY).joinpath(symbol_data['symbol'])
         if reports_dir.exists() and reports_dir.is_dir():
-            logger.info(
+            logger.debug(
                 f"Directory for {symbol_data['symbol']}'s annual statements found at {reports_dir}")
         else:
-            logger.info(
+            logger.debug(
                 f"Directory for {symbol_data['symbol']}'s annual statements not found at {reports_dir}. Trying to create.")
             reports_dir.mkdir()
             if not reports_dir.exists():
@@ -218,15 +219,15 @@ def fetch_audited_statements():
                     f"Could not create directory at {reports_dir}")
         # now load the page with the reports
         logger.info(
-            f"Now trying to fetch annual audited statements for {symbol_data['symbol']}")
+            f"Now trying to fetch annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}")
         annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TODAY_DATE}"
-        logger.info(f"Navigating to {annual_statements_url}")
+        logger.debug(f"Navigating to {annual_statements_url}")
         annual_statements_page = requests.get(
             annual_statements_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
         if annual_statements_page.status_code != 200:
             raise requests.exceptions.HTTPError(
                 "Could not load URL. "+annual_statements_url)
-        logger.info("Successfully loaded webpage.")
+        logger.debug("Successfully loaded webpage.")
         # and search the page for the links to all annual reports
         annual_statements_page_soup = BeautifulSoup(
             annual_statements_page.text, 'lxml')
@@ -246,7 +247,7 @@ def fetch_audited_statements():
                 if report_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. "+annual_statements_url)
-                logger.info("Successfully loaded webpage.")
+                logger.debug("Successfully loaded webpage.")
                 # and search the page for the link to the actual pdf report
                 report_soup = BeautifulSoup(
                     report_page.text, 'lxml')
@@ -287,22 +288,23 @@ def fetch_audited_statements():
             # check if file was already downloaded
             full_local_path = reports_dir.joinpath(local_filename)
             if full_local_path.is_file():
-                logger.info(
+                logger.debug(
                     f"PDF file {local_filename} was already downloaded. Skipping.")
             else:
                 # else download this new pdf report
                 # get the http response
                 http_response_obj = requests.get(pdf['pdf_link'], stream=True)
                 # save contents of response (pdf report) to the local file
-                logger.info(
+                logger.debug(
                     f"Now downloading file {local_filename}. Please wait.")
                 with open(full_local_path, "wb") as local_pdf_file:
                     for chunk in http_response_obj.iter_content(chunk_size=1024):
                         # save chunks of pdf to local file
                         if chunk:
                             local_pdf_file.write(chunk)
-                logger.info("Finished download file.")
-    logger.info("Finished downloading all annual audited statements.")
+                logger.debug("Finished download file.")
+        logger.info(
+            f"Finished downloading all annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}")
     return 0
 
 
@@ -331,10 +333,10 @@ def fetch_quarterly_statements():
         reports_dir = current_dir.joinpath(
             REPORTS_DIRECTORY).joinpath(symbol_data['symbol'])
         if reports_dir.exists() and reports_dir.is_dir():
-            logger.info(
+            logger.debug(
                 f"Directory for {symbol_data['symbol']}'s quarterly statements found at {reports_dir}")
         else:
-            logger.info(
+            logger.debug(
                 f"Directory for {symbol_data['symbol']}'s quarterly statements not found at {reports_dir}. Trying to create.")
             reports_dir.mkdir()
             if not reports_dir.exists():
@@ -342,15 +344,15 @@ def fetch_quarterly_statements():
                     f"Could not create directory at {reports_dir}")
         # now load the page with the reports
         logger.info(
-            f"Now trying to fetch quarterly unaudited statements for {symbol_data['symbol']}")
+            f"Now trying to fetch quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}")
         quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}&date={QUARTERLY_STATEMENTS_START_DATE_STRING}&date_to={TODAY_DATE}"
-        logger.info(f"Navigating to {quarterly_statements_url}")
+        logger.debug(f"Navigating to {quarterly_statements_url}")
         quarterly_statements_page = requests.get(
             quarterly_statements_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
         if quarterly_statements_page.status_code != 200:
             raise requests.exceptions.HTTPError(
                 "Could not load URL. "+quarterly_statements_url)
-        logger.info("Successfully loaded webpage.")
+        logger.debug("Successfully loaded webpage.")
         # and search the page for the links to all annual reports
         quarterly_statements_page_soup = BeautifulSoup(
             quarterly_statements_page.text, 'lxml')
@@ -370,7 +372,7 @@ def fetch_quarterly_statements():
                 if report_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. "+quarterly_statements_url)
-                logger.info("Successfully loaded webpage.")
+                logger.debug("Successfully loaded webpage.")
                 # and search the page for the link to the actual pdf report
                 report_soup = BeautifulSoup(
                     report_page.text, 'lxml')
@@ -400,12 +402,12 @@ def fetch_quarterly_statements():
                         f'Could not find a release date for this report: {link}')
                 # now append our data
                 if pdf_release_date > QUARTERLY_STATEMENTS_START_DATETIME:
-                    logger.info(
+                    logger.debug(
                         "Report is new enough. Adding to download list.")
                     pdf_reports.append(
                         {'pdf_link': pdf_link, 'release_date': pdf_release_date})
                 else:
-                    logger.info("Report is too old. Discarding.")
+                    logger.debug("Report is too old. Discarding.")
             except (requests.exceptions.HTTPError, RuntimeError) as exc:
                 logger.warning(
                     f"Ran into an error while trying to get the download link for {link}. Skipping statement.", exc_info=exc)
@@ -416,22 +418,23 @@ def fetch_quarterly_statements():
             # check if file was already downloaded
             full_local_path = reports_dir.joinpath(local_filename)
             if full_local_path.is_file():
-                logger.info(
+                logger.debug(
                     f"PDF file {local_filename} was already downloaded. Skipping.")
             else:
                 # else download this new pdf report
                 # get the http response
                 http_response_obj = requests.get(pdf['pdf_link'], stream=True)
                 # save contents of response (pdf report) to the local file
-                logger.info(
+                logger.debug(
                     f"Now downloading file {local_filename}. Please wait.")
                 with open(full_local_path, "wb") as local_pdf_file:
                     for chunk in http_response_obj.iter_content(chunk_size=1024):
                         # save chunks of pdf to local file
                         if chunk:
                             local_pdf_file.write(chunk)
-                logger.info("Finished download file.")
-    logger.info("Finished downloading all quarterly unaudited statements.")
+                logger.debug("Finished download file.")
+        logger.info(
+            f"Finished downloading all quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}")
     return 0
 
 
@@ -463,8 +466,8 @@ def alert_me_new_annual_reports():
             symbol_available_annual_reports = set()
             symbol_processed_annual_reports = set()
             annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}"
-            logger.debug(
-                f"Now fetching latest available annual reports for {symbol_data['symbol']}")
+            logger.info(
+                f"Now checking latest available annual reports for {symbol_data['symbol']} in PID {os.getpid()}")
             logger.debug(f"Navigating to {annual_reports_url}")
             annual_reports_page = requests.get(
                 annual_reports_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
@@ -538,6 +541,8 @@ def alert_me_new_annual_reports():
                 if result[0]:
                     symbol_processed_annual_reports.add(result[0])
             # now compare both sets and see if any new reports were found
+            logger.debug(
+                "Now comparing downloaded and processed reports for all symbols.")
             for available_report in symbol_available_annual_reports:
                 available_report_processed_already = False
                 for processed_report in symbol_processed_annual_reports:
@@ -545,6 +550,8 @@ def alert_me_new_annual_reports():
                         available_report_processed_already = True
                 if not available_report_processed_already:
                     all_new_annual_reports.add(available_report)
+            logger.info(
+                f"Finished checks for {symbol_data['symbol']} in PID {os.getpid()}")
         # endregion
         return all_new_annual_reports
 
@@ -576,8 +583,8 @@ def alert_me_new_audited_statements():
         for symbol_data in all_symbols:
             symbol_available_audited_statements = set()
             symbol_processed_audited_statements = set()
-            logger.debug(
-                f"Now trying to fetch annual audited statements for {symbol_data['symbol']}")
+            logger.info(
+                f"Now trying to fetch annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}")
             annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}"
             logger.debug(f"Navigating to {annual_statements_url}")
             annual_statements_page = requests.get(
@@ -605,7 +612,7 @@ def alert_me_new_audited_statements():
                     if report_page.status_code != 200:
                         raise requests.exceptions.HTTPError(
                             "Could not load URL. "+annual_statements_url)
-                    logger.info("Successfully loaded webpage.")
+                    logger.debug("Successfully loaded webpage.")
                     # and search the page for the link to the actual pdf report
                     report_soup = BeautifulSoup(
                         report_page.text, 'lxml')
@@ -660,6 +667,8 @@ def alert_me_new_audited_statements():
                 if not available_report_processed_already:
                     all_new_audited_statements.add(available_report)
             # endregion
+            logger.info(
+                f"Finished checking outstanding audited statements for {symbol_data['symbol']} in PID {os.getpid()}")
         return all_new_audited_statements
 
 
@@ -690,8 +699,8 @@ def alert_me_new_quarterly_statements():
         for symbol_data in all_symbols:
             symbol_available_quarterly_statements = set()
             symbol_processed_quarterly_statements = set()
-            logger.debug(
-                f"Now trying to fetch quarterly unaudited statements for {symbol_data['symbol']}")
+            logger.info(
+                f"Now checking outstanding quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}")
             quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}"
             logger.debug(f"Navigating to {quarterly_statements_url}")
             quarterly_statements_page = requests.get(
@@ -778,6 +787,8 @@ def alert_me_new_quarterly_statements():
                         available_report_processed_already = True
                 if not available_report_processed_already:
                     all_new_quarterly_statements.add(available_report)
+            logger.info(
+                f"Finished checking outstanding quarterly reports for {symbol_data['symbol']} in PID {os.getpid()}")
         # endregion
         return all_new_quarterly_statements
 
@@ -825,16 +836,16 @@ def main(args):
                     alert_me_new_audited_statements, ())
                 res_new_quarterly_statements = multipool.apply_async(
                     alert_me_new_quarterly_statements, ())
-                # wait until the new report list is ready
+                # # wait until the new report list is ready
                 new_annual_reports = res_new_annual_reports.get()
                 logger.debug(
-                    f"Annual reports processing check function exited with code: {new_annual_reports}")
+                    f"Annual reports processing check function complete.")
                 new_audited_statements = res_new_audited_statements.get()
                 logger.debug(
-                    f"Audited statements processing check function exited with code: {new_audited_statements}")
+                    f"Audited statements processing check function complete.")
                 new_quarterly_statements = res_new_quarterly_statements.get()
                 logger.debug(
-                    f"Quarterly statements processing check function exited with code: {new_quarterly_statements}")
+                    f"Quarterly statements processing check function complete.")
                 multipool.close()
                 multipool.join()
                 # now send the email of outstanding reports
@@ -871,8 +882,9 @@ trinistocks.com
                         " executed successfully.")
         q_listener.stop()
         return 0
-    except Exception:
-        logger.exception("Error in script "+os.path.basename(__file__))
+    except Exception as exc:
+        logger.exception("Error in script " +
+                         os.path.basename(__file__), exc_info=exc)
         custom_logging.flush_smtp_logger()
 
 
