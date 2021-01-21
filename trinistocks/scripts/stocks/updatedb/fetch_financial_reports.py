@@ -799,7 +799,7 @@ def main(args):
     q_listener, q, logger = custom_logging.setup_logging(
         logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
         loggername=LOGGERNAME,
-        stdoutlogginglevel=logging.DEBUG,
+        stdoutlogginglevel=logging.INFO,
         smtploggingenabled=True,
         smtplogginglevel=logging.ERROR,
         smtpmailhost='localhost',
