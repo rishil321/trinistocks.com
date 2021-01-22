@@ -10,12 +10,52 @@ class HistoricalStockInfoTable(tables.Table):
     date = tables.DateColumn(verbose_name="Date")
     currency = tables.Column(
         accessor="symbol__currency", verbose_name="Currency")
-    open_price = tables.Column(verbose_name="Open Price ($)")
-    high = tables.Column(verbose_name="High ($)")
-    low = tables.Column(verbose_name="Low ($)")
-    close_price = tables.Column(verbose_name="Close Price ($)")
-    volume_traded = tables.Column(verbose_name="Volume Traded (Shares)")
-    change_dollars = tables.Column(verbose_name="Price Change ($)")
+    open_price = tables.Column(verbose_name="Open Price")
+    high = tables.Column(verbose_name="High")
+    low = tables.Column(verbose_name="Low")
+    close_price = tables.Column(verbose_name="Close Price")
+    volume_traded = tables.Column(verbose_name="Volume Traded")
+    change_dollars = tables.Column(verbose_name="Price Change")
+
+    def render_date(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_currency(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_open_price(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_high(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_low(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_close_price(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_volume_traded(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,} shares".format(value)
+
+    def render_change_dollars(self, value, column):
+        if value < 0:
+            column.attrs = {'td': {'style': 'color:red',
+                                   'data-label': column.verbose_name}}
+            return '-'+'$'+str(abs(value))
+        elif value > 0:
+            column.attrs = {'td': {'style': 'color:green',
+                                   'data-label': column.verbose_name}}
+        else:
+            column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
 
     class Meta:
         attrs = {"class": "djangotables"}
@@ -139,8 +179,17 @@ class ListedStocksTable(tables.Table):
 
 
 class ListedStocksPerSectorTable(tables.Table):
-    sector = tables.Column()
-    num_listed = tables.Column()
+    sector = tables.Column(verbose_name="Sector")
+    num_listed = tables.Column(verbose_name="Number Listed")
+
+    def render_sector(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_num_listed(self, value, column):
+        column.attrs = {
+            'td': {'data-label': column.verbose_name, 'class': 'limited_width_col'}}
+        return value
 
     class Meta:
         attrs = {"class": "djangotables"}
@@ -157,10 +206,43 @@ class HistoricalIndicesSummaryTable(tables.Table):
 
 
 class OSTradesHistoryTable(tables.Table):
+
+    date = tables.Column(verbose_name="Date")
+    volume_traded = tables.Column(verbose_name="Volume Traded")
+    os_bid = tables.Column(verbose_name="O/S Bid Price")
+    os_bid_vol = tables.Column(verbose_name="O/S Bid Volume")
+    os_offer = tables.Column(verbose_name="O/S Offer Price")
+    os_offer_vol = tables.Column("O/S Offer Volume")
+
+    def render_date(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_volume_traded(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,} shares".format(value)
+
+    def render_os_bid(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_os_bid_vol(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,} shares".format(value)
+
+    def render_os_offer(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_os_offer_vol(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,} shares".format(value)
+
     class Meta:
         model = models.DailyStockSummary
         attrs = {"class": "djangotables"}
-        fields = ('date', 'os_bid', 'os_bid_vol', 'os_offer', 'os_offer_vol')
+        fields = ('date', 'volume_traded', 'os_bid', 'os_bid_vol', 'os_offer',
+                  'os_offer_vol')
         export_formats = ['csv', 'xlsx']
 
 
@@ -277,31 +359,31 @@ class FundamentalAnalysisSummaryTable(tables.Table):
 
     def render_price_to_earnings_ratio(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.1f}".format(value)
+        return "{:,.2f}".format(value)
 
     def render_RoE(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.1f}".format(value)
+        return "{:,.2f}".format(value)
 
     def render_price_to_book_ratio(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.1f}".format(value)
+        return "{:,.2f}".format(value)
 
     def render_current_ratio(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.1f}".format(value)
+        return "{:,.2f}".format(value)
 
     def render_EPS(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.1f} $/share".format(value)
+        return "{:,.2f} $/share".format(value)
 
     def render_dividend_yield(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.1f}%".format(value)
+        return "{:,.2f}%".format(value)
 
     def render_dividend_payout_ratio(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.1f}%".format(value)
+        return "{:,.2f}%".format(value)
 
     class Meta:
         attrs = {'class': 'djangotables'}
@@ -310,34 +392,54 @@ class FundamentalAnalysisSummaryTable(tables.Table):
 
 class PortfolioSummaryTable(tables.Table):
 
-    symbol_id = tables.Column()
+    symbol_id = tables.Column(verbose_name="Symbol")
     sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
     shares_remaining = tables.Column(verbose_name='Number of Shares')
-    average_cost = tables.Column()
+    average_cost = tables.Column(verbose_name="Average Cost")
     current_market_price = tables.Column(verbose_name='Market Price')
-    book_cost = tables.Column()
-    market_value = tables.Column()
-    total_gain_loss = tables.Column(verbose_name='Total Gain(Loss)')
+    book_cost = tables.Column(verbose_name="Book Cost")
+    market_value = tables.Column(verbose_name="Market Value")
+    total_gain_loss = tables.Column(verbose_name='Overall Gain/Loss')
 
-    def render_average_cost(self, value):
-        return f"${value}"
+    def render_symbol_id(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
 
-    def render_current_market_price(self, value):
-        return f"${value}"
+    def render_sector(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
 
-    def render_book_cost(self, value):
-        return f"${value}"
+    def render_shares_remaining(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,} shares".format(value)
 
-    def render_market_value(self, value):
-        return f"${value}"
+    def render_average_cost(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_current_market_price(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_book_cost(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
+
+    def render_market_value(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
 
     def render_total_gain_loss(self, value, column):
         if value < 0:
-            column.attrs = {'td': {'bgcolor': '#ff9999'}}
-            return f"$({abs(value)})"
+            column.attrs = {'td': {'style': 'color:red',
+                                   'data-label': column.verbose_name}}
+            return '-'+'$'+str(abs(value))
+        elif value > 0:
+            column.attrs = {'td': {'style': 'color:green',
+                                   'data-label': column.verbose_name}}
         else:
-            column.attrs = {'td': {'bgcolor': '#80ff80'}}
-            return f"${value}"
+            column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "${:,.2f}".format(value)
 
     class Meta:
         attrs = {'class': 'djangotables'}

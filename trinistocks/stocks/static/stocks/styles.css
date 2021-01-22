@@ -402,7 +402,7 @@ th {
         margin-right: auto;
         border-left: solid 0.1rem black;
         border-right: solid 0.1rem black;
-        border-radius: 0.2rem;
+        border-radius: 0.25rem;
         border-collapse: separate;
     }
 

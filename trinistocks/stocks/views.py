@@ -1001,6 +1001,8 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             # also include the stock price below
             graph_labels_3 = [obj.date
                               for obj in historical_close_prices_1]
+            graph_labels_4 = [obj.date
+                              for obj in historical_close_prices_2]
             graph_close_prices_1 = [obj['close_price']
                                     for obj in historical_close_prices_1.values()]
             graph_close_prices_2 = [obj['close_price']
@@ -1015,6 +1017,7 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
             context['graph_labels_1'] = graph_labels_1
             context['graph_labels_2'] = graph_labels_2
             context['graph_labels_3'] = graph_labels_3
+            context['graph_labels_4'] = graph_labels_4
             context['quarterly_dates_1'] = quarterly_dates_1
             context['quarterly_dates_2'] = quarterly_dates_2
             context['symbol1'] = self.symbol1

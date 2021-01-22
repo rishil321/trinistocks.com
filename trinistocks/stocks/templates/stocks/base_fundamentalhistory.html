@@ -83,6 +83,7 @@
     {{ quarterly_dates_1|json_script:"quarterly_dates_1" }}
     {{ quarterly_dates_2|json_script:"quarterly_dates_2" }}
     {{ graph_labels_3|json_script:"graph_labels_3" }}
+    {{ graph_labels_4|json_script:"graph_labels_4" }}
     {{ graph_dataset_1|json_script:"graph_dataset_1" }}
     {{ graph_dataset_2|json_script:"graph_dataset_2" }}
     {{ quarterly_dataset_1|json_script:"quarterly_dataset_1" }}
@@ -180,20 +181,24 @@
 
     //second graph of stock close prices
     var graph_labels_3 = JSON.parse(document.getElementById('graph_labels_3').textContent);
+    var graph_labels_4 = JSON.parse(document.getElementById('graph_labels_4').textContent);
     var graph_close_prices_1 = JSON.parse(document.getElementById('graph_close_prices_1').textContent);
     var graph_close_prices_2 = JSON.parse(document.getElementById('graph_close_prices_2').textContent);
     var trace3 = {
         x: graph_labels_3,
         y: graph_close_prices_1,
         name :'{{symbol1}}',
-        mode: 'markers'
+        type:'scatter',
+        line: {shape: 'spline'},
+        mode: 'line+markers'
     };
     var trace4 = {
-    x: graph_labels_3,
-    y: graph_close_prices_2,
-    name :'{{symbol2}}',
-    mode: 'markers',
-    line: {shape: 'spline'},
+        x: graph_labels_4,
+        y: graph_close_prices_2,
+        name :'{{symbol2}}',
+        type:'scatter',
+        line: {shape: 'spline'},
+        mode: 'line+markers'
     };
     var data2 = [trace3,trace4];
     var layout2 = {
