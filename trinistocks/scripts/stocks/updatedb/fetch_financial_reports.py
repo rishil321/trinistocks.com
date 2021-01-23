@@ -868,7 +868,7 @@ trinistocks.com
                 msg["From"] = "trinistocks@gmail.com"
                 msg["To"] = OUTSTANDINGREPORTEMAIL
                 msg["Subject"] = "trinistocks: Outstanding Fundamental Reports"
-                p = Popen(["sendmail", "-t", "-oi"],
+                p = Popen(["/usr/sbin/sendmail", "-t", "-oi"],
                           stdin=PIPE, universal_newlines=True)
                 p.communicate(msg.as_string())
                 return_code = p.returncode

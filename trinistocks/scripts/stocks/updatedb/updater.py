@@ -135,8 +135,8 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     f"SELECT {daily_stock_summary_table_name}.symbol,{daily_stock_summary_table_name}.close_price, listed_equities.currency \
                     FROM {daily_stock_summary_table_name}, listed_equities WHERE \
                     {daily_stock_summary_table_name}.symbol = listed_equities.symbol AND {daily_stock_summary_table_name}.date='{latest_stock_date}';", db_connect.dbengine)
-                share_price_df['share_price_conversion_rates'] = share_price_df.apply(lambda x: 1/TTD_USD if
-                                                                                      x.currency == 'USD' else (1/TTD_JMD if x.currency == 'JMD' else (1/TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
+                share_price_df['share_price_conversion_rates'] = share_price_df.apply(lambda x: TTD_USD if
+                                                                                      x.currency == 'USD' else (TTD_JMD if x.currency == 'JMD' else (TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
                 # create a merged df to calculate the p/e
                 price_to_earnings_df = pd.merge(
                     raw_annual_data_df, share_price_df, how='inner', on='symbol')
