@@ -120,6 +120,9 @@
     {% block activepagetoggle %}
     $("#portfoliodropdown").toggleClass("has-background-red");
     $("#portfoliotransactionslink").toggleClass("has-background-red");
+    $("#optionsbutton").unbind("click");
+    $("#optionsbutton").toggleClass("graytext");
+    $("#optionstooltip").toggleClass("is-hidden");
     {% endblock %}
 
     {% block morejs%}

@@ -55,14 +55,88 @@ from scripts.stocks.updatedb import updater
 # Class definitions
 
 
-class LandingPageView(RedirectView):
+class HomePageView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+    """
+    Our homepage for trinistocks.com
+    """
+    template_name = 'stocks/base_homepage.html'
+    model = models.DailyStockSummary
+    table_class = stocks_tables.DailyTradingSummaryTable
+    filterset_class = filters.DailyTradingSummaryFilter
 
-    def get_redirect_url(self, *args, **kwargs):
-        base_url = reverse('stocks:dailytradingsummary', current_app="stocks")
-        query_string = urlencode({'date': stocks_template_tags.get_latest_date_dailytradingsummary(),
-                                  'wastradedtoday': 1, 'sort': '-valuetraded'})
-        url = '{}?{}'.format(base_url, query_string)
-        return url
+    def get(self, request, *args, **kwargs):
+        # get the filters included in the URL.
+        # If the required filters are not present, return a redirect
+        required_parameters = ['date', 'was_traded_today', 'sort']
+        for parameter in required_parameters:
+            try:
+                # check that each parameter has a value
+                if self.request.GET[parameter]:
+                    pass
+            except MultiValueDictKeyError:
+                LOGGER.warning(
+                    "Homepage requested without all parameters. Sending redirect.")
+                # if we are missing any parameters, return a redirect
+                base_url = reverse(
+                    'stocks:homepage', current_app="stocks")
+                query_string = urlencode({'date': stocks_template_tags.get_latest_date_dailytradingsummary(),
+                                          'was_traded_today': 1, 'sort': '-value_traded'})
+                url = '{}?{}'.format(base_url, query_string)
+                return redirect(url)
+        return super(HomePageView, self).get(request)
+
+    def get_context_data(self, *args, **kwargs):
+        try:
+            errors = ""
+            LOGGER.info("Home page was called")
+            # get the current context
+            context = super().get_context_data(
+                *args, **kwargs)
+            selected_date = datetime.strptime(
+                self.request.GET.get('date'), "%Y-%m-%d")
+            # Now select the records corresponding to the selected date
+            # as well as their symbols, and order by the highest volume traded
+            daily_trading_summary_records = models.DailyStockSummary.objects.exclude(was_traded_today=0).filter(
+                date=selected_date).select_related('symbol').order_by('-value_traded')
+            if not daily_trading_summary_records:
+                raise ValueError(
+                    "No data available for the date selected.")
+            # rename the symbol field properly and select only required fields
+            selected_records = daily_trading_summary_records.values(
+                'symbol', 'value_traded')
+            # check if an export request was received
+            # Set up the graph
+            # get the top 10 records by value traded
+            graph_symbols = [record['symbol']
+                             for record in selected_records[:10]]
+            graph_value_traded = [record['value_traded']
+                                  for record in selected_records[:10]]
+            # create a category for the sum of all other symbols (not in the top 10)
+            others = dict(symbol='Others', value_traded=0)
+            for record in selected_records:
+                if (record['symbol'] not in graph_symbols) and record['value_traded']:
+                    others['value_traded'] += record['value_traded']
+            # add the 'other' category to the graph
+            graph_symbols.append(others['symbol'])
+            graph_value_traded.append(others['value_traded'])
+            # get a human readable date
+            selected_date_parsed = selected_date.strftime('%Y-%m-%d')
+            # Now add our context data and return a response
+            context['errors'] = errors
+            context['selected_date'] = selected_date.date()
+            context['selected_date_parsed'] = selected_date_parsed
+            context['graph_symbols'] = graph_symbols
+            context['graph_value_traded'] = graph_value_traded
+            LOGGER.info("Successfully loaded page.")
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            LOGGER.warning(
+                "Got a value error while loading this page"+str(verr))
+        except Exception as ex:
+            LOGGER.exception(
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
 
 
 class DailyTradingSummaryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
@@ -232,13 +306,38 @@ class TechnicalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Filt
         return context
 
 
-class FundamentalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, TemplateView):
+class FundamentalAnalysisSummary(ExportMixin, tables2.views.MultiTableMixin, TemplateView):
     """
     Set up the data for the technical analysis summary page
     """
     template_name = 'stocks/base_fundamentalanalysissummary.html'
     model = models.FundamentalAnalysisSummary
-    table_class = stocks_tables.FundamentalAnalysisSummaryTable
+    qs1 = model.objects.raw(
+        '''
+        SELECT * 
+        FROM calculated_fundamental_ratios WHERE (symbol,date) IN (
+        SELECT symbol, MAX(date)
+        FROM calculated_fundamental_ratios
+        WHERE report_type='annual'
+        GROUP BY symbol
+        )
+        AND report_type='annual'
+        '''
+    )
+    qs2 = model.objects.raw(
+        '''
+        SELECT * 
+        FROM calculated_fundamental_ratios WHERE (symbol,date) IN (
+        SELECT symbol, MAX(date)
+        FROM calculated_fundamental_ratios
+        WHERE report_type='quarterly'
+        GROUP BY symbol
+        )
+        AND report_type='quarterly'
+        '''
+    )
+    tables = [stocks_tables.FundamentalAnalysisSummaryTable(
+        qs1), stocks_tables.FundamentalAnalysisSummaryTable(qs2)]
     table_pagination = False
 
     def get(self, request, *args, **kwargs):
@@ -260,25 +359,6 @@ class FundamentalAnalysisSummary(ExportMixin, tables2.views.SingleTableMixin, Te
                 url = '{}?{}'.format(base_url, query_string)
                 return redirect(url)
         return super(FundamentalAnalysisSummary, self).get(request)
-
-    def get_queryset(self):
-        try:
-            dataset = self.model.objects.raw(
-                '''
-                SELECT * 
-                FROM calculated_fundamental_ratios WHERE (symbol,date) IN (
-                SELECT symbol, MAX(date)
-                FROM calculated_fundamental_ratios
-                WHERE report_type='annual'
-                GROUP BY symbol
-                )
-                AND report_type='annual'
-                '''
-            )
-            return dataset
-        except Exception as exc:
-            LOGGER.exception(
-                "Error found while fetching dataset.", exc_info=exc)
 
     def get_context_data(self, *args, **kwargs):
         try:
@@ -521,7 +601,7 @@ class DividendHistoryView(FilterView):
             LOGGER.debug("Loading context keys.")
             context['listed_stocks'] = listed_stocks
             context['selected_symbol'] = self.selected_symbol
-            context['selected_stock_name'] = self.selected_stock.security_name.title()
+            context['selected_stock_name'] = self.selected_stock.security_name
             context['selected_stock_symbol'] = self.selected_stock.symbol
             context['entered_start_date'] = self.entered_start_date.strftime(
                 '%Y-%m-%d')
@@ -1249,7 +1329,8 @@ class PortfolioSummaryView(LoginRequiredMixin, ExportMixin, tables2.views.Single
         try:
             LOGGER.info("Successfully loaded page.")
             current_user = get_user_model().objects.get(username=self.request.user.username)
-            current_data = self.model.objects.filter(user=current_user)
+            current_data = self.model.objects.filter(
+                user=current_user).order_by('-market_value')
             context['current_username'] = self.request.user.username
             # check which GET variables were included in the request
             delete_request_message = None
@@ -1285,6 +1366,7 @@ class PortfolioSummaryView(LoginRequiredMixin, ExportMixin, tables2.views.Single
             sectors = sectors_df['sector'].to_list()
             market_values = sectors_df['market_value'].to_list()
             sector_market_values = [float(x) for x in market_values]
+            sector_market_values.sort(reverse=True)
             # set up our context variables to graph
             context['symbols'] = symbols
             context['symbol_market_values'] = symbol_market_values

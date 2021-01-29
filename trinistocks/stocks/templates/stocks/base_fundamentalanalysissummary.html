@@ -14,8 +14,14 @@
     {% block mainblock %}
     <h1>Fundamental Analysis Summary</h1>
     <br>
+    <h2>Audited Data</h2>
     <div class="tablediv_scroll">
-        {% render_table table %}
+        {% render_table tables.0 %}
+    </div>
+    <br>
+    <h2>Unaudited Data</h2>
+    <div class="tablediv_scroll">
+        {% render_table tables.1 %}
     </div>
     {% endblock mainblock %}
 
@@ -27,4 +33,7 @@
     {% block activepagetoggle %}
     $("#summarizeddropdown").toggleClass("has-background-red");
     $("#fundamentalanalysislink").toggleClass("has-background-red");
+    $("#optionsbutton").unbind("click");
+    $("#optionsbutton").toggleClass("graytext");
+    $("#optionstooltip").toggleClass("is-hidden");
     {% endblock %}

@@ -9,8 +9,8 @@
 
     {% block customizationbar %}
 
-    <div class="column">
-        <label class="" for="symbol">Stock:</label>
+    <div class="panelblock">
+        <label class="panellabel" for="symbol">Stock:</label>
         <select class="custom-dropdown" id="symbol" name="symbol">
             <!--Add options based on dictionary items returned-->
             {% for listed_stock in listed_stocks %}
@@ -23,17 +23,17 @@
         </select>
     </div>
 
-    <div class="column">
-       <label class="" for="startdate">Start Date:</label>
+    <div class="panelblock">
+       <label class="panellabel" for="startdate">Start Date:</label>
         <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="record_date__gte">
     </div>
 
-    <div class="column">
+    <div class="panelblock">
         <label for="enddate" class="">End Date:</label>
         <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="record_date__lte"/>
     </div>
 
-    <div class="column">
+    <div class="panelblock">
         <input type="hidden" value="-record_date" name="sort"></input>
         <input name="configure_button"  class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:dividendhistory' %}" value="Search"/>
     </div>

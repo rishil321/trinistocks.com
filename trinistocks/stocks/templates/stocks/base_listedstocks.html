@@ -31,4 +31,7 @@
     {% block activepagetoggle %}
     $("#summarizeddropdown").toggleClass("has-background-red");
     $("#listedstockslink").toggleClass("has-background-red");
+    $("#optionsbutton").unbind("click");
+    $("#optionsbutton").toggleClass("graytext");
+    $("#optionstooltip").toggleClass("is-hidden");
     {% endblock %}

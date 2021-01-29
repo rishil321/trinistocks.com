@@ -9,36 +9,26 @@
     "@context" : "http://schema.org",
     "@type" : "Dataset",
     "name" : "Stocks Traded on the TTSE",
-    "description" : "Latest daily stock trading data from the Trinidad and Tobago Stock Exchange (TTSE)"
+    "description" : "Latest data for trini stocks from the Trinidad and Tobago Stock Exchange (TTSE)"
     }
     </script>
     {% endblock headerscripts%}
 
-    {% block description %}Daily volume,price changes etc. for stocks traded on the 
+    {% block description %}Daily volume,price changes etc. for trini stocks traded on the 
     Trinidad and Tobago Stock Exchange (TTSE)
     {% endblock description %}
 
-    {% block title %}trinistocks | Daily Trades
+    {% block title %}trinistocks | Home
     {% endblock title %}
 
     {% block customizationbar%}
-        <div class="panel-block">
-            <label class="panellabel" for="date">Trading date</label>
-            <input type="date" class="custom-date-selector" value="{{ selected_date_parsed }}" id="date" name="date">
-        </div>
-        <div class="panel-block">
-            <input type="hidden" value="1" name="was_traded_today"></input>
-            <input type="hidden" value="-value_traded" name="sort"></input>
-            <input type="submit" name="configure_button" class="custom-red-button vertical-center" onclick="location.href='{% url 'stocks:dailytradingsummary' %}" value="Search"/>
-        </div>
     {% endblock customizationbar%}
 
     {% block mainblock %}
     <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selected_date }}</h1>
     <!-- Chart -->
-    <div id="chartdiv" class="chart-div" style="">
-    </div>
-    <div class="is-clearfix clearfix"></div>    
+    <div id="chartdiv" class="chart-div" style=""></div>
+    <div class="is-clearfix clearfix"></div>
     {% render_table table %}
     {% endblock mainblock %}
 
@@ -50,18 +40,23 @@
     var value_traded = JSON.parse(document.getElementById('graph_value_traded').textContent);
     var data = [
         {
-            x: js_symbols,
-            y: value_traded,
+            y: js_symbols,
+            x: value_traded,
             marker:{
                 color: ['#ff3300','#ff5410','#ff6c22','#ff8134','#ff9347','#ffa45b','#ffb470','#ffc387','#ffd29f','#ffd29f','#ffd499']
             },
-            type: 'bar'
+            textinfo: "label+percent",
+            hoverinfo: "label+percent",
+            textposition: "outside",
+            automargin: true,
+            type: 'bar',
+            orientation:'h'
         }
     ];
     var layout = {
         xaxis: {
             automargin: true,
-            title: {text:'Ticker Symbol',
+            title: {text:'Dollar Volume Traded ($)',
             standoff: 20
             },
             titlefont: {
@@ -76,26 +71,31 @@
             showexponent: 'all'
         },
         yaxis: {
-            title: 'Dollar Volume Traded ($)',
+            automargin: true,
+            title: {text:'Ticker Symbol',
+            standoff: 0},
             titlefont: {
             size: 20
             },
             showticklabels: true,
-            tickangle: 45,
+            tickangle: 'auto',
             tickfont: {
             size: 16
             },
             exponentformat: 'SI',
-            showexponent: 'all'
+            showexponent: 'all',
+            autorange: 'reversed'
         }
-        };
-    Plotly.newPlot('chartdiv', data, layout);
+    };
+    Plotly.newPlot('chartdiv', data,layout);
     </script>
     {% endblock chartjs %}
     <!-- END MAIN -->
     
     <!--Javascript-->
     {% block activepagetoggle %}
-    $("#summarizeddropdown").toggleClass("has-background-red");
-    $("#dailytradingsummarylink").toggleClass("has-background-red");
+    $("#homelink").toggleClass("has-background-red");
+    $("#optionsbutton").unbind("click");
+    $("#optionsbutton").toggleClass("graytext");
+    $("#optionstooltip").toggleClass("is-hidden");
     {% endblock %}

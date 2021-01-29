@@ -55,33 +55,102 @@ trinistocks | Portfolio Summary
 {% block chartjs %}
 <script>
   var data1 = [{
-    values: {{symbol_market_values | safe}},
-    labels:{{symbols | safe}},
-    type: 'pie',
+    x: {{symbol_market_values | safe}},
+    y:{{symbols | safe}},
+    type: 'bar',
+    marker:{
+      'color':Array.from({length: {{symbols | safe}}.length}, (x, i) => i).reverse(),
+      'colorscale': 'Reds'},
+    autocolorscale:true,
     textinfo: "label+percent",
     hoverinfo: "label+percent",
     textposition: "outside",
-    automargin: true
+    automargin: true,
+    orientation:'h'
   }];
   var layout1 = {
-    title: 'Currents Stocks In Portfolio (By Market Value)',
-    showlegend: false
+    title: 'Current Market Value per Symbol',
+  xaxis: {
+      automargin: true,
+      title: {text:'Current Market Value ($)',
+      standoff: 20
+      },
+      titlefont: {
+      size: 20
+      },
+      showticklabels: true,
+      tickangle: 'auto',
+      tickfont: {
+      size: 14
+      },
+      exponentformat: 'SI',
+      showexponent: 'all'
+  },
+  yaxis: {
+      automargin: true,
+      title: {text:'Ticker Symbol',
+      standoff: 10},
+      titlefont: {
+      size: 20
+      },
+      showticklabels: true,
+      tickangle: 'auto',
+      tickfont: {
+      size: 16
+      },
+      exponentformat: 'SI',
+      showexponent: 'all',
+      autorange: 'reversed'
+  }
   };
-  Plotly.newPlot('chartdiv1', data1, layout1, {
-    responsive: true
-  });
+  Plotly.newPlot('chartdiv1', data1, layout1);
   var data2 = [{
-    values: {{sector_market_values | safe}},
-    labels: {{sectors | safe}},
-    type: 'pie',
+    x: {{sector_market_values | safe}},
+    y: {{sectors | safe}},
     textinfo: "label+percent",
     hoverinfo: "label+percent",
     textposition: "outside",
-    automargin: true
+    automargin: true,
+    type: 'bar',
+    marker:{
+      'color':Array.from({length: {{symbols | safe}}.length}, (x, i) => i).reverse(),
+      'colorscale': 'Rainbow'},
+    orientation:'h'
   }];
   var layout2 = {
-    title: 'Currents Sectors In Portfolio (By Market Value)',
-    showlegend: false
+    title: 'Current Market Value per Sector',
+  xaxis: {
+      automargin: true,
+      title: {text:'Total Sector Market Value ($)',
+      standoff: 20
+      },
+      titlefont: {
+      size: 20
+      },
+      showticklabels: true,
+      tickangle: 'auto',
+      tickfont: {
+      size: 14
+      },
+      exponentformat: 'SI',
+      showexponent: 'all'
+  },
+  yaxis: {
+      automargin: true,
+      title: {text:'Sector',
+      standoff: 10},
+      titlefont: {
+      size: 20
+      },
+      showticklabels: true,
+      tickangle: 'auto',
+      tickfont: {
+      size: 16
+      },
+      exponentformat: 'SI',
+      showexponent: 'all',
+      autorange: 'reversed'
+  }
   };
   Plotly.newPlot('chartdiv2', data2, layout2, {
     responsive: true
@@ -95,6 +164,9 @@ trinistocks | Portfolio Summary
 {% block activepagetoggle %}
 $("#portfoliodropdown").toggleClass("has-background-red");
 $("#portfoliosummarylink").toggleClass("has-background-red");
+$("#optionsbutton").unbind("click");
+$("#optionsbutton").toggleClass("graytext");
+$("#optionstooltip").toggleClass("is-hidden");
 {% endblock activepagetoggle%}
 
 {%block morejs%}

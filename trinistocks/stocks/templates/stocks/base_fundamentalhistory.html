@@ -10,8 +10,8 @@
 
     {% block customizationbar %}
 
-    <div class="column">
-        <label class="" for="indicator">Indicator<br></label>
+    <div class="panelblock">
+        <label class="panellabel" for="indicator">Indicator:</label>
         <select class="custom-date-selector" id="indicator" name="indicator">
             <!--Add options based on dictionary items returned-->
             {% for indicator in all_indicators %}
@@ -24,8 +24,8 @@
         </select>
     </div>
 
-    <div class="column">
-        <label class="" for="symbol1">Stock 1<br></label>
+    <div class="panelblock">
+        <label class="panellabel" for="symbol1">Stock 1:</label>
         <select class="custom-date-selector" id="symbol1" name="symbol1">
             <!--Add options based on dictionary items returned-->
             {% for listed_stock in listed_stocks %}
@@ -38,8 +38,8 @@
         </select>
     </div>
 
-    <div class="column">
-        <label class="" for="symbol2">Stock 2<br></label>
+    <div class="panelblock">
+        <label class="panellabel" for="symbol2">Stock 2:</label>
         <select class="custom-date-selector" id="symbol2" name="symbol2">
             <!--Add options based on dictionary items returned-->
             {% for listed_stock in listed_stocks %}
@@ -52,13 +52,13 @@
         </select>
     </div>
 
-    <div class="column">
-        <label class="" for="startdate">Start Date<br></label>
+    <div class="panelblock">
+        <label class="" for="startdate">Start Date:</label>
         <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte" >
     </div>
 
     <div class="column">
-        <label class="" for="enddate">End Date<br></label>
+        <label class="" for="enddate">End Date:</label>
         <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
     </div>
 

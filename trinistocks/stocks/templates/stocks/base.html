@@ -60,7 +60,7 @@
     <nav style="" class="navbar is-black" role="navigation" aria-label="main navigation" id="navbartop">
         <div class="navbar-brand">
             <img class="navbaricon" src="{%  static 'stocks/trinistocks_horizontal_transparent.png' %}">
-            <a class="navbar-item tooltip" id="homelink" href="{% url "stocks:landingpage" %}">
+            <a class="navbar-item tooltip homebutton" id="homelink" href="{% url "stocks:homepage" %}">
             <span class="tooltiptext bottom">Home</span>
             <i class="fas fa-1x fa-home"></i></a>
             {%if request.user.is_authenticated %}
@@ -74,6 +74,9 @@
                 <i class="fas fa-1x fa-user-times"></i>
                 </a>
             {% endif %}
+            <a class="navbar-item tooltip lastbutton" id="optionsbutton">
+            <span id="optionstooltip" class="tooltiptext bottom">Options</span>
+            <i class="fas fa-1x fa-filter"></i></a>
             <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="left_sidebar" id="navbar_burger">
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
@@ -115,17 +118,19 @@
         </div>
     </nav>
     {% endblock %}
-
     <br>
     <form method="get">
-    <div class="columns is-centered is-multiline is-vcentered" id="customizationbar" style="text-align:center;">
+    <nav id="optionspanel" class="panel is-hidden">
+        <p class="panel-heading">
+            Options
+        </p>
         {% block customizationbar%}
         {% endblock customizationbar%}
-    </div>
+    </nav>
     </form>
 
     <!-- Main content-->
-    <br>
+
     <div class="vertical-flex-container">
         <div class="vertical-flex-container">
             {% block mainblock %}
@@ -151,9 +156,9 @@
             $(".navbar-menu").toggleClass("is-active");
         });
         //trigger the red background for the config button
-        $("#configbutton").click(function() {
-            $("#sidepanel").toggleClass("is-hidden");
-            $("#configbutton").toggleClass("has-background-red");
+        $("#optionsbutton").click(function() {
+            $("#optionspanel").toggleClass("is-hidden");
+            $("#optionsbutton").toggleClass("has-background-red");
         });
         //display the guilt trip paragraph if adblock is enabled
         $(function(){
