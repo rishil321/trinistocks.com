@@ -33,7 +33,7 @@ import sqlalchemy.exc
 # Imports from the local filesystem
 from ...database_ops import DatabaseConnect
 from ... import custom_logging
-from ..crosslisted_symbols import USD_DIVIDEND_SYMBOLS, JMD_DIVIDEND_SYMBOLS, BBD_DIVIDEND_SYMBOLS
+from ..crosslisted_symbols import USD_DIVIDEND_SYMBOLS, JMD_DIVIDEND_SYMBOLS, BBD_DIVIDEND_SYMBOLS, USD_STOCK_SYMBOLS
 
 # endregion IMPORTS
 
@@ -132,14 +132,14 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;", db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
                 # then get the share price for each listed stock at this date
                 share_price_df = pd.io.sql.read_sql(
-                    f"SELECT {daily_stock_summary_table_name}.symbol,{daily_stock_summary_table_name}.close_price, listed_equities.currency \
-                    FROM {daily_stock_summary_table_name}, listed_equities WHERE \
-                    {daily_stock_summary_table_name}.symbol = listed_equities.symbol AND {daily_stock_summary_table_name}.date='{latest_stock_date}';", db_connect.dbengine)
-                share_price_df['share_price_conversion_rates'] = share_price_df.apply(lambda x: TTD_USD if
-                                                                                      x.currency == 'USD' else (TTD_JMD if x.currency == 'JMD' else (TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
-                # create a merged df to calculate the p/e
+                    f"SELECT symbol,close_price \
+                    FROM {daily_stock_summary_table_name} WHERE \
+                    {daily_stock_summary_table_name}.date='{latest_stock_date}';", db_connect.dbengine)
+                # create a merged df
                 price_to_earnings_df = pd.merge(
                     raw_annual_data_df, share_price_df, how='inner', on='symbol')
+                price_to_earnings_df['share_price_conversion_rates'] = price_to_earnings_df.apply(lambda x: TTD_USD if
+                                                                                                  x.currency == 'USD' else (TTD_JMD if x.currency == 'JMD' else (TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
                 calculated_fundamental_ratios_df['price_to_earnings_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
                     price_to_earnings_df['basic_earnings_per_share']
                 # now calculate the price to dividend per share ratio
@@ -151,6 +151,7 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     share_price_df, dividends_df, how='inner', on='symbol')
                 # calculate dividend yield and dividend payout ratio
                 # add the dividend conversion rates for this df as well
+                # first note that dividends are paid in various currencies, so we need to convert them all to TTD
                 symbols_list = price_to_earnings_df['symbol'].to_list()
                 conversion_rates = []
                 for symbol in symbols_list:
@@ -164,14 +165,24 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                         conversion_rates.append(1.00)
                 price_to_earnings_df['dividend_conversion_rates'] = pd.Series(
                     conversion_rates, index=price_to_earnings_df.index)
+                # now calculate a conversion rate for the price for the dividend yields
+                conversion_rates = []
+                for symbol in symbols_list:
+                    if symbol in USD_STOCK_SYMBOLS:
+                        conversion_rates.append(1/TTD_USD)
+                    else:
+                        conversion_rates.append(1.00)
+                price_to_earnings_df['dividend_stock_price_conversion_rates'] = pd.Series(
+                    conversion_rates, index=price_to_earnings_df.index)
                 # note that the price_to_earnings_df contains the share price
                 calculated_fundamental_ratios_df['dividend_yield'] = 100 * \
                     (price_to_earnings_df['dividends_per_share']*price_to_earnings_df['dividend_conversion_rates']) / \
-                    (price_to_earnings_df['close_price'])
+                    (price_to_earnings_df['close_price'] *
+                     price_to_earnings_df['dividend_stock_price_conversion_rates'])
                 # now dividend payout ratio
                 calculated_fundamental_ratios_df['dividend_payout_ratio'] = 100 * price_to_earnings_df['total_dividends_paid'] / \
                     price_to_earnings_df['net_income']
-                # we need to set up a series with the conversion factors for different currencies
+                # first calculate the conversion factors for different dividend currencies to TTD
                 symbols_list = dividends_df['symbol'].to_list()
                 conversion_rates = []
                 for symbol in symbols_list:
@@ -186,8 +197,17 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                 # now add this new series to our df
                 dividends_df['dividend_conversion_rates'] = pd.Series(
                     conversion_rates, index=dividends_df.index)
+                # now calculate a conversion rate for the price
+                conversion_rates = []
+                for symbol in symbols_list:
+                    if symbol in USD_STOCK_SYMBOLS:
+                        conversion_rates.append(1/TTD_USD)
+                    else:
+                        conversion_rates.append(1.00)
+                dividends_df['price_conversion_rates'] = pd.Series(
+                    conversion_rates, index=dividends_df.index)
                 # calculate the price to dividend per share ratio
-                calculated_fundamental_ratios_df['price_to_dividends_per_share_ratio'] = dividends_df['close_price'] / \
+                calculated_fundamental_ratios_df['price_to_dividends_per_share_ratio'] = (dividends_df['close_price']*dividends_df['price_conversion_rates']) / \
                     (dividends_df['dividend_amount'] *
                      dividends_df['dividend_conversion_rates'])
                 # now calculate the eps growth rate
