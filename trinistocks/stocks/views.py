@@ -1,7 +1,7 @@
 # region IMPORTS
 # Imports from standard Python lib
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 # Imports from cheese factory
 import dateutil
 from django.core.exceptions import ValidationError
@@ -43,6 +43,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.template import Context
+import simplejson
 # Imports from local machine
 from stocks import models, filters
 from stocks import tables as stocks_tables
@@ -94,6 +95,11 @@ class HomePageView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                 *args, **kwargs)
             selected_date = datetime.strptime(
                 self.request.GET.get('date'), "%Y-%m-%d")
+            # get the date one week back for the market indexes
+            trailing_30d_date = selected_date - timedelta(days=30)
+            if not selected_date:
+                raise RuntimeError(
+                    "Could not get a valid date for this query.")
             # Now select the records corresponding to the selected date
             # as well as their symbols, and order by the highest volume traded
             daily_trading_summary_records = models.DailyStockSummary.objects.exclude(was_traded_today=0).filter(
@@ -121,12 +127,44 @@ class HomePageView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
             graph_value_traded.append(others['value_traded'])
             # get a human readable date
             selected_date_parsed = selected_date.strftime('%Y-%m-%d')
+            # Now set up the data for the market indexes
+            market_indexes_records = models.HistoricalIndicesInfo.objects.filter(date__gt=trailing_30d_date).filter(
+                date__lt=selected_date).order_by('date')
+            tnt_data = market_indexes_records.filter(
+                index_name='All T&T Totals')
+            tnt_values = [obj.index_value for obj in tnt_data]
+            tnt_dates = [datetime.strftime(
+                obj.date, "%d-%m-%Y") for obj in tnt_data]
+            composite_data = market_indexes_records.filter(
+                index_name='Composite Totals')
+            composite_dates = [datetime.strftime(
+                obj.date, "%d-%m-%Y") for obj in composite_data]
+            composite_values = [obj.index_value for obj in composite_data]
+            cross_listed_data = market_indexes_records.filter(
+                index_name='Cross-Listed Totals')
+            cross_listed_dates = [datetime.strftime(
+                obj.date, "%d-%m-%Y") for obj in cross_listed_data]
+            cross_listed_values = [
+                obj.index_value for obj in cross_listed_data]
+            sme_data = market_indexes_records.filter(
+                index_name='Sme Totals')
+            sme_dates = [datetime.strftime(
+                obj.date, "%d-%m-%Y") for obj in sme_data]
+            sme_values = [obj.index_value for obj in sme_data]
             # Now add our context data and return a response
             context['errors'] = errors
             context['selected_date'] = selected_date.date()
             context['selected_date_parsed'] = selected_date_parsed
             context['graph_symbols'] = graph_symbols
             context['graph_value_traded'] = graph_value_traded
+            context['tnt_dates'] = tnt_dates
+            context['tnt_values'] = tnt_values
+            context['composite_dates'] = composite_dates
+            context['composite_values'] = composite_values
+            context['cross_listed_dates'] = cross_listed_dates
+            context['cross_listed_values'] = cross_listed_values
+            context['sme_dates'] = sme_dates
+            context['sme_values'] = sme_values
             LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)

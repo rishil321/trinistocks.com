@@ -25,9 +25,11 @@
     {% endblock customizationbar%}
 
     {% block mainblock %}
-    <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selected_date }}</h1>
+    <h1 style="" class="" id="charttitle">TTSE Trailing 30-Day Market Indexes</h1>
+    <div id="chartdiv2" class="chart-div" style=""></div>
     <!-- Chart -->
-    <div id="chartdiv" class="chart-div" style=""></div>
+    <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selected_date }}</h1>
+    <div id="chartdiv1" class="chart-div" style=""></div>
     <div class="is-clearfix clearfix"></div>
     {% render_table table %}
     {% endblock mainblock %}
@@ -35,7 +37,16 @@
     {% block chartjs %}
     {{ graph_value_traded|json_script:"graph_value_traded" }}
     {{ graph_symbols|json_script:"graph_symbols" }}
+    {{ tnt_dates|json_script:"tnt_dates" }}
+    {{ tnt_values|json_script:"tnt_values" }}
+    {{ composite_dates|json_script:"composite_dates" }}
+    {{ composite_values|json_script:"composite_values" }}
+    {{ cross_listed_dates|json_script:"cross_listed_dates" }}
+    {{ cross_listed_values|json_script:"cross_listed_values" }}
+    {{ sme_dates|json_script:"sme_dates" }}
+    {{ sme_values|json_script:"sme_values" }}
     <script>
+    // plot daily dollar volume bar graph
     var js_symbols = JSON.parse(document.getElementById('graph_symbols').textContent);
     var value_traded = JSON.parse(document.getElementById('graph_value_traded').textContent);
     var data = [
@@ -87,7 +98,99 @@
             autorange: 'reversed'
         }
     };
-    Plotly.newPlot('chartdiv', data,layout);
+    Plotly.newPlot('chartdiv1', data,layout);
+    // plot stock market indexes
+    var tnt_dates = JSON.parse(document.getElementById('tnt_dates').textContent);
+    var tnt_values = JSON.parse(document.getElementById('tnt_values').textContent);
+    var composite_dates = JSON.parse(document.getElementById('composite_dates').textContent);
+    var composite_values = JSON.parse(document.getElementById('composite_values').textContent);
+    var cross_listed_dates = JSON.parse(document.getElementById('cross_listed_dates').textContent);
+    var cross_listed_values = JSON.parse(document.getElementById('cross_listed_values').textContent);
+    var sme_dates = JSON.parse(document.getElementById('sme_dates').textContent);
+    var sme_values = JSON.parse(document.getElementById('sme_values').textContent);
+    var tnt_trace = {
+        x: tnt_dates,
+        y: tnt_values,
+        name :'All T&T Index',
+        type:'scatter',
+        xaxis: 'x1',
+        yaxis: 'y1',
+    };
+    var composite_trace = {
+        x: composite_dates,
+        y: composite_values,
+        name :'Composite Index',
+        type:'scatter',
+        xaxis: 'x2',
+        yaxis: 'y2',
+    };
+    var cross_listed_trace = {
+        x: cross_listed_dates,
+        y: cross_listed_values,
+        name :'Cross-Listed Index',
+        type:'scatter',
+        xaxis: 'x3',
+        yaxis: 'y3',
+    };
+    var sme_trace = {
+        x: sme_dates,
+        y: sme_values,
+        name :'SME Index',
+        type:'scatter',
+        xaxis: 'x4',
+        yaxis: 'y4',
+    };
+    var data2 = [tnt_trace,composite_trace,cross_listed_trace,sme_trace];
+    var layout2 = {
+    xaxis: {
+        automargin: true,
+        showticklabels: false,
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    xaxis2: {
+        automargin: true,
+        showticklabels: false,
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    xaxis3: {
+        automargin: true,
+        showticklabels: false,
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    xaxis4: {
+        title:{text:'Date',
+        font:{size:18}},
+        automargin: true,
+        showticklabels: true,
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis: {
+        showticklabels: true,
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis2: {
+        showticklabels: true,
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis3: {
+        showticklabels: true,
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    yaxis4: {
+        showticklabels: true,
+        exponentformat: 'SI',
+        showexponent: 'all'
+    },
+    grid: {rows: 4, columns: 1, pattern: 'independent',roworder: 'top to bottom'}
+    };
+    Plotly.newPlot('chartdiv2', data2, layout2);
     </script>
     {% endblock chartjs %}
     <!-- END MAIN -->

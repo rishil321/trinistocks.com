@@ -273,7 +273,11 @@ th {
 }
 
 .chart-div {
-    height: 25rem;
+    height: 30rem;
+}
+
+.chart-div-small {
+    height: 15rem;
 }
 
 .ebaybannerdiv {
@@ -363,6 +367,10 @@ th {
 
     .chart-div {
         height: 40 rem;
+    }
+
+    .chart-div-small {
+        height: 20rem;
     }
 
     .topbannerdiv {
