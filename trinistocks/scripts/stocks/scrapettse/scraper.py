@@ -49,7 +49,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # The timeout to set for multiprocessing tasks (in seconds)
 MULTIPROCESSING_TIMEOUT = 60*60
-WEBPAGE_LOAD_TIMEOUT_SECS = 30
+WEBPAGE_LOAD_TIMEOUT_SECS = 60
 # Define a start date to use for the full updates
 START_DATE = '2017-01-01'
 LOGGERNAME = 'scraper.py'
