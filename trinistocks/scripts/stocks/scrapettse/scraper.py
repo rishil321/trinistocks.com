@@ -1249,12 +1249,14 @@ def main(args):
                     for core_date_list in dates_to_fetch_sublists:
                         async_results.append(multipool.apply_async(
                             scrape_equity_summary_data, (core_date_list,)))
-                    # update tShe technical analysis stock data
-                    multipool.apply_async(update_technical_analysis_data, ())
                     # wait until all workers finish fetching data before continuing
                     for result in async_results:
                         logger.debug(
                             f"One process of scrape_equity_summary_data exited with code {result.get()}")
+                    # update tShe technical analysis stock data
+                    multipool.apply_async(update_technical_analysis_data, ())
+                    # update news data
+                    multipool.apply_async(scrape_newsroom_data, ())
                 multipool.close()
                 multipool.join()
                 logger.debug(os.path.basename(__file__) +
