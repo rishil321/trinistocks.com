@@ -92,13 +92,13 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                 else:
                     date_column = 'quarter_end_date'
                 # read the audited raw table as a pandas df
-                raw_annual_data_df = pd.io.sql.read_sql(
+                raw_data_df = pd.io.sql.read_sql(
                     f"SELECT * FROM {raw_data_table_name} ORDER BY symbol,{date_column} DESC;", db_connect.dbengine)
                 # create new dataframe for calculated ratios
                 calculated_fundamental_ratios_df = pd.DataFrame()
-                calculated_fundamental_ratios_df['symbol'] = raw_annual_data_df['symbol'].copy(
+                calculated_fundamental_ratios_df['symbol'] = raw_data_df['symbol'].copy(
                 )
-                calculated_fundamental_ratios_df['date'] = raw_annual_data_df[date_column].copy(
+                calculated_fundamental_ratios_df['date'] = raw_data_df[date_column].copy(
                 )
                 # set the report type
                 if 'annual' in raw_data_table_name:
@@ -109,22 +109,25 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                 average_equity_df = pd.DataFrame()
                 average_equity_df['symbol'] = calculated_fundamental_ratios_df['symbol'].copy(
                 )
-                average_equity_df['total_stockholders_equity'] = raw_annual_data_df['total_shareholders_equity'].copy(
+                average_equity_df['total_stockholders_equity'] = raw_data_df['total_shareholders_equity'].copy(
                 )
                 # calculate the return on equity
-                calculated_fundamental_ratios_df['RoE'] = raw_annual_data_df['net_income'] / \
+                calculated_fundamental_ratios_df['RoE'] = raw_data_df['net_income'] / \
                     average_equity_df['total_stockholders_equity']
                 # now calculate the return on invested capital
-                calculated_fundamental_ratios_df['RoIC'] = raw_annual_data_df['profit_after_tax'] / \
-                    raw_annual_data_df['total_shareholders_equity']
+                calculated_fundamental_ratios_df['RoIC'] = raw_data_df['profit_after_tax'] / \
+                    raw_data_df['total_shareholders_equity']
                 # now calculate the working capital
-                calculated_fundamental_ratios_df['working_capital'] = raw_annual_data_df['total_assets'] - \
-                    raw_annual_data_df['total_liabilities']
+                calculated_fundamental_ratios_df['working_capital'] = raw_data_df['total_assets'] - \
+                    raw_data_df['total_liabilities']
                 # and the current ratio
-                calculated_fundamental_ratios_df['current_ratio'] = raw_annual_data_df['total_assets'] / \
-                    raw_annual_data_df['total_liabilities']
+                calculated_fundamental_ratios_df['current_ratio'] = raw_data_df['total_assets'] / \
+                    raw_data_df['total_liabilities']
                 # copy basic earnings per share
-                calculated_fundamental_ratios_df['EPS'] = raw_annual_data_df['basic_earnings_per_share']
+                calculated_fundamental_ratios_df['EPS'] = raw_data_df['basic_earnings_per_share']
+                # calculate cash per share
+                calculated_fundamental_ratios_df['cash_per_share'] = raw_data_df['cash_cash_equivalents'] / \
+                    raw_data_df['total_shares_outstanding']
                 # calculate price to earnings ratio
                 # first get the latest share price data
                 # get the latest date from the daily stock table
@@ -137,7 +140,7 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     {daily_stock_summary_table_name}.date='{latest_stock_date}';", db_connect.dbengine)
                 # create a merged df
                 price_to_earnings_df = pd.merge(
-                    raw_annual_data_df, share_price_df, how='inner', on='symbol')
+                    raw_data_df, share_price_df, how='inner', on='symbol')
                 price_to_earnings_df['share_price_conversion_rates'] = price_to_earnings_df.apply(lambda x: TTD_USD if
                                                                                                   x.currency == 'USD' else (TTD_JMD if x.currency == 'JMD' else (TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
                 calculated_fundamental_ratios_df['price_to_earnings_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
@@ -211,14 +214,14 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     (dividends_df['dividend_amount'] *
                      dividends_df['dividend_conversion_rates'])
                 # now calculate the eps growth rate
-                calculated_fundamental_ratios_df['EPS_growth_rate'] = raw_annual_data_df['basic_earnings_per_share'].diff(
+                calculated_fundamental_ratios_df['EPS_growth_rate'] = raw_data_df['basic_earnings_per_share'].diff(
                 )*100
                 # now calculate the price to earnings-to-growth ratio
                 calculated_fundamental_ratios_df['PEG'] = calculated_fundamental_ratios_df['price_to_earnings_ratio'] / \
                     calculated_fundamental_ratios_df['EPS_growth_rate']
                 # calculate the book value per share (BVPS)
-                calculated_fundamental_ratios_df['book_value_per_share'] = (raw_annual_data_df['total_assets'] - raw_annual_data_df['total_liabilities']) / \
-                    raw_annual_data_df['total_shares_outstanding']
+                calculated_fundamental_ratios_df['book_value_per_share'] = (raw_data_df['total_assets'] - raw_data_df['total_liabilities']) / \
+                    raw_data_df['total_shares_outstanding']
                 # calculate the price to book ratio
                 calculated_fundamental_ratios_df['price_to_book_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
                     ((price_to_earnings_df['total_assets'] - price_to_earnings_df['total_liabilities']) /
