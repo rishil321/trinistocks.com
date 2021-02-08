@@ -1,6 +1,10 @@
 # Imports from standard libraries (
 from django.urls import path, include, reverse_lazy
 from django.contrib.auth import views as auth_views
+from django.contrib.staticfiles.storage import staticfiles_storage
+from django.views.generic.base import RedirectView
+from django.conf import settings
+from django.conf.urls.static import static
 # Imports from local machine
 from . import views
 
@@ -51,4 +55,6 @@ urlpatterns = [
                                                                           success_url=reverse_lazy('stocks:password_change_complete', current_app="stocks")), name='password_change'),
     path('account/password_change_complete', auth_views.PasswordChangeDoneView.as_view(
         template_name='stocks/account/base_passwordchangecomplete.html'), name='password_change_complete'),
-]
+    path("ads.txt", RedirectView.as_view(
+        url=staticfiles_storage.url("stocks/ads.txt")),),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

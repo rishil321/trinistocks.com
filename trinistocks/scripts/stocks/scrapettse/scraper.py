@@ -12,6 +12,7 @@
 # Put all your imports here, one per line.
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
+import concurrent.futures
 from ..crosslisted_symbols import USD_STOCK_SYMBOLS
 from ...database_ops import DatabaseConnect
 from ... import custom_logging
@@ -62,7 +63,7 @@ LOGGERNAME = 'scraper.py'
 
 
 def scrape_listed_equity_data():
-    """Use the requests and pandas libs to fetch the current listed equities at 
+    """Use the requests and pandas libs to fetch the current listed equities at
     https://www.stockex.co.tt/listed-securities/?IdInstrumentType=1&IdSegment=&IdSector=
     and scrape the useful output into a list of dictionaries to write to the db
     """
@@ -86,15 +87,15 @@ def scrape_listed_equity_data():
         # store the series that lists all the current stock symbols
         listed_stock_symbols = dataframe_list[0]['Symbol']
         # remove the suspended char from the symbols
-        listed_stock_symbols = listed_stock_symbols.str.replace('\(S\)', '')
+        listed_stock_symbols = listed_stock_symbols.str.replace(r'\(S\)', '')
         # Go to the main summary page for each symbol
         for symbol in listed_stock_symbols:
             try:
                 per_stock_url = f"https://www.stockex.co.tt/manage-stock/{symbol}/"
                 logger.debug("Navigating to "+per_stock_url)
-                news_page = requests.get(
+                equity_page = requests.get(
                     per_stock_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
-                if news_page.status_code != 200:
+                if equity_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. "+per_stock_url)
                 else:
@@ -103,7 +104,7 @@ def scrape_listed_equity_data():
                 equity_data = dict(symbol=symbol)
                 # use beautifulsoup to get the securityname, sector, status, financial year end, website
                 per_stock_page_soup = BeautifulSoup(
-                    news_page.text, 'lxml')
+                    equity_page.text, 'lxml')
                 equity_data['security_name'] = per_stock_page_soup.find(
                     text='Security:').find_parent("h2").find_next("h2").text.title()
                 # apply some custom formatting to our names
@@ -153,7 +154,7 @@ def scrape_listed_equity_data():
                 else:
                     equity_data['currency'] = 'TTD'
                 # get a list of tables from the URL
-                dataframe_list = pd.read_html(news_page.text)
+                dataframe_list = pd.read_html(equity_page.text)
                 # use pandas to get the issued share capital and market cap
                 equity_data['issued_share_capital'] = int(
                     float(dataframe_list[0]['Opening Price'][8]))
@@ -178,15 +179,15 @@ def scrape_listed_equity_data():
         logger.debug('Now trying to fetch symbol ids for news')
         news_url = 'https://www.stockex.co.tt/news/'
         logger.debug(f"Navigating to {news_url}")
-        news_page = requests.get(
+        equity_page = requests.get(
             news_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
-        if news_page.status_code != 200:
+        if equity_page.status_code != 200:
             raise requests.exceptions.HTTPError(
                 "Could not load URL. "+news_url)
         logger.debug("Successfully loaded webpage.")
         # get all the options for the dropdown select, since these contain the ids
         news_page_soup = BeautifulSoup(
-            news_page.text, 'lxml')
+            equity_page.text, 'lxml')
         all_symbol_mappings = news_page_soup.find(id='symbol')
         # now parse the soup and get the symbols and their ids
         symbols = []
@@ -267,7 +268,7 @@ def check_num_equities_in_sector():
 
 
 def scrape_historical_indices_data():
-    """Use the requests and pandas libs to fetch data for all indices at 
+    """Use the requests and pandas libs to fetch data for all indices at
     https://www.stockex.co.tt/indices/
     and scrape the useful output into a list of dictionaries to write to the db
     """
@@ -329,7 +330,7 @@ def scrape_historical_indices_data():
 
 
 def scrape_dividend_data():
-    """Use the requests and pandas libs to browse through 
+    """Use the requests and pandas libs to browse through
     https://www.stockex.co.tt/manage-stock/<symbol> for each listed security
     """
     try:
@@ -669,7 +670,7 @@ def scrape_equity_summary_data(dates_to_fetch,):
 
 
 def update_equity_summary_data(start_date):
-    """ 
+    """
     Create the list of dates that we need to scrape data from https://www.stockex.co.tt/market-quote/
     for, based on the start_date specified and the dates already in the historical_indices_info table
     """
@@ -683,8 +684,6 @@ def update_equity_summary_data(start_date):
         logger.debug("Reading existing data from tables in database...")
         historical_indices_info_table = Table(
             'historical_indices_info', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
-        listed_equities_table = Table(
-            'listed_equities', MetaData(), autoload=True, autoload_with=db_connect.dbengine)
         # Now get the dates that we already have recorded (from the historical indices table)
         logger.debug("Creating list of dates to fetch.")
         dates_already_recorded = []
@@ -884,8 +883,8 @@ def update_technical_analysis_data():
     Calculate/scrape the data needed for the technical_analysis_summary table
     """
     db_connect = None
+    logger = logging.getLogger(LOGGERNAME)
     try:
-        logger = logging.getLogger(LOGGERNAME)
         db_connect = DatabaseConnect()
         logger.debug("Successfully connected to database")
         logger.debug(
@@ -1023,6 +1022,178 @@ def update_technical_analysis_data():
         # Always close the database connection
         if db_connect is not None:
             db_connect.close()
+
+
+def parse_news_data_per_stock(symbols_to_fetch_for):
+    """In a single thread, take a subset of symbols and fetch the news data for each symbol
+    """
+    news_data = []
+    logger = logging.getLogger(LOGGERNAME)
+    for symbol in symbols_to_fetch_for:
+        logger.debug(
+            f"Now attempting to fetch news data for {symbol}")
+        try:
+            # loop through each page of news until we reach pages that have no news
+            page_num = 1
+            while True:
+                # Construct the full URL using the symbol
+                news_url = f"https://www.stockex.co.tt/news/?symbol={symbol['symbol_id']}&category=&date=&date_to=&search&page={page_num}#search_c"
+                logger.debug("Navigating to "+news_url)
+                news_page = requests.get(
+                    news_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                if news_page.status_code != 200:
+                    raise requests.exceptions.HTTPError(
+                        "Could not load URL. "+news_page)
+                else:
+                    logger.debug("Successfully loaded webpage.")
+                # get the dataframes from the page
+                per_stock_page_soup = BeautifulSoup(
+                    news_page.text, 'lxml')
+                news_articles = per_stock_page_soup.findAll(
+                    'div', class_=['news_item'])
+                if not news_articles:
+                    # if we have an empty list of news articles, stop incrementing the list, since we have reached the end
+                    logger.debug(
+                        f"Finished fetching news articles for {symbol['symbol']}")
+                    break
+                # else process the list
+                for article in news_articles:
+                    try:
+                        link = article.contents[1].attrs['href']
+                        # load the link to get the main article page
+                        logger.debug(
+                            "Now clicking news link. Navigating to "+link)
+                        news_page = requests.get(
+                            link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                        if news_page.status_code != 200:
+                            raise requests.exceptions.HTTPError(
+                                "Could not load URL. "+link)
+                        else:
+                            logger.debug(
+                                "Successfully loaded webpage.")
+                        # find the elements we want on the page
+                        per_stock_page_soup = BeautifulSoup(
+                            news_page.text, 'lxml')
+                        # try to get the category
+                        category_type_soup = per_stock_page_soup.select(
+                            'div.elementor-text-editor.elementor-clearfix')
+                        possible_categories = [
+                            'Annual Report', 'Articles', 'Audited Financial Statements', 'Quarterly Financial Statements']
+                        category = None
+                        for possible_category in category_type_soup:
+                            if possible_category.string is not None and (possible_category.string.strip() in possible_categories):
+                                category = possible_category.string.strip()
+                        if not category:
+                            raise RuntimeError(
+                                f"We were not able to find the category for {article}")
+                        # try to get the date
+                        date = None
+                        date_soup = per_stock_page_soup.select(
+                            'h2.elementor-heading-title.elementor-size-default')
+                        for possible_date in date_soup:
+                            if possible_date.string is not None:
+                                try:
+                                    date = datetime.strptime(
+                                        possible_date.string.strip(), "%d/%m/%Y")
+                                except ValueError as exc:
+                                    pass
+                        if not date:
+                            raise RuntimeError(
+                                f"We were not able to find the date for {article}")
+                        # try to get title
+                        title = None
+                        title_soup = per_stock_page_soup.select(
+                            'h1.elementor-heading-title.elementor-size-xl')
+                        for possible_title in title_soup:
+                            if possible_title.string is not None:
+                                if len(possible_title.string.strip().split("–")) == 2:
+                                    title = possible_title.string.strip().split("–")[
+                                        1].strip()
+                                else:
+                                    title = possible_title.string.strip()
+                        if not title:
+                            raise RuntimeError(
+                                f"We were not able to find the title for {article}")
+                        # try to get full pdf link
+                        link = None
+                        link_soup = per_stock_page_soup.select(
+                            'div.elementor-text-editor.elementor-clearfix')
+                        for possible_link in link_soup:
+                            if len(possible_link.contents) > 1 and 'href' in possible_link.contents[1].attrs and possible_link.contents[1].attrs['href'].strip():
+                                link = possible_link.contents[1].attrs['href'].strip(
+                                )
+                        if not link:
+                            raise RuntimeError(
+                                "We were not able to find the link for {article}")
+                        # now append the data to our list
+                        news_data.append(
+                            {'symbol': symbol['symbol'], 'category': category, 'date': date, 'title': title, 'link': link})
+                    except Exception as exc:
+                        logger.warning(
+                            f"Could not parse article from {article}", exc_info=exc)
+                # increment the page num and restart the loop
+                page_num += 1
+            # return all the news data for this thread
+            return news_data
+        except Exception:
+            logger.warning(
+                f"We ran into a problem while checking news for {symbol['symbol']}")
+
+
+def scrape_newsroom_data():
+    """Use the requests and pandas libs to fetch the current listed equities at 
+    https://www.stockex.co.tt/listed-securities/?IdInstrumentType=1&IdSegment=&IdSector=
+    and scrape the useful output into a list of dictionaries to write to the db
+    """
+    logger = logging.getLogger(LOGGERNAME)
+    try:
+        all_listed_symbols = []
+        with DatabaseConnect() as db_connection:
+            listed_equities_table = Table(
+                'listed_equities', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
+            selectstmt = select(
+                [listed_equities_table.c.symbol, listed_equities_table.c.symbol_id])
+            result = db_connection.dbcon.execute(selectstmt)
+            for row in result:
+                all_listed_symbols.append(
+                    {'symbol': row[0], 'symbol_id': row[1]})
+        # set up a variable to store all data to be written to the db table
+        all_news_data = []
+        # set up some threads to speed up the process
+        num_threads = 5
+        # split the complete list of symbols into sublists for the threads
+        per_thread_symbols = [all_listed_symbols[i::num_threads]
+                              for i in range(num_threads)]
+        # submit the work to the thread workers
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads, thread_name_prefix='fetch_news_data') as executor:
+            future_to_news_fetch = {executor.submit(
+                parse_news_data_per_stock, symbols): symbols for symbols in per_thread_symbols}
+            for future in concurrent.futures.as_completed(future_to_news_fetch):
+                per_thread_symbols = future_to_news_fetch[future]
+                try:
+                    news_data = future.result()
+                except Exception:
+                    logging.exception(
+                        f"Ran into an issue with this set of symbols: {per_thread_symbols}")
+                else:
+                    logging.debug(
+                        "Successfully got data for symbols. Adding to master list.")
+                    all_news_data += news_data
+        with DatabaseConnect() as db_connection:
+            # now write the list of dicts to the database
+            stock_news_table = Table(
+                'stock_news_data', MetaData(), autoload=True, autoload_with=db_connection.dbengine)
+            logging.debug("Inserting scraped news data into stock_news table")
+            insert_stmt = insert(stock_news_table).values(
+                all_news_data)
+            upsert_stmt = insert_stmt.on_duplicate_key_update(
+                {x.name: x for x in insert_stmt.inserted})
+            result = db_connection.dbcon.execute(upsert_stmt)
+            logger.debug(
+                "Database update successful. Number of rows affected was "+str(result.rowcount))
+            return 0
+    except Exception:
+        logging.exception("Ran into an issue while trying to fetch news data.")
 
 
 def main(args):
