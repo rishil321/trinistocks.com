@@ -1133,11 +1133,11 @@ def parse_news_data_per_stock(symbols_to_fetch_for):
                             f"Could not parse article from {article}", exc_info=exc)
                 # increment the page num and restart the loop
                 page_num += 1
-            # return all the news data for this thread
-            return news_data
         except Exception:
             logger.warning(
                 f"We ran into a problem while checking news for {symbol['symbol']}")
+    # return all the news data for this thread
+    return news_data
 
 
 def scrape_newsroom_data():
