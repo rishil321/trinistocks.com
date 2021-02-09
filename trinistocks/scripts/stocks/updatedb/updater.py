@@ -125,9 +125,6 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     raw_data_df['total_liabilities']
                 # copy basic earnings per share
                 calculated_fundamental_ratios_df['EPS'] = raw_data_df['basic_earnings_per_share']
-                # calculate cash per share
-                calculated_fundamental_ratios_df['cash_per_share'] = raw_data_df['cash_cash_equivalents'] / \
-                    raw_data_df['total_shares_outstanding']
                 # calculate price to earnings ratio
                 # first get the latest share price data
                 # get the latest date from the daily stock table
@@ -145,6 +142,10 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                                                                                                   x.currency == 'USD' else (TTD_JMD if x.currency == 'JMD' else (TTD_BBD if x.currency == 'BBD' else 1.00)), axis=1)
                 calculated_fundamental_ratios_df['price_to_earnings_ratio'] = (price_to_earnings_df['close_price'] * price_to_earnings_df['share_price_conversion_rates']) / \
                     price_to_earnings_df['basic_earnings_per_share']
+                # calculate cash per share
+                calculated_fundamental_ratios_df['cash_per_share'] = (price_to_earnings_df['cash_cash_equivalents']) / \
+                    (price_to_earnings_df['total_shares_outstanding'] *
+                     price_to_earnings_df['share_price_conversion_rates'])
                 # now calculate the price to dividend per share ratio
                 # first get the dividends per share
                 dividends_df = pd.io.sql.read_sql(

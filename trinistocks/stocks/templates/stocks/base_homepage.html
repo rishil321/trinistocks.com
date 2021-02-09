@@ -25,13 +25,16 @@
     {% endblock customizationbar%}
 
     {% block mainblock %}
-    <h1 style="" class="" id="charttitle">TTSE Trailing 30-Day Market Indexes</h1>
+    <h1 style="" class="" id="charttitle2">TTSE Trailing 30-Day Market Indexes</h1>
     <div id="chartdiv2" class="chart-div" style=""></div>
     <!-- Chart -->
-    <h1 style="" class="" id="charttitle">Stocks Traded on the TTSE on {{ selected_date }}</h1>
+    <h1 style="" class="" id="charttitle1">Stocks Traded on the TTSE on {{ selected_date }}</h1>
     <div id="chartdiv1" class="chart-div" style=""></div>
     <div class="is-clearfix clearfix"></div>
-    {% render_table table %}
+    {% render_table daily_traded_table %}
+    <br>
+    <h1 style="" class="" id="charttitle3">Latest News Published on TTSE</h1>
+    {% render_table stock_news_table %}
     {% endblock mainblock %}
 
     {% block chartjs %}

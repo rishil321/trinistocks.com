@@ -56,13 +56,12 @@ from scripts.stocks.updatedb import updater
 # Class definitions
 
 
-class HomePageView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+class HomePageView(ExportMixin, tables2.MultiTableMixin, FilterView):
     """
     Our homepage for trinistocks.com
     """
     template_name = 'stocks/base_homepage.html'
-    model = models.DailyStockSummary
-    table_class = stocks_tables.DailyTradingSummaryTable
+    tables = []
     filterset_class = filters.DailyTradingSummaryFilter
 
     def get(self, request, *args, **kwargs):
@@ -95,7 +94,7 @@ class HomePageView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
                 *args, **kwargs)
             selected_date = datetime.strptime(
                 self.request.GET.get('date'), "%Y-%m-%d")
-            # get the date one week back for the market indexes
+            # get the date 4 weeks back for the market indexes
             trailing_30d_date = selected_date - timedelta(days=30)
             if not selected_date:
                 raise RuntimeError(
@@ -151,6 +150,9 @@ class HomePageView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
             sme_dates = [datetime.strftime(
                 obj.date, "%d-%m-%Y") for obj in sme_data]
             sme_values = [obj.index_value for obj in sme_data]
+            # set up the news data
+            stock_news_records = models.StockNewsData.objects.filter(
+                date__lt=selected_date).select_related('symbol').order_by('-date')
             # Now add our context data and return a response
             context['errors'] = errors
             context['selected_date'] = selected_date.date()
@@ -165,6 +167,10 @@ class HomePageView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
             context['cross_listed_values'] = cross_listed_values
             context['sme_dates'] = sme_dates
             context['sme_values'] = sme_values
+            context['daily_traded_table'] = stocks_tables.DailyTradingSummaryTable(
+                daily_trading_summary_records)
+            context['stock_news_table'] = stocks_tables.StockNewsTable(
+                stock_news_records)
             LOGGER.info("Successfully loaded page.")
         except ValueError as verr:
             context['errors'] = ALERTMESSAGE+str(verr)

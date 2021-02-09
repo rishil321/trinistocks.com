@@ -202,6 +202,8 @@ class FundamentalAnalysisSummary(models.Model):
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="P/B")
     current_ratio = models.DecimalField(
         max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Current Ratio")
+    cash_per_share = models.DecimalField(
+        max_digits=10, decimal_places=3, blank=True, null=True, verbose_name="Cash per Share")
 
     class Meta:
         managed = False
@@ -255,3 +257,17 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class StockNewsData(models.Model):
+    news_id = models.AutoField(primary_key=True)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, db_column='symbol')
+    date = models.DateField(verbose_name="Date")
+    title = models.CharField(max_length=200)
+    link = models.CharField(max_length=500)
+    category = models.CharField(max_length=50)
+
+    class Meta:
+        managed = False
+        db_table = 'stock_news_data'

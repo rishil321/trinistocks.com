@@ -189,7 +189,7 @@ table {
     margin-right: auto;
 }
 
-th {
+table th {
     background-color: black;
     color: white;
     padding-top: 1rem;
@@ -446,6 +446,10 @@ th {
     .limited_width_col {
         max-width: 10rem;
     }
+
+    .title_width_col {
+        max-width: 20rem;
+    }
 }
 
 /*Mobile View*/
@@ -498,5 +502,13 @@ th {
         width: 100%;
         white-space: nowrap;
         color: black;
+    }
+
+    .limited_width_col {
+        max-width: 5rem;
+    }
+
+    .title_width_col {
+        max-width: 10rem;
     }
 }

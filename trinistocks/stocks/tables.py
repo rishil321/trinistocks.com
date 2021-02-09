@@ -4,6 +4,8 @@ from django_tables2.export.views import ExportMixin
 from django.urls import reverse
 from .templatetags import stocks_template_tags
 from urllib.parse import urlencode
+from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 
 class HistoricalStockInfoTable(tables.Table):
@@ -72,15 +74,19 @@ class HistoricalDividendInfoTable(tables.Table):
 
 class DailyTradingSummaryTable(tables.Table):
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
-        lambda record: render_symbol_id_link(value=record)))
-    volume_traded = tables.Column(verbose_name="Volume Traded")
-    last_sale_price = tables.Column(verbose_name="Last Sale Price")
+        lambda record: render_symbol_id_link(value=record)), orderable=False)
+    volume_traded = tables.Column(
+        verbose_name="Volume Traded", orderable=False)
+    last_sale_price = tables.Column(
+        verbose_name="Last Sale Price", orderable=False)
     currency = tables.Column(
-        accessor="symbol__currency", verbose_name="Currency")
-    value_traded = tables.Column(verbose_name="Dollar Volume Traded")
-    low = tables.Column(verbose_name="Low")
-    high = tables.Column(verbose_name="High")
-    change_dollars = tables.Column(verbose_name="Price Change")
+        accessor="symbol__currency", verbose_name="Currency", orderable=False)
+    value_traded = tables.Column(
+        verbose_name="Dollar Volume Traded", orderable=False)
+    low = tables.Column(verbose_name="Low", orderable=False)
+    high = tables.Column(verbose_name="High", orderable=False)
+    change_dollars = tables.Column(
+        verbose_name="Price Change", orderable=False)
 
     # add the symbols to all other columns
     def render_volume_traded(self, value, column):
@@ -343,6 +349,7 @@ class FundamentalAnalysisSummaryTable(tables.Table):
     dividend_yield = tables.Column(verbose_name="Dividend Yield")
     dividend_payout_ratio = tables.Column(
         verbose_name="Payout Ratio")
+    cash_per_share = tables.Column(verbose_name="Cash Per Share")
 
     def render_symbol(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
@@ -379,6 +386,10 @@ class FundamentalAnalysisSummaryTable(tables.Table):
     def render_dividend_payout_ratio(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
         return "{:,.2f}%".format(value)
+
+    def render_cash_per_share(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return "{:,.2f}".format(value)+" $/share"
 
     class Meta:
         attrs = {'class': 'djangotables'}
@@ -435,6 +446,40 @@ class PortfolioSummaryTable(tables.Table):
         else:
             column.attrs = {'td': {'data-label': column.verbose_name}}
         return "${:,.2f}".format(value)
+
+    class Meta:
+        attrs = {'class': 'djangotables'}
+        export_formats = ['csv', 'xlsx']
+
+
+class StockNewsTable(tables.Table):
+
+    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
+        lambda record: render_fundamental_history_symbol_link(value=record)), orderable=False)
+    date = tables.Column(verbose_name="Date Published", orderable=False)
+    category = tables.Column(verbose_name="Category", orderable=False)
+    title = tables.Column(verbose_name="Title", orderable=False)
+
+    def render_symbol(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_date(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_title(self, value, column, record):
+        column.attrs = {
+            'td': {'data-label': column.verbose_name, 'class': 'title_width_col'}}
+        return mark_safe(f'<a href="{escape(record.link)}">{escape(value)}</a>')
+
+    def render_link(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_category(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
 
     class Meta:
         attrs = {'class': 'djangotables'}
