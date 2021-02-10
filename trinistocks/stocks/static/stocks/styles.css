@@ -332,11 +332,6 @@ table th {
     /* Use half of the width (120/2 = 60), to center the tooltip */
 }
 
-/* Show the tooltip text when you mouse over the tooltip container */
-.tooltip:hover .tooltiptext {
-    visibility: visible;
-}
-
 .far,
 .fas {
     display: inline;
@@ -421,6 +416,12 @@ table th {
         /* Use half of the width (120/2 = 60), to center the tooltip */
     }
 
+    /* Show the tooltip text when you mouse over the tooltip container */
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+    }
+
+
     td:first-child,
     th:first-child {
         padding-left: 0.5rem;
@@ -502,13 +503,5 @@ table th {
         width: 100%;
         white-space: nowrap;
         color: black;
-    }
-
-    .limited_width_col {
-        max-width: 5rem;
-    }
-
-    .title_width_col {
-        max-width: 10rem;
     }
 }
