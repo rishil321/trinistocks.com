@@ -1167,6 +1167,39 @@ class FundamentalHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
         return context
 
 
+class StockNewsHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterView):
+    """
+    Set up the data for the news on each stock
+    """
+    template_name = 'stocks/base_stocknewshistory.html'
+    model = models.StockNewsData
+    table_class = stocks_tables.StockNewsHistoryTable
+    table_pagination = {
+        "per_page": 10
+    }
+    filterset_class = filters.StockNewsHistoryFilter
+
+    def get_context_data(self, *args, **kwargs):
+        try:
+            errors = ""
+            LOGGER.info("Stock news history page was called")
+            # get the current context
+            context = super().get_context_data(
+                *args, **kwargs)
+            LOGGER.info("Successfully loaded page.")
+            listed_stocks = models.ListedEquities.objects.all().order_by('symbol')
+            context['listed_stocks'] = listed_stocks
+        except ValueError as verr:
+            context['errors'] = ALERTMESSAGE+str(verr)
+            LOGGER.warning(
+                "Got a valueerror while loading this page"+str(verr))
+        except Exception as ex:
+            LOGGER.exception(
+                "Sorry. Ran into a problem while attempting to load the page: "+self.template_name)
+            context['errors'] = ALERTMESSAGE+str(ex)
+        return context
+
+
 class AboutPageView(TemplateView):
     """
     Set up the data for the technical analysis summary page

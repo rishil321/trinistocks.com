@@ -64,8 +64,7 @@ class TechnicalAnalysisSummaryFilter(django_filters.FilterSet):
 
 
 class PortfolioSummaryFilter(django_filters.FilterSet):
-    
-    
+
     class Meta:
         model = models.PortfolioSummary
         fields = {'user_id'}
@@ -77,3 +76,13 @@ class PortfolioSummaryFilter(django_filters.FilterSet):
         # for the current user
         current_user = getattr(self.request, 'user', None)
         return parent.filter(user=current_user)
+
+
+class StockNewsHistoryFilter(django_filters.FilterSet):
+    class Meta:
+        model = models.StockNewsData
+        fields = {
+            'date': ['gte', 'lte', ],
+            'symbol': ['exact', ],
+            'category': ['exact', ],
+        }

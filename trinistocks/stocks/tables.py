@@ -485,6 +485,40 @@ class StockNewsTable(tables.Table):
         attrs = {'class': 'djangotables'}
         export_formats = ['csv', 'xlsx']
 
+
+class StockNewsHistoryTable(tables.Table):
+
+    symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
+        lambda record: render_fundamental_history_symbol_link(value=record)), orderable=True)
+    date = tables.Column(verbose_name="Date Published", orderable=True)
+    category = tables.Column(verbose_name="Category", orderable=True)
+    title = tables.Column(verbose_name="Title", orderable=False)
+
+    def render_symbol(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_date(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_title(self, value, column, record):
+        column.attrs = {
+            'td': {'data-label': column.verbose_name, 'class': 'title_width_col'}}
+        return mark_safe(f'<a href="{escape(record.link)}">{escape(value)}</a>')
+
+    def render_link(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    def render_category(self, value, column):
+        column.attrs = {'td': {'data-label': column.verbose_name}}
+        return value
+
+    class Meta:
+        attrs = {'class': 'djangotables'}
+        export_formats = ['csv', 'xlsx']
+
 # methods
 # render the URLs for the symbol column
 

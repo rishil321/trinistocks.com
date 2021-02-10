@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load django_tables2 %}
+{% load static %}
+
+    {% block description %}"Official news for stocks listed on the TTSE"
+    {% endblock description %}
+
+    {% block title %}trinistocks | Stock News
+    {% endblock title %}
+
+    {% block customizationbar %}
+
+    <div class="panelblock">
+        <label class="panellabel" for="symbol">Stock:</label>
+        <select class="custom-dropdown" id="symbol" name="symbol">
+            <!--Add options based on dictionary items returned-->
+            {% for listed_stock in listed_stocks %}
+                {% if listed_stock.symbol == selected_stock_symbol %}
+                    <option value="{{ listed_stock.symbol }}" selected>{{ listed_stock.symbol }} ({{ listed_stock.security_name }})</option>
+                {% else %}
+                    <option value="{{ listed_stock.symbol }}">{{ listed_stock.symbol }} ({{ listed_stock.security_name }})</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="panelblock">
+       <label class="panellabel" for="category">Category:</label>
+        <select class="custom-dropdown" id="category" name="category">
+            <option value="">Any</option>
+            <option value="Articles" >Articles</option>
+            <option value="Annual Report">Annual Reports</option>
+            <option value="Audited Financial Statements" >Audited Financial Statements</option>
+            <option value="Quarterly Financial Statements" >Quarterly Financial Statements</option>
+        </select>
+    </div>
+
+    <div class="panelblock">
+       <label class="panellabel" for="startdate">Start Date:</label>
+        <input class="custom-date-selector" type="date" value="{{ entered_start_date }}" id="startdate" name="date__gte">
+    </div>
+
+    <div class="panelblock">
+        <label for="enddate" class="">End Date:</label>
+        <input class="custom-date-selector" type="date" value="{{ entered_end_date }}" id="enddate" name="date__lte"/>
+    </div>
+
+    <div class="panelblock">
+        <input type="hidden" value="-date" name="sort"></input>
+        <input name="configure_button"  class="custom-red-button" type="submit" onclick="location.href='{% url 'stocks:stocknewshistory' %}" value="Search"/>
+    </div>
+
+    {% endblock customizationbar %}
+
+    {% block mainblock %}
+    <h1>TTSE Stock News Articles</h1>
+    <br>
+    <div class="tablediv_scroll">
+        {% render_table table %}
+    </div>
+    {% endblock mainblock %}
+
+    {% block chartjs %}
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#summarizeddropdown").toggleClass("has-background-red");
+    $("#stocknewshistorylink").toggleClass("has-background-red");
+    {% endblock %}
