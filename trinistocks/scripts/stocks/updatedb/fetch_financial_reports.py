@@ -40,7 +40,7 @@ from ...database_ops import DatabaseConnect
 # Put your constants here. These should be named in CAPS.
 TTSE_NEWS_CATEGORIES = {'annual_reports': 56, 'articles': 57,
                         'annual_statements': 58, 'quarterly_statements': 59}
-WEBPAGE_LOAD_TIMEOUT_SECS = 30
+WEBPAGE_LOAD_TIMEOUT_SECS = 60
 REPORTS_DIRECTORY = 'financial_reports'
 IGNORE_SYMBOLS = ['CPFV', 'GMLP', 'LJWA', 'LJWP', 'MOV', 'PPMF', 'SFC']
 QUARTERLY_STATEMENTS_START_DATE_STRING = '2020-10-01'
@@ -865,7 +865,7 @@ Please add the data for these reports into the raw_quarterly_data and raw_annual
 Sincerely,
 trinistocks.com
                 ''')
-                msg["From"] = "trinistocks@gmail.com"
+                msg["From"] = "admin@trinistocks.com"
                 msg["To"] = OUTSTANDINGREPORTEMAIL
                 msg["Subject"] = "trinistocks: Outstanding Fundamental Reports"
                 p = Popen(["/usr/sbin/sendmail", "-t", "-oi"],

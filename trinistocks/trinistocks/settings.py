@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'chartjs',
     'django_tables2',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'drf_yasg',
     'corsheaders'
@@ -216,3 +217,12 @@ DEFAULT_FROM_EMAIL = 'django_server1@trinistats.com'
 
 LOGIN_URL = reverse_lazy('stocks:login', current_app="stocks")
 AUTH_USER_MODEL = 'stocks.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}

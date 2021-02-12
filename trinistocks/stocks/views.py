@@ -3,38 +3,21 @@
 import logging
 from datetime import datetime, timedelta
 # Imports from cheese factory
-import dateutil
 from django.core.exceptions import ValidationError
 import django_tables2 as tables2
 from django_tables2.export.views import ExportMixin
 from django_filters.views import FilterView
-from django.views.generic.base import RedirectView
-from django.http import HttpResponse
-from django.shortcuts import render
 from django.views.generic import TemplateView
-from chartjs.views.lines import BaseLineChartView
-from django.views.generic import ListView
-from dateutil.parser import parse
-from django.core import serializers
-from django.http.response import JsonResponse
 from django import forms
 from django.db.models import F
 from django.utils.datastructures import MultiValueDictKeyError
 from urllib.parse import urlencode
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.db.models import Max
 from django.urls import reverse_lazy
-from django.http import HttpResponseRedirect
-from django.core.validators import validate_email
-from django.contrib.auth import authenticate, password_validation
-from django.core import exceptions
-from django.contrib import messages
 from django.views.generic.edit import FormView
-from django.contrib.auth.views import LoginView
 from django.contrib.auth import login, logout, get_user_model
 from django.db.utils import IntegrityError
-from django.contrib.auth.decorators import login_required
 import pandas as pd
 from django.core.mail import send_mail
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -42,18 +25,24 @@ from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
-from django.template import Context
-import simplejson
+from rest_framework import generics, permissions
+from .serializers import DailyStockSummarySerializer
 # Imports from local machine
-from stocks import models, filters
-from stocks import tables as stocks_tables
+from . import models, filters
+from . import tables as stocks_tables
 from .templatetags import stocks_template_tags
 from . import forms
-from django.conf import settings
 from scripts.stocks.updatedb import updater
 # endregion
 
+# CONSTANTS
+ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
+# Set up logging
+LOGGER = logging.getLogger('trinistocks')
+
 # Class definitions
+
+# Regular Page Views
 
 
 class HomePageView(ExportMixin, tables2.MultiTableMixin, FilterView):
@@ -1300,7 +1289,7 @@ class RegisterPageView(FormView):
             send_mail(
                 'trinistocks: Account Creation',
                 f'You have created a new account at www.trinistocks.com! Your username is {new_username}.Please login and start monitoring and growing your portfolio with us today.',
-                'trinistocks@gmail.com',
+                'admin@trinistocks.com',
                 [f'{new_email}'],
                 fail_silently=False,
             )
@@ -1525,7 +1514,7 @@ class PasswordResetRequestView(FormView):
             send_mail(
                 subject,
                 email,
-                'trinistocks@gmail.com',
+                'admin@trinistocks.com',
                 [user.email],
                 fail_silently=False,
             )
@@ -1533,14 +1522,18 @@ class PasswordResetRequestView(FormView):
             context['reset_sent'] = True
         return self.render_to_response(context)
 
+# API Views
 
-# CONSTANTS
-ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
-# Set up logging
-LOGGER = logging.getLogger('root')
 
-# Global variables
+class DailyStockSummaryList(generics.ListCreateAPIView):
+    queryset = models.DailyStockSummary.objects.all()
+    serializer_class = DailyStockSummarySerializer
+    permission_classes = (permissions.IsAuthenticated,)  # new
 
-# Create functions used by the views here
-
-# Create your view functions here.
+    def get_queryset(self):
+        """
+        Return only the objects for the last trading day
+        """
+        latest_date = stocks_template_tags.get_latest_date_dailytradingsummary()
+        return models.DailyStockSummary.objects.exclude(was_traded_today=0).filter(
+            date=latest_date).select_related('symbol').order_by('-value_traded')

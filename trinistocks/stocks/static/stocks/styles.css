@@ -48,6 +48,14 @@ h1 {
     color: white;
 }
 
+.selfie {
+    width: 5rem;
+    float: left;
+    margin-right: 1rem;
+    border: 1px solid black;
+    border-radius: 5px;
+}
+
 .custom-red-button {
     background-color: red;
     border-width: 0em;
