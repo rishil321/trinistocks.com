@@ -4,6 +4,7 @@ A collection of Django/Python apps for displaying stats related to T&amp;T
 ## Requirements
 
 - Python 3
+- Django
 
 ## Installation instructions for local development
 
