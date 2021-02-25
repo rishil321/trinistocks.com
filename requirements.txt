@@ -4,7 +4,6 @@ apturl==0.5.2
 asgiref==3.3.1
 astroid==2.4.2
 attrs==20.3.0
-autopep8==1.5.4
 backcall==0.2.0
 beautifulsoup4==4.9.3
 blinker==1.4
