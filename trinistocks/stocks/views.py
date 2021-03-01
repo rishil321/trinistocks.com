@@ -1138,9 +1138,7 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
             context["listed_stocks"] = listed_stocks
             if self.symbol_needed:
                 context["selected_symbol"] = selected_symbol
-                context[
-                    "selected_stock_name"
-                ] = self.selected_stock.security_name.title()
+                context["selected_stock_name"] = self.selected_stock.security_name
                 context["selected_stock_symbol"] = self.selected_stock.symbol
             if self.index_name_needed:
                 context["index_parameter"] = self.index_parameter
