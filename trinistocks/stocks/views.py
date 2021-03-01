@@ -17,7 +17,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.views.generic.edit import FormView
-from django.contrib.auth import login, logout, get_user_model
+from django.contrib.auth import login, logout, get_user_model, authenticate
 from django.db.utils import IntegrityError
 import pandas as pd
 from django.core.mail import send_mail
