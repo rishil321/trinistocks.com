@@ -1002,7 +1002,7 @@ def update_daily_trades():
             f"https://www.stockex.co.tt/market-quote/?TradeDate={today_date}"
         )
         logger.debug("Navigating to " + urlsummarypage)
-        http_get_req = requests.get(urlsummarypage, timeout=10)
+        http_get_req = requests.get(urlsummarypage, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
         if http_get_req.status_code != 200:
             raise requests.exceptions.HTTPError(
                 "Could not load URL to update latest daily data " + urlsummarypage
@@ -1639,7 +1639,7 @@ def main(args):
                     multipool.apply_async(scrape_newsroom_data, ())
                 multipool.close()
                 multipool.join()
-                logger.debug(os.path.basename(__file__) + " executed successfully.")
+                logger.debug(os.path.basename(__file__) + " was completed.")
                 q_listener.stop()
                 return 0
     except Exception as exc:
