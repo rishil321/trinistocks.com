@@ -152,11 +152,9 @@ class HomePageView(ExportMixin, tables2.MultiTableMixin, FilterView):
             sme_dates = [datetime.strftime(obj.date, "%d-%m-%Y") for obj in sme_data]
             sme_values = [obj.index_value for obj in sme_data]
             # set up the news data
-            stock_news_records = (
-                models.StockNewsData.objects.filter(date__lt=selected_date)
-                .select_related("symbol")
-                .order_by("-date")[:10]
-            )
+            stock_news_records = models.StockNewsData.objects.select_related(
+                "symbol"
+            ).order_by("-date")[:10]
             # Now add our context data and return a response
             context["errors"] = errors
             context["selected_date"] = selected_date.date()
