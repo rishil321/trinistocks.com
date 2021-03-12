@@ -11,6 +11,8 @@
 import logging
 from . import configs
 from sqlalchemy import create_engine, Table, MetaData
+import pymysql
+pymysql.install_as_MySQLdb()
 
 class DatabaseConnect:
 

@@ -18,6 +18,7 @@ import smtplib
 import sys
 
 # CONSTANTS. These should be all in upper case
+LOGGERNAME = None
 
 # Global variables
 
@@ -33,8 +34,7 @@ class BufferingSMTPHandler(logging.handlers.BufferingHandler):
         self.fromaddr = fromaddr
         self.toaddrs = toaddrs
         self.subject = subject
-        self.setFormatter(logging.Formatter(
-            "%(asctime)s %(levelname)-5s %(message)s"))
+        self.setFormatter(logging.Formatter("%(asctime)s %(levelname)-5s %(message)s"))
 
     def flushoutput(self):
         # this method is automatically called
@@ -47,7 +47,10 @@ class BufferingSMTPHandler(logging.handlers.BufferingHandler):
             # Connect to the SMTP mailhost
             smtp = smtplib.SMTP(self.mailhost, port)
             msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (
-                self.fromaddr, ",".join(self.toaddrs), self.subject)
+                self.fromaddr,
+                ",".join(self.toaddrs),
+                self.subject,
+            )
             for record in self.buffer:
                 s = self.format(record)
                 msg = msg + s + "\r\n"
@@ -55,19 +58,22 @@ class BufferingSMTPHandler(logging.handlers.BufferingHandler):
             smtp.quit()
             self.buffer = []
 
+
 # Put your function definitions here. These should be lower-case, separated by underscores.
 
 
-def setup_logging(loggername = __name__,
-                  logdirparent = str(os.getcwd()),
-                  filelogginglevel = logging.DEBUG,
-                  stdoutlogginglevel = logging.DEBUG,
-                  smtploggingenabled = False,
-                  smtplogginglevel = logging.INFO,
-                  smtpmailhost = 'localhost',
-                  smtpfromaddr = 'Python default email',
-                  smtptoaddr = 'test@gmail.com',
-                  smtpsubj = 'Test Python Email'):
+def setup_logging(
+    loggername=__name__,
+    logdirparent=str(os.getcwd()),
+    filelogginglevel=logging.DEBUG,
+    stdoutlogginglevel=logging.DEBUG,
+    smtploggingenabled=False,
+    smtplogginglevel=logging.INFO,
+    smtpmailhost="localhost",
+    smtpfromaddr="Python default email",
+    smtptoaddr="test@gmail.com",
+    smtpsubj="Test Python Email",
+):
     """Setup the logging module to write logs to several different streams
 
     :param modulename: [The name of the module calling this function], defaults to 'log'
@@ -92,28 +98,36 @@ def setup_logging(loggername = __name__,
     :type smtpsubj: str, optional
     :return: [description]
     :rtype: [type]
-    """    
+    """
+    global LOGGERNAME
+    LOGGERNAME = loggername
     # Set up a queue to take in logging messages from multiple threads
     q = multiprocessing.Queue()
     # set up a stream handler for stdout
-    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler = logging.StreamHandler()
     # Set the format of the messages for logs
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     stdout_handler.setFormatter(formatter)
     stdout_handler.setLevel(stdoutlogginglevel)
-    mainlogger = logging.getLogger(loggername)
+    mainlogger = logging.getLogger(LOGGERNAME)
     mainlogger.setLevel(logging.DEBUG)
     # add the handler to the logger so records from this process are handled
     mainlogger.addHandler(stdout_handler)
     # Check the current working directory for a 'logs' folder to store our logfiles
-    logdirectory = logdirparent+os.path.sep+'logs'
+    logdirectory = logdirparent + os.path.sep + "logs"
     # Create the directory if it doesn't already exist
     Path(logdirectory).mkdir(parents=True, exist_ok=True)
     # Now add a log handler to output to a file
     # And set the name for the logfile to be created
-    logfilename = logdirectory+os.path.sep+loggername + \
-        f"{datetime.now():%Y-%m-%d-%H-%M-%S}"+'.log'
+    logfilename = (
+        logdirectory
+        + os.path.sep
+        + loggername
+        + f"{datetime.now():%Y-%m-%d-%H-%M-%S}"
+        + ".log"
+    )
     logfilehandler = logging.FileHandler(logfilename)
     # Set the format for file log output messages
     logfilehandler.setFormatter(formatter)
@@ -122,12 +136,13 @@ def setup_logging(loggername = __name__,
     # Add the log handler for files
     mainlogger.addHandler(logfilehandler)
     # ql gets records from the queue and sends them to the handler
-    ql = logging.handlers.QueueListener(q, stdout_handler,logfilehandler)
+    ql = logging.handlers.QueueListener(q, stdout_handler, logfilehandler)
     ql.start()
     # Now set up the SMTP log handler
     if smtploggingenabled:
         smtploghandler = BufferingSMTPHandler(
-            smtpmailhost, smtpfromaddr, smtptoaddr, smtpsubj)
+            smtpmailhost, smtpfromaddr, smtptoaddr, smtpsubj
+        )
         smtploghandler.setLevel(smtplogginglevel)
         mainlogger.addHandler(smtploghandler)
     mainlogger.info("Logging setup successfully!")
@@ -136,7 +151,7 @@ def setup_logging(loggername = __name__,
 
 def flush_smtp_logger():
     # Find the SMTP log handler
-    mainlogger = logging.getLogger(__name__)
+    mainlogger = logging.getLogger(LOGGERNAME)
     for handler in mainlogger.handlers:
         if handler.__class__ == BufferingSMTPHandler:
             # and flush the messages
@@ -146,7 +161,7 @@ def flush_smtp_logger():
 def logging_worker_init(q):
     # the worker processes write logs into the q, which are then handled by this queuehandler
     qh = logging.handlers.QueueHandler(q)
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(LOGGERNAME)
     logger.addHandler(qh)
     # remove the default stdout handler
     for handler in logger.handlers:

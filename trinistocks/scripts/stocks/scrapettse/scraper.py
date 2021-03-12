@@ -24,6 +24,7 @@ import sqlalchemy.exc
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy import create_engine, Table, select, MetaData, text, and_
 import requests
+
 from pid import PidFile
 import logging
 import os
@@ -52,8 +53,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MULTIPROCESSING_TIMEOUT = 60 * 60
 WEBPAGE_LOAD_TIMEOUT_SECS = 60
 # Define a start date to use for the full updates
-START_DATE = "2017-01-01"
-LOGGERNAME = "scraper.py"
+TTSE_RECORDS_START_DATE = "2017-01-01"
+LOGGERNAME = "scraper"
 
 # endregion CONSTANTS
 
@@ -1347,7 +1348,7 @@ def update_technical_analysis_data():
             db_connect.close()
 
 
-def parse_news_data_per_stock(symbols_to_fetch_for):
+def parse_news_data_per_stock(symbols_to_fetch_for, start_date):
     """In a single thread, take a subset of symbols and fetch the news data for each symbol"""
     news_data = []
     logger = logging.getLogger(LOGGERNAME)
@@ -1358,7 +1359,7 @@ def parse_news_data_per_stock(symbols_to_fetch_for):
             page_num = 1
             while True:
                 # Construct the full URL using the symbol
-                news_url = f"https://www.stockex.co.tt/news/?symbol={symbol['symbol_id']}&category=&date=&date_to=&search&page={page_num}#search_c"
+                news_url = f"https://www.stockex.co.tt/news/?symbol={symbol['symbol_id']}&category=&date={start_date}&date_to=&search&page={page_num}#search_c"
                 logger.debug("Navigating to " + news_url)
                 news_page = requests.get(news_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
                 if news_page.status_code != 200:
@@ -1489,12 +1490,13 @@ def parse_news_data_per_stock(symbols_to_fetch_for):
     return news_data
 
 
-def scrape_newsroom_data():
+def scrape_newsroom_data(start_date):
     """Use the requests and pandas libs to fetch the current listed equities at
     https://www.stockex.co.tt/listed-securities/?IdInstrumentType=1&IdSegment=&IdSector=
     and scrape the useful output into a list of dictionaries to write to the db
     """
     logger = logging.getLogger(LOGGERNAME)
+    logger.debug(f"Now trying to scrape newsroom date from {start_date} to today")
     try:
         all_listed_symbols = []
         with DatabaseConnect() as db_connection:
@@ -1523,9 +1525,10 @@ def scrape_newsroom_data():
             max_workers=num_threads, thread_name_prefix="fetch_news_data"
         ) as executor:
             future_to_news_fetch = {
-                executor.submit(parse_news_data_per_stock, symbols): symbols
+                executor.submit(parse_news_data_per_stock, symbols, start_date): symbols
                 for symbols in per_thread_symbols
             }
+            logger.debug(f"Newsroom pages now being fetched by worker threads.")
             for future in concurrent.futures.as_completed(future_to_news_fetch):
                 per_thread_symbols = future_to_news_fetch[future]
                 try:
@@ -1580,24 +1583,38 @@ def main(args):
         )
         # Set up a pidfile to ensure that only one instance of this script runs at a time
         with PidFile(piddir=tempfile.gettempdir()):
-            # set the start date based on the the full history option
-            if args.full_history:
-                start_date = START_DATE
-            else:
-                start_date = (datetime.now() + relativedelta(months=-1)).strftime(
-                    "%Y-%m-%d"
-                )
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(
                 os.cpu_count(), custom_logging.logging_worker_init, [q]
             ) as multipool:
                 logger.debug("Now starting TTSE scraper.")
-                # check if this is the daily update (run inside the trading day)
-                if args.daily_update:
-                    result = multipool.apply_async(update_daily_trades, ())
-                    result.get()
+                # check if this is the intradaily update (run inside the trading day)
+                if args.intradaily_update:
+                    logger.debug("Intradaily scraper called.")
+                    daily_trade_update_result = multipool.apply_async(
+                        update_daily_trades, ()
+                    )
+                    logger.debug(
+                        f"update_daily_trades exited with code {daily_trade_update_result.get()}"
+                    )
                 else:
-                    # else this is a full update (run once a day)
+                    if args.end_of_day_update:
+                        logger.debug("End of day scraper called.")
+                        start_date = (datetime.now() + relativedelta(days=-1)).strftime(
+                            "%Y-%m-%d"
+                        )
+                    elif args.full_history:
+                        logger.debug("Full history scraper called.")
+                        start_date = TTSE_RECORDS_START_DATE
+                    elif args.catchup:
+                        logger.debug("Catchup scraper called.")
+                        start_date = (
+                            datetime.now() + relativedelta(months=-1)
+                        ).strftime("%Y-%m-%d")
+                    # update news data first
+                    scrape_all_newsroom_data_result = multipool.apply_async(
+                        scrape_newsroom_data, (start_date,)
+                    )
                     scrape_listed_equity_data_result = multipool.apply_async(
                         scrape_listed_equity_data, ()
                     )
@@ -1610,6 +1627,9 @@ def main(args):
                     # block on the next function to wait until the dates are ready
                     dates_to_fetch_sublists = multipool.apply(
                         update_equity_summary_data, (start_date,)
+                    )
+                    logger.debug(
+                        f"scrape_all_newsroom_data exited with code {scrape_all_newsroom_data_result.get()}"
                     )
                     logger.debug(
                         f"scrape_listed_equity_data exited with code {scrape_listed_equity_data_result.get()}"
@@ -1633,10 +1653,8 @@ def main(args):
                         logger.debug(
                             f"One process of scrape_equity_summary_data exited with code {result.get()}"
                         )
-                    # update tShe technical analysis stock data
+                    # update the technical analysis stock data
                     multipool.apply_async(update_technical_analysis_data, ())
-                    # update news data
-                    multipool.apply_async(scrape_newsroom_data, ())
                 multipool.close()
                 multipool.join()
                 logger.debug(os.path.basename(__file__) + " was completed.")
@@ -1661,9 +1679,21 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "-d",
-        "--daily_update",
-        help="Only update data for the daily summary for today",
+        "-id",
+        "--intradaily_update",
+        help="Only update data that would have changed immediately during today's trading",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-eod",
+        "--end_of_day_update",
+        help="Update all data that would have changed as a result of today's trading",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-c",
+        "--catchup",
+        help="If we missed any data, run this to scrape missed days",
         action="store_true",
     )
     args = parser.parse_args()
