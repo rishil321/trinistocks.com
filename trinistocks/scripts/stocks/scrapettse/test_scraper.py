@@ -97,6 +97,9 @@ def test_scrape_dividend_data():
 
 
 def test_scrape_newsroom_data():
+    start_date = (datetime.now() + relativedelta(days=-1)).strftime(
+                        "%Y-%m-%d"
+    end_date = (datetime.now()).strftime("%Y-%m-%d")
     assert scraper.scrape_newsroom_data() == 0
 
 

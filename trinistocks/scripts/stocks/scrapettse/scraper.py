@@ -1595,8 +1595,8 @@ def main(args):
                         update_daily_trades, ()
                     )
                     start_date = (datetime.now() + relativedelta(days=-1)).strftime(
-                        "%Y-%m-%d"
-                    end_date = (datetime.now()).strftime("%Y-%m-%d")
+                        "%Y-%m-%d")
+                    end_date = datetime.now().strftime("%Y-%m-%d")
                     scrape_all_newsroom_data_result = multipool.apply_async(
                         scrape_newsroom_data, (start_date,end_date)
                     )
