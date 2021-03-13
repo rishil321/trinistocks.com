@@ -1348,7 +1348,7 @@ def update_technical_analysis_data():
             db_connect.close()
 
 
-def parse_news_data_per_stock(symbols_to_fetch_for, start_date,end_date):
+def parse_news_data_per_stock(symbols_to_fetch_for, start_date, end_date):
     """In a single thread, take a subset of symbols and fetch the news data for each symbol"""
     news_data = []
     logger = logging.getLogger(LOGGERNAME)
@@ -1496,7 +1496,7 @@ def scrape_newsroom_data(start_date, end_date):
     and scrape the useful output into a list of dictionaries to write to the db
     """
     logger = logging.getLogger(LOGGERNAME)
-    logger.debug(f"Now trying to scrape newsroom date from {start_date} to {end_date}}")
+    logger.debug(f"Now trying to scrape newsroom date from {start_date} to {end_date}")
     try:
         all_listed_symbols = []
         with DatabaseConnect() as db_connection:
@@ -1525,7 +1525,9 @@ def scrape_newsroom_data(start_date, end_date):
             max_workers=num_threads, thread_name_prefix="fetch_news_data"
         ) as executor:
             future_to_news_fetch = {
-                executor.submit(parse_news_data_per_stock, symbols, start_date,end_date): symbols
+                executor.submit(
+                    parse_news_data_per_stock, symbols, start_date, end_date
+                ): symbols
                 for symbols in per_thread_symbols
             }
             logger.debug(f"Newsroom pages now being fetched by worker threads.")
@@ -1595,10 +1597,11 @@ def main(args):
                         update_daily_trades, ()
                     )
                     start_date = (datetime.now() + relativedelta(days=-1)).strftime(
-                        "%Y-%m-%d")
+                        "%Y-%m-%d"
+                    )
                     end_date = datetime.now().strftime("%Y-%m-%d")
                     scrape_all_newsroom_data_result = multipool.apply_async(
-                        scrape_newsroom_data, (start_date,end_date)
+                        scrape_newsroom_data, (start_date, end_date)
                     )
                     logger.debug(
                         f"update_daily_trades exited with code {daily_trade_update_result.get()}"
