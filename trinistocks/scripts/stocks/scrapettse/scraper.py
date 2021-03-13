@@ -1594,6 +1594,12 @@ def main(args):
                     daily_trade_update_result = multipool.apply_async(
                         update_daily_trades, ()
                     )
+                    start_date = (datetime.now() + relativedelta(days=-1)).strftime(
+                        "%Y-%m-%d"
+                    )
+                    scrape_all_newsroom_data_result = multipool.apply_async(
+                        scrape_newsroom_data, (start_date,)
+                    )
                     logger.debug(
                         f"update_daily_trades exited with code {daily_trade_update_result.get()}"
                     )
