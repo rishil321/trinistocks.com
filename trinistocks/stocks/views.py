@@ -1775,7 +1775,7 @@ class PasswordResetRequestView(FormView):
 class DailyStockSummaryList(generics.ListCreateAPIView):
     queryset = models.DailyStockSummary.objects.all()
     serializer_class = DailyStockSummarySerializer
-    permission_classes = (permissions.IsAuthenticated,)  # new
+    permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
         """
