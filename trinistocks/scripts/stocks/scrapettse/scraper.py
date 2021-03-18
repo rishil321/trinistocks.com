@@ -1659,9 +1659,11 @@ def main(args):
                             f"One process of scrape_equity_summary_data exited with code {result.get()}"
                         )
                     # update the technical analysis stock data
-                    multipool.apply_async(update_technical_analysis_data, ())
+                    update_technical_analysis_result = multipool.apply_async(
+                        update_technical_analysis_data, ()
+                    )
                     logger.debug(
-                        f"update_technical_analysis_data exited with code {update_technical_analysis_data.get()}"
+                        f"update_technical_analysis_data exited with code {update_technical_analysis_result.get()}"
                     )
                 multipool.close()
                 multipool.join()
