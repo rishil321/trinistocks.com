@@ -1158,6 +1158,7 @@ def update_daily_trades():
         return 0
     except Exception:
         logger.exception("Could not load daily data for today!")
+        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
         if db_connect is not None:
@@ -1411,9 +1412,7 @@ def parse_news_data_per_stock(symbols_to_fetch_for, start_date, end_date):
                             ):
                                 category = possible_category.string.strip()
                         if not category:
-                            raise RuntimeError(
-                                f"We were not able to find the category for {article}"
-                            )
+                            logger.warning("Could not parse category for this URL.")
                         # try to get the date
                         date = None
                         date_soup = per_stock_page_soup.select(
@@ -1544,6 +1543,8 @@ def scrape_newsroom_data(start_date, end_date):
                         "Successfully got data for symbols. Adding to master list."
                     )
                     all_news_data += news_data
+        if not all_news_data:
+            raise RuntimeError("No news data could be parsed.")
         with DatabaseConnect() as db_connection:
             # now write the list of dicts to the database
             stock_news_table = Table(
@@ -1565,6 +1566,7 @@ def scrape_newsroom_data(start_date, end_date):
             return 0
     except Exception:
         logger.exception("Ran into an issue while trying to fetch news data.")
+        custom_logging.flush_smtp_logger()
 
 
 def main(args):
@@ -1623,6 +1625,13 @@ def main(args):
                         start_date = (
                             datetime.now() + relativedelta(months=-1)
                         ).strftime("%Y-%m-%d")
+                        end_date = datetime.now().strftime("%Y-%m-%d")
+                        scrape_all_newsroom_data_result = multipool.apply_async(
+                            scrape_newsroom_data, (start_date, end_date)
+                        )
+                        logger.debug(
+                            f"scrape_all_newsroom_data exited with code {scrape_all_newsroom_data_result.get()}"
+                        )
                     scrape_listed_equity_data_result = multipool.apply_async(
                         scrape_listed_equity_data, ()
                     )
@@ -1671,7 +1680,7 @@ def main(args):
                 q_listener.stop()
                 return 0
     except Exception as exc:
-        logger.error(f"Error in script {os.path.basename(__file__)}", exc_info=exc)
+        logger.exception(f"Error in script {os.path.basename(__file__)}", exc_info=exc)
         custom_logging.flush_smtp_logger()
 
 
