@@ -18,7 +18,6 @@ import smtplib
 import sys
 
 # CONSTANTS. These should be all in upper case
-LOGGERNAME = None
 
 # Global variables
 
@@ -99,8 +98,6 @@ def setup_logging(
     :return: [description]
     :rtype: [type]
     """
-    global LOGGERNAME
-    LOGGERNAME = loggername
     # Set up a queue to take in logging messages from multiple threads
     q = multiprocessing.Queue()
     # set up a stream handler for stdout
@@ -111,7 +108,9 @@ def setup_logging(
     )
     stdout_handler.setFormatter(formatter)
     stdout_handler.setLevel(stdoutlogginglevel)
-    mainlogger = logging.getLogger(LOGGERNAME)
+    mainlogger = logging.getLogger(loggername)
+    if mainlogger.hasHandlers():
+        mainlogger.handlers.clear()
     mainlogger.setLevel(logging.DEBUG)
     # add the handler to the logger so records from this process are handled
     mainlogger.addHandler(stdout_handler)
