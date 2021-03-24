@@ -164,7 +164,7 @@ def logging_worker_init(q):
     # the worker processes write logs into the q, which are then handled by this queuehandler
     qh = logging.handlers.QueueHandler(q)
     logger = logging.getLogger(LOGGERNAME)
-    logger.addHandler(qh)
+    # logger.addHandler(qh)
     # remove the default stdout handler
     for handler in logger.handlers:
         if handler.__class__ == logging.StreamHandler:
