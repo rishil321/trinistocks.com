@@ -137,10 +137,10 @@ def setup_logging(
     # Set the level of logging for files
     logfilehandler.setLevel(filelogginglevel)
     # Add the log handler for files
-    # mainlogger.addHandler(logfilehandler)
+    mainlogger.addHandler(logfilehandler)
     # ql gets records from the queue and sends them to the handler
     ql = logging.handlers.QueueListener(q, stdout_handler, logfilehandler)
-    ql.start()
+    # ql.start()
     # Now set up the SMTP log handler
     if smtploggingenabled:
         smtploghandler = BufferingSMTPHandler(
