@@ -112,6 +112,7 @@ def setup_logging(
     stdout_handler.setFormatter(formatter)
     stdout_handler.setLevel(stdoutlogginglevel)
     mainlogger = logging.getLogger(LOGGERNAME)
+    mainlogger.propagate = False
     if mainlogger.hasHandlers():
         mainlogger.handlers.clear()
     mainlogger.setLevel(logging.DEBUG)
@@ -136,7 +137,7 @@ def setup_logging(
     # Set the level of logging for files
     logfilehandler.setLevel(filelogginglevel)
     # Add the log handler for files
-    mainlogger.addHandler(logfilehandler)
+    # mainlogger.addHandler(logfilehandler)
     # ql gets records from the queue and sends them to the handler
     ql = logging.handlers.QueueListener(q, stdout_handler, logfilehandler)
     ql.start()
@@ -164,7 +165,7 @@ def logging_worker_init(q):
     # the worker processes write logs into the q, which are then handled by this queuehandler
     qh = logging.handlers.QueueHandler(q)
     logger = logging.getLogger(LOGGERNAME)
-    # logger.addHandler(qh)
+    logger.addHandler(qh)
     # remove the default stdout handler
     for handler in logger.handlers:
         if handler.__class__ == logging.StreamHandler:

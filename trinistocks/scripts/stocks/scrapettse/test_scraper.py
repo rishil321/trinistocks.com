@@ -54,7 +54,7 @@ def test_daily_trades():
     assert scraper.main(args) == 0
 
 
-def test_normal_updates():
+def test_intradaily_updates():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-f",
@@ -63,12 +63,24 @@ def test_normal_updates():
         action="store_true",
     )
     parser.add_argument(
-        "-d",
-        "--daily_update",
-        help="Only update data for the daily summary for today",
+        "-id",
+        "--intradaily_update",
+        help="Only update data that would have changed immediately during today's trading",
         action="store_true",
     )
-    args = parser.parse_args([])
+    parser.add_argument(
+        "-eod",
+        "--end_of_day_update",
+        help="Update all data that would have changed as a result of today's trading",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-c",
+        "--catchup",
+        help="If we missed any data, run this to scrape missed days",
+        action="store_true",
+    )
+    args = parser.parse_args(["-id"])
     assert scraper.main(args) == 0
 
 
