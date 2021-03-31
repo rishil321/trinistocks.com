@@ -1544,26 +1544,30 @@ def scrape_newsroom_data(start_date, end_date):
                     )
                     all_news_data += news_data
         if not all_news_data:
-            raise RuntimeError("No news data could be parsed.")
-        with DatabaseConnect() as db_connection:
-            # now write the list of dicts to the database
-            stock_news_table = Table(
-                "stock_news_data",
-                MetaData(),
-                autoload=True,
-                autoload_with=db_connection.dbengine,
+            # if we could not parse any news data for today
+            logger.warning(
+                "No news data could be parsed for today. Possibly no news released today?"
             )
-            logger.debug("Inserting scraped news data into stock_news table")
-            insert_stmt = insert(stock_news_table).values(all_news_data)
-            upsert_stmt = insert_stmt.on_duplicate_key_update(
-                {x.name: x for x in insert_stmt.inserted}
-            )
-            result = db_connection.dbcon.execute(upsert_stmt)
-            logger.debug(
-                "Database update successful. Number of rows affected was "
-                + str(result.rowcount)
-            )
-            return 0
+        else:
+            with DatabaseConnect() as db_connection:
+                # now write the list of dicts to the database
+                stock_news_table = Table(
+                    "stock_news_data",
+                    MetaData(),
+                    autoload=True,
+                    autoload_with=db_connection.dbengine,
+                )
+                logger.debug("Inserting scraped news data into stock_news table")
+                insert_stmt = insert(stock_news_table).values(all_news_data)
+                upsert_stmt = insert_stmt.on_duplicate_key_update(
+                    {x.name: x for x in insert_stmt.inserted}
+                )
+                result = db_connection.dbcon.execute(upsert_stmt)
+                logger.debug(
+                    "Database update successful. Number of rows affected was "
+                    + str(result.rowcount)
+                )
+                return 0
     except Exception:
         logger.exception("Ran into an issue while trying to fetch news data.")
         custom_logging.flush_smtp_logger()
