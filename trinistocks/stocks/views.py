@@ -27,9 +27,9 @@ from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from rest_framework import generics, permissions
-from .serializers import DailyStockSummarySerializer
 
 # Imports from local machine
+from . import serializers
 from . import models, filters
 from . import tables as stocks_tables
 from .templatetags import stocks_template_tags
@@ -1772,19 +1772,228 @@ class PasswordResetRequestView(FormView):
 # API Views
 
 
-class DailyStockSummaryList(generics.ListCreateAPIView):
-    queryset = models.DailyStockSummary.objects.all()
-    serializer_class = DailyStockSummarySerializer
+class DailyStocksTradedApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.DailyStockSummarySerializer
+    # require a token to access the api
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
         """
         Return only the objects for the last trading day
         """
-        latest_date = stocks_template_tags.get_latest_date_dailytradingsummary()
+        queryset = models.DailyStockSummary.objects.all()
+        # check if a date was included in the request
+        filter_date = self.request.query_params.get("date")
+        # if no date was included, send data for the last date
+        if not filter_date:
+            filter_date = stocks_template_tags.get_latest_date_dailytradingsummary()
         return (
             models.DailyStockSummary.objects.exclude(was_traded_today=0)
-            .filter(date=latest_date)
+            .filter(date=filter_date)
             .select_related("symbol")
             .order_by("-value_traded")
         )
+
+
+class StockNewsApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.StockNewsDataSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        check the url for any filters applied and return the filtered queryset
+        """
+        queryset = models.StockNewsData.objects.all()
+        filter_symbol = self.request.query_params.get("symbol")
+        filter_start_date = self.request.query_params.get("start_date")
+        filter_end_date = self.request.query_params.get("end_date")
+        filter_category = self.request.query_params.get("category")
+        if filter_symbol is not None:
+            queryset = queryset.filter(symbol=filter_symbol)
+        if filter_start_date is not None and filter_end_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date).filter(
+                date__lte=filter_end_date
+            )
+        if filter_category is not None:
+            queryset = queryset.filter(category=filter_category)
+        return queryset
+
+
+class ListedStocksApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.ListedStocksSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        check the url for any filters applied and return the filtered queryset
+        """
+        queryset = models.ListedEquities.objects.all()
+        filter_symbol = self.request.query_params.get("symbol")
+        filter_status = self.request.query_params.get("status")
+        filter_sector = self.request.query_params.get("sector")
+        filter_currency = self.request.query_params.get("currency")
+        if filter_symbol is not None:
+            queryset = queryset.filter(symbol=filter_symbol)
+        if filter_status is not None:
+            queryset = queryset.filter(status=filter_status)
+        if filter_sector is not None:
+            queryset = queryset.filter(sector=filter_sector)
+        if filter_currency is not None:
+            queryset = queryset.filter(currency=filter_currency)
+        return queryset
+
+
+class TechnicalAnalysisApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.TechnicalAnalysisSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        check the url for any filters applied and return the filtered queryset
+        """
+        queryset = models.TechnicalAnalysisSummary.objects.all()
+        return queryset
+
+
+class FundamentalAnalysisApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.FundamentalAnalysisSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        check the url for any filters applied and return the filtered queryset
+        """
+        queryset = models.FundamentalAnalysisSummary.objects.all()
+        # check for any url filters applied
+        filter_symbol = self.request.query_params.get("symbol")
+        filter_report_type = self.request.query_params.get("report_type")
+        filter_start_date = self.request.query_params.get("start_date")
+        filter_end_date = self.request.query_params.get("end_date")
+        if filter_symbol is not None:
+            queryset = queryset.filter(symbol=filter_symbol)
+        if filter_start_date is not None and filter_end_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date).filter(
+                date__lte=filter_end_date
+            )
+        if filter_report_type is not None:
+            queryset = queryset.filter(report_type=filter_report_type)
+        return queryset
+
+
+class StockPriceApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.StockPriceSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return only the objects for the last trading day
+        """
+        queryset = models.DailyStockSummary.objects.all()
+        filter_symbol = self.request.query_params.get("symbol")
+        # check if a date was included in the request
+        filter_start_date = self.request.query_params.get("start_date")
+        filter_end_date = self.request.query_params.get("end_date")
+        if filter_symbol is not None:
+            queryset = queryset.filter(symbol=filter_symbol)
+        if filter_start_date is not None and filter_end_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date).filter(
+                date__lte=filter_end_date
+            )
+        return queryset
+
+
+class DividendPaymentsApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.DividendPaymentsSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return only the objects for the last trading day
+        """
+        queryset = models.HistoricalDividendInfo.objects.all()
+        filter_symbol = self.request.query_params.get("symbol")
+        # check if a date was included in the request
+        filter_start_date = self.request.query_params.get("start_date")
+        filter_end_date = self.request.query_params.get("end_date")
+        if filter_symbol is not None:
+            queryset = queryset.filter(symbol=filter_symbol)
+        if filter_start_date is not None and filter_end_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date).filter(
+                date__lte=filter_end_date
+            )
+        return queryset
+
+
+class DividendYieldsApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.DividendYieldSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return only the objects for the last trading day
+        """
+        queryset = models.HistoricalDividendYield.objects.all()
+        filter_symbol = self.request.query_params.get("symbol")
+        # check if a date was included in the request
+        filter_start_date = self.request.query_params.get("start_date")
+        filter_end_date = self.request.query_params.get("end_date")
+        if filter_symbol is not None:
+            queryset = queryset.filter(symbol=filter_symbol)
+        if filter_start_date is not None and filter_end_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date).filter(
+                date__lte=filter_end_date
+            )
+        return queryset
+
+
+class MarketIndicesApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.MarketIndicesSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return only the objects for the last trading day
+        """
+        queryset = models.HistoricalIndicesInfo.objects.all()
+        filter_index_name = self.request.query_params.get("index_name")
+        # check if a date was included in the request
+        filter_start_date = self.request.query_params.get("start_date")
+        filter_end_date = self.request.query_params.get("end_date")
+        if filter_index_name is not None:
+            queryset = queryset.filter(symbol=filter_index_name)
+        if filter_start_date is not None and filter_end_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date).filter(
+                date__lte=filter_end_date
+            )
+        return queryset
+
+
+class OutstandingTradesApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.OutstandingTradesSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return only the objects for the last trading day
+        """
+        queryset = models.DailyStockSummary.objects.all()
+        filter_symbol = self.request.query_params.get("symbol")
+        # check if a date was included in the request
+        filter_start_date = self.request.query_params.get("start_date")
+        filter_end_date = self.request.query_params.get("end_date")
+        if filter_symbol is not None:
+            queryset = queryset.filter(symbol=filter_symbol)
+        if filter_start_date is not None and filter_end_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date).filter(
+                date__lte=filter_end_date
+            )
+        return queryset
