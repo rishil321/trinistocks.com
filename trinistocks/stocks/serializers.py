@@ -68,11 +68,29 @@ class TechnicalAnalysisSerializer(serializers.ModelSerializer):
         )
 
 
-class FundamentalAnalysisSerializer(serializers.ModelSerializer):
+class ListedStockSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = ListedEquities
+        fields = (
+            "symbol",
+            "security_name",
+            "status",
+            "sector",
+            "issued_share_capital",
+            "market_capitalization",
+            "financial_year_end",
+            "currency",
+        )
+
+
+class FundamentalAnalysisSerializer(serializers.HyperlinkedModelSerializer):
+    sector = ListedStockSerializer(source="stock.sector")
+
     class Meta:
         model = FundamentalAnalysisSummary
         fields = (
             "symbol",
+            "sector",
             "date",
             "report_type",
             "RoE",
