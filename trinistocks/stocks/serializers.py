@@ -84,13 +84,13 @@ class ListedStockSerializer(serializers.ModelSerializer):
 
 
 class FundamentalAnalysisSerializer(serializers.ModelSerializer):
-    stock = ListedStockSerializer(many=True)
+    stock = ListedStockSerializer(many=True, source="stock_fields")
 
     class Meta:
         model = FundamentalAnalysisSummary
         fields = (
             "symbol",
-            "stock",
+            "stock_fields",
             "date",
             "report_type",
             "RoE",
