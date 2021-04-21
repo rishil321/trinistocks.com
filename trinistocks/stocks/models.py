@@ -256,7 +256,12 @@ class TechnicalAnalysisSummary(models.Model):
 class FundamentalAnalysisSummary(models.Model):
 
     id = models.AutoField(primary_key=True)
-    symbol = models.ForeignKey(ListedEquities, models.CASCADE, db_column="symbol")
+    symbol = models.ForeignKey(
+        ListedEquities,
+        models.CASCADE,
+        db_column="symbol",
+        related_name="symboldata",
+    )
     date = models.DateField(verbose_name="Date")
     report_type = models.CharField(max_length=10)
     RoE = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
