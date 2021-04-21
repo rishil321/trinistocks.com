@@ -85,14 +85,12 @@ class ListedStockSerializer(serializers.ModelSerializer):
 
 class FundamentalAnalysisSerializer(serializers.ModelSerializer):
     stock = ListedStockSerializer()
-    sector = serializers.CharField(read_only=True, source="stock.sector")
 
     class Meta:
         model = FundamentalAnalysisSummary
         fields = (
             "symbol",
-            stock,
-            "sector",
+            "stock",
             "date",
             "report_type",
             "RoE",
