@@ -84,7 +84,7 @@ class ListedStockSerializer(serializers.ModelSerializer):
 
 
 class FundamentalAnalysisSerializer(serializers.ModelSerializer):
-    stock = ListedStockSerializer(many=True)
+    stock = ListedStockSerializer(many=True, source="stock")
 
     class Meta:
         model = FundamentalAnalysisSummary
