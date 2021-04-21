@@ -68,29 +68,15 @@ class TechnicalAnalysisSerializer(serializers.ModelSerializer):
         )
 
 
-class ListedStockSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ListedEquities
-        fields = (
-            "symbol",
-            "security_name",
-            "status",
-            "sector",
-            "issued_share_capital",
-            "market_capitalization",
-            "financial_year_end",
-            "currency",
-        )
-
-
 class FundamentalAnalysisSerializer(serializers.ModelSerializer):
-    test = ListedStockSerializer(source="test")
+    symbol = serializers.CharField(read_only=True, source="symbol.symbol")
+    sector = serializers.CharField(read_only=True, source="symbol.sector")
 
     class Meta:
         model = FundamentalAnalysisSummary
         fields = (
             "symbol",
-            "test",
+            "sector",
             "date",
             "report_type",
             "RoE",

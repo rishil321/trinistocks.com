@@ -260,6 +260,7 @@ class FundamentalAnalysisSummary(models.Model):
         ListedEquities,
         models.CASCADE,
         db_column="symbol",
+        related_name="fundamental_analysis_data",
     )
     date = models.DateField(verbose_name="Date")
     report_type = models.CharField(max_length=10)
