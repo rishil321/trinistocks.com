@@ -78,7 +78,7 @@ class FundamentalAnalysisSerializer(serializers.ModelSerializer):
             "RoE",
             "EPS",
             "RoIC",
-            "working_capital",
+            "current_ratio",
             "price_to_earnings_ratio",
             "dividend_yield",
             "price_to_book_ratio",
