@@ -84,8 +84,7 @@ class ListedStockSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class FundamentalAnalysisSerializer(serializers.HyperlinkedModelSerializer):
-    stock = ListedStockSerializer()
-    sector = serializers.CharField(read_only=True, source="stock.sector")
+    sector = serializers.CharField(read_only=True, source="listedequities.sector")
 
     class Meta:
         model = FundamentalAnalysisSummary
