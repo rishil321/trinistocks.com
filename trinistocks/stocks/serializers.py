@@ -84,13 +84,13 @@ class ListedStockSerializer(serializers.ModelSerializer):
 
 
 class FundamentalAnalysisSerializer(serializers.ModelSerializer):
-    symboldata = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    test = ListedStockSerializer(source="test")
 
     class Meta:
         model = FundamentalAnalysisSummary
         fields = (
             "symbol",
-            "symboldata",
+            "test",
             "date",
             "report_type",
             "RoE",
