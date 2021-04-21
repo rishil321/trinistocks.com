@@ -68,7 +68,7 @@ class TechnicalAnalysisSerializer(serializers.ModelSerializer):
         )
 
 
-class ListedStockSerializer(serializers.HyperlinkedModelSerializer):
+class ListedStockSerializer(serializers.ModelSerializer):
     class Meta:
         model = ListedEquities
         fields = (
@@ -83,7 +83,7 @@ class ListedStockSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class FundamentalAnalysisSerializer(serializers.HyperlinkedModelSerializer):
+class FundamentalAnalysisSerializer(serializers.ModelSerializer):
     symboldata = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
