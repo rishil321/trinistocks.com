@@ -91,6 +91,7 @@ class FundamentalAnalysisSerializer(serializers.ModelSerializer):
         model = FundamentalAnalysisSummary
         fields = (
             "symbol",
+            "stock",
             "sector",
             "date",
             "report_type",
