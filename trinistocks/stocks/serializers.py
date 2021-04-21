@@ -82,6 +82,7 @@ class FundamentalAnalysisSerializer(serializers.ModelSerializer):
             "price_to_earnings_ratio",
             "dividend_yield",
             "price_to_book_ratio",
+            "dividend_payout_ratio",
             "cash_per_share",
         )
 
