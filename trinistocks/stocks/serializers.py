@@ -51,10 +51,14 @@ class ListedStocksSerializer(serializers.ModelSerializer):
 
 
 class TechnicalAnalysisSerializer(serializers.ModelSerializer):
+    symbol = serializers.CharField(read_only=True, source="symbol.symbol")
+    sector = serializers.CharField(read_only=True, source="symbol.sector")
+
     class Meta:
         model = TechnicalAnalysisSummary
         fields = (
             "symbol",
+            "sector",
             "last_close_price",
             "sma_20",
             "sma_200",
