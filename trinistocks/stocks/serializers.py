@@ -101,6 +101,9 @@ class StockPriceSerializer(serializers.ModelSerializer):
         fields = (
             "symbol",
             "date",
+            "open_price",
+            "low",
+            "high",
             "close_price",
         )
 
