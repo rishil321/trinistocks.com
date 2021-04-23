@@ -1897,13 +1897,10 @@ class StockPriceApiView(generics.ListCreateAPIView):
         filter_symbol = self.request.query_params.get("symbol")
         # check if a date was included in the request
         filter_start_date = self.request.query_params.get("start_date")
-        filter_end_date = self.request.query_params.get("end_date")
         if filter_symbol is not None:
             queryset = queryset.filter(symbol=filter_symbol)
-        if filter_start_date is not None and filter_end_date is not None:
-            queryset = queryset.filter(date__gte=filter_start_date).filter(
-                date__lte=filter_end_date
-            )
+        if filter_start_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date)
         return queryset
 
 

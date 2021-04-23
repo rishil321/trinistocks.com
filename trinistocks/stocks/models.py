@@ -55,6 +55,7 @@ class ListedEquitiesPerSector(models.Model):
 
 
 class DailyStockSummary(models.Model):
+
     daily_share_id = models.AutoField(primary_key=True)
     symbol = models.ForeignKey(ListedEquities, models.CASCADE, db_column="symbol")
     date = models.DateField()
