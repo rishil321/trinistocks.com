@@ -1184,10 +1184,21 @@ def update_daily_trades():
                                 stock_data["last_sale_price"] = symbol_data_chunks[
                                     6
                                 ].replace("$", "")
+                                stock_data["open_price"] = stock_data["last_sale_price"]
+                                stock_data["close_price"] = stock_data[
+                                    "last_sale_price"
+                                ]
+                                stock_data["high"] = stock_data["last_sale_price"]
+                                stock_data["low"] = stock_data["last_sale_price"]
                                 stock_data["change_dollars"] = (
                                     symbol_data_chunks[7]
                                     .replace("(", "")
                                     .replace(")", "")
+                                )
+                                stock_data["was_traded_today"] = 1
+                                stock_data["value_traded"] = (
+                                    stock_data["volume_traded"]
+                                    * stock_data["last_sale_price"]
                                 )
                                 logger.debug(
                                     f"Marquee data looks good for {stock_data['symbol']}. Adding to db list."
