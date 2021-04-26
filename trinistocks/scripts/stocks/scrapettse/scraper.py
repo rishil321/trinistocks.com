@@ -1010,10 +1010,13 @@ def update_daily_trades():
             )
         else:
             logger.debug("Successfully loaded webpage.")
+        # set up a list to store the data to be written to db
+        all_daily_stock_data = []
         # get a list of tables from the URL
         dataframe_list = pd.read_html(http_get_req.text)
-        # if this is a valid trading day, extract the values we need from the tables
-        if len(dataframe_list[00].index) == 8:
+        # if this is a valid trading day, and the summary data for today has been published,
+        # extract the values we need from the tables
+        if len(dataframe_list[00].index) == 8:  # 8
             # get the tables holding useful data
             market_indices_table = dataframe_list[0]
             ordinary_shares_table = dataframe_list[1]
@@ -1024,7 +1027,6 @@ def update_daily_trades():
             usd_equity_shares_table = dataframe_list[6]
             # extract the values required from the tables
             # lets try to wrangle the daily data for stocks
-            all_daily_stock_data = []
             for shares_table in [
                 ordinary_shares_table,
                 preference_shares_table,
@@ -1129,7 +1131,78 @@ def update_daily_trades():
                     shares_table = shares_table.replace({np.nan: None})
                     # add all values to the large list
                     all_daily_stock_data += shares_table.to_dict("records")
-            # now insert the data into the db
+        else:
+            # if no summary data has been published yet for today, try to use the marquee on the main page to source data
+            logger.debug(
+                "No summary data found for today (yet?). Trying to get marquee data from main page."
+            )
+            url_main_page = f"https://www.stockex.co.tt/"
+            logger.debug("Navigating to " + url_main_page)
+            http_get_req = requests.get(
+                url_main_page, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+            )
+            if http_get_req.status_code != 200:
+                raise requests.exceptions.HTTPError(
+                    "Could not load URL to update latest daily data " + url_main_page
+                )
+            else:
+                logger.debug("Successfully loaded webpage.")
+            # parse the text if we were able to load the marquee data
+            page_soup = BeautifulSoup(http_get_req.text, "lxml")
+            marquee = page_soup.find("marquee", id=["tickerTape"])
+            if not marquee:
+                logger.warning(f"Could not find marquee on today's page.")
+            else:
+                logger.debug("Found marquee for today. Now parsing data.")
+                try:
+                    # use string operations to try to make sense of the marquee
+                    marquee_text = marquee.text
+                    # marquee_text = " Trade Data for 26 Apr 2021 @ 10:06 AM:  AGL  Vol 272  $24.25 (-0.15)  |  CIF  Vol 1,000  $25.05 (0.04)  |  FCI  Vol 875  $6.74 (0.00)  |  FIRST  Vol 3,500  $46.50 (0.10)  |  GHL  Vol 9  $25.61 (0.01)  |  GML  Vol 500  $3.01 (0.00)  |  MASSY  Vol 2,650  $64.00 (0.00)  |  NEL  Vol 1,000  $2.99 (0.00)  |  NGL  Vol 9,700  $13.50 (-0.36)  |  RFHL  Vol 3,093  $132.36 (-0.01)  |  SBTT  Vol 3,657  $54.65 (0.00)  |  WCO  Vol 1,800  $32.98 (0.02)  | "
+                    marquee_text_date = marquee_text.split(": ")[0]
+                    marquee_text_symbol_data = marquee_text.split(": ")[1]
+                    # check if the marquee date is today
+                    marquee_text_date = marquee_text_date.split("for ")[1].split(" @")[
+                        0
+                    ]
+                    if (
+                        datetime.strptime(marquee_text_date, "%d %b %Y").date()
+                        == datetime.today().date()
+                    ):
+                        # if the marquee is showing data for today, then try to parse and store it
+                        logger.info("Marquee is for today. Continuing.")
+                        per_symbol_data = marquee_text_symbol_data.split(" | ")
+                        for symbol_data in per_symbol_data:
+                            # try to store symbol data for each symbol in marquee
+                            stock_data = {}
+                            symbol_data_chunks = symbol_data.split(" ")
+                            if len(symbol_data_chunks) == 9:
+                                stock_data["symbol"] = symbol_data_chunks[1]
+                                stock_data["date"] = datetime.today()
+                                stock_data["volume_traded"] = symbol_data_chunks[
+                                    4
+                                ].replace(",", "")
+                                stock_data["last_sale_price"] = symbol_data_chunks[
+                                    6
+                                ].replace("$", "")
+                                stock_data["change_dollars"] = (
+                                    symbol_data_chunks[7]
+                                    .replace("(", "")
+                                    .replace(")", "")
+                                )
+                                logger.debug(
+                                    f"Marquee data looks good for {stock_data['symbol']}. Adding to db list."
+                                )
+                                # add dict data to list to be written to db
+                                all_daily_stock_data.append(stock_data)
+                    else:
+                        logger.warning("Marquee is for another date. Ignoring.")
+                except Exception as exc:
+                    logger.error(
+                        "Problem while parsing data for marquee. Data possibly in invalid format?",
+                        exc_info=exc,
+                    )
+        if all_daily_stock_data:
+            # if we have any data to insert, then push the data into the db
             execute_completed_successfully = False
             execute_failed_times = 0
             while not execute_completed_successfully and execute_failed_times < 5:
@@ -1153,8 +1226,6 @@ def update_daily_trades():
                     logger.warning(str(operr))
                     time.sleep(2)
                     execute_failed_times += 1
-        else:
-            logger.warning("No data found for today.")
         return 0
     except Exception:
         logger.exception("Could not load daily data for today!")
