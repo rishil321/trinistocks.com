@@ -124,14 +124,10 @@ def setup_logging(
     Path(logdirectory).mkdir(parents=True, exist_ok=True)
     # Now add a log handler to output to a file
     # And set the name for the logfile to be created
-    logfilename = (
-        logdirectory
-        + os.path.sep
-        + loggername
-        + f"{datetime.now():%Y-%m-%d-%H-%M-%S}"
-        + ".log"
+    logfilename = logdirectory + os.path.sep + loggername + ".log"
+    logfilehandler = logging.handlers.RotatingFileHandler(
+        logfilename, maxBytes=2000, backupCount=5
     )
-    logfilehandler = logging.FileHandler(logfilename)
     # Set the format for file log output messages
     logfilehandler.setFormatter(formatter)
     # Set the level of logging for files
