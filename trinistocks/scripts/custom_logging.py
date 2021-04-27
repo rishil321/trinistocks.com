@@ -126,7 +126,7 @@ def setup_logging(
     # And set the name for the logfile to be created
     logfilename = logdirectory + os.path.sep + loggername + ".log"
     logfilehandler = logging.handlers.RotatingFileHandler(
-        logfilename, maxBytes=2000, backupCount=5
+        logfilename, maxBytes=1000000, backupCount=5
     )
     # Set the format for file log output messages
     logfilehandler.setFormatter(formatter)
