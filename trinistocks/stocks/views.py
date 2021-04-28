@@ -1920,7 +1920,7 @@ class DividendPaymentsApiView(generics.ListCreateAPIView):
         if filter_symbol is not None:
             queryset = queryset.filter(symbol=filter_symbol)
         if filter_start_date is not None:
-            queryset = queryset.filter(date__gte=filter_start_date)
+            queryset = queryset.filter(record_date__gte=filter_start_date)
         return queryset
 
 
