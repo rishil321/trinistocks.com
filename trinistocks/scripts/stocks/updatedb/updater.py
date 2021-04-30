@@ -172,7 +172,7 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                      calculated_ratios_df['dividend_stock_price_conversion_rates'])
                 # now dividend payout ratio
                 calculated_ratios_df['dividend_payout_ratio'] = 100 * calculated_ratios_df['total_dividends_paid'] / \
-                    calculated_ratios_df['net_income']
+                    calculated_ratios_df['profit_after_tax']
                 # now calculate the eps growth rate
                 calculated_ratios_df['EPS_growth_rate'] = calculated_ratios_df[
                     'basic_earnings_per_share'].diff() * 100
