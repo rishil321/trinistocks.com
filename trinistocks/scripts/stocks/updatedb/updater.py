@@ -106,7 +106,7 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                 # first get the latest share price data
                 # get the latest date from the daily stock table
                 latest_stock_date = pd.io.sql.read_sql(
-                    f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;",
+                    f"SELECT date FROM {daily_stock_summary_table_name} WHERE os_bid_vol !=0 ORDER BY date DESC LIMIT 1;",
                     db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
                 # get the closing price df
                 share_price_df = pd.io.sql.read_sql(
