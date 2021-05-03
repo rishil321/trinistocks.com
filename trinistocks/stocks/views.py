@@ -41,7 +41,7 @@ from scripts.stocks.updatedb import updater
 # CONSTANTS
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
 # Set up logging
-LOGGER = logging.getLogger()
+LOGGER = logging.getLogger("root")
 
 # Class definitions
 
