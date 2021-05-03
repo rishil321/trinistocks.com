@@ -270,7 +270,7 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
             db_connect.dbengine)
         # get the latest date from the daily stock table
         latest_stock_date = pd.io.sql.read_sql(
-            f"SELECT date FROM {daily_stock_summary_table_name} ORDER BY date DESC LIMIT 1;",
+            f"SELECT date FROM {daily_stock_summary_table_name} WHERE os_bid_vol !=0 ORDER BY date DESC LIMIT 1;",
             db_connect.dbengine)['date'][0].strftime('%Y-%m-%d')
         # then get the share price for each listed stock at this date
         share_price_df = pd.io.sql.read_sql(
@@ -466,7 +466,7 @@ def update_portfolio_summary_market_values():
             FROM portfolio_summary;", db_connect.dbengine)
         # get the last date that we have scraped data for
         latest_date = pd.io.sql.read_sql(
-            f"SELECT date FROM daily_stock_summary ORDER BY date DESC LIMIT 1;",
+            f"SELECT date FROM daily_stock_summary WHERE os_bid_vol !=0 ORDER BY date DESC LIMIT 1;",
             db_connect.dbengine)['date'][0]
         # get the closing price for all shares on this date
         closing_price_df = pd.io.sql.read_sql(
