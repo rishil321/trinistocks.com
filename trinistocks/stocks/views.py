@@ -1980,15 +1980,9 @@ class MarketIndicesApiView(generics.ListCreateAPIView):
         filter_end_date = self.request.query_params.get("end_date")
         if filter_index_name is not None:
             queryset = queryset.filter(symbol=filter_index_name)
-<<<<<<< HEAD
         if filter_start_date is not None:
             queryset = queryset.filter(date__gte=filter_start_date)
             )
-=======
-        if filter_start_date is not None and filter_end_date is not None:
-            queryset = queryset.filter(date__gte=filter_start_date).filter(
-                date__lte=filter_end_date)
->>>>>>> 23704b0f03d20939ec53c5361c120f4fc3a25b75
         return queryset
 
 
