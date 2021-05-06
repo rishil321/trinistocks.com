@@ -146,4 +146,4 @@ scripts/configs/*
 trinistocks/scripts/stocks/updatedb/financial_reports/*
 
 # the settings file
-stocks/trinistocks/settings.py
+*settings.py
