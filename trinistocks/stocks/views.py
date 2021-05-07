@@ -1808,14 +1808,11 @@ class StockNewsApiView(generics.ListCreateAPIView):
         queryset = models.StockNewsData.objects.all()
         filter_symbol = self.request.query_params.get("symbol")
         filter_start_date = self.request.query_params.get("start_date")
-        filter_end_date = self.request.query_params.get("end_date")
         filter_category = self.request.query_params.get("category")
         if filter_symbol is not None:
             queryset = queryset.filter(symbol=filter_symbol)
-        if filter_start_date is not None and filter_end_date is not None:
-            queryset = queryset.filter(date__gte=filter_start_date).filter(
-                date__lte=filter_end_date
-            )
+        if filter_start_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date)
         if filter_category is not None:
             queryset = queryset.filter(category=filter_category)
         return queryset
@@ -1873,13 +1870,10 @@ class FundamentalAnalysisApiView(generics.ListCreateAPIView):
         filter_symbol = self.request.query_params.get("symbol")
         filter_report_type = self.request.query_params.get("report_type")
         filter_start_date = self.request.query_params.get("start_date")
-        filter_end_date = self.request.query_params.get("end_date")
         if filter_symbol is not None:
             queryset = queryset.filter(symbol=filter_symbol)
-        if filter_start_date is not None and filter_end_date is not None:
-            queryset = queryset.filter(date__gte=filter_start_date).filter(
-                date__lte=filter_end_date
-            )
+        if filter_start_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date)
         if filter_report_type is not None:
             queryset = queryset.filter(report_type=filter_report_type)
         return queryset
@@ -1958,9 +1952,8 @@ class MarketIndicesApiView(generics.ListCreateAPIView):
         filter_index_name = self.request.query_params.get("index_name")
         # check if a date was included in the request
         filter_start_date = self.request.query_params.get("start_date")
-        filter_end_date = self.request.query_params.get("end_date")
         if filter_index_name is not None:
-            queryset = queryset.filter(symbol=filter_index_name)
+            queryset = queryset.filter(index_name=filter_index_name)
         if filter_start_date is not None:
             queryset = queryset.filter(date__gte=filter_start_date)
         return queryset
@@ -1979,11 +1972,8 @@ class OutstandingTradesApiView(generics.ListCreateAPIView):
         filter_symbol = self.request.query_params.get("symbol")
         # check if a date was included in the request
         filter_start_date = self.request.query_params.get("start_date")
-        filter_end_date = self.request.query_params.get("end_date")
         if filter_symbol is not None:
             queryset = queryset.filter(symbol=filter_symbol)
-        if filter_start_date is not None and filter_end_date is not None:
-            queryset = queryset.filter(date__gte=filter_start_date).filter(
-                date__lte=filter_end_date
-            )
+        if filter_start_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date)
         return queryset
