@@ -1206,7 +1206,9 @@ def update_daily_trades():
                                     f"Marquee data looks good for {stock_data['symbol']}. Adding to db list."
                                 )
                                 # add dict data to list to be written to db
-                                all_daily_stock_data.append(stock_data)
+                                # only if the vol is >0
+                                if (stock_data["volume_traded"] > 0):
+                                    all_daily_stock_data.append(stock_data)
                     else:
                         logger.warning("Marquee is for another date. Ignoring.")
                 except Exception as exc:
