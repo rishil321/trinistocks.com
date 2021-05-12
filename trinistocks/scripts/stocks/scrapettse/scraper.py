@@ -1136,6 +1136,19 @@ def update_daily_trades():
             logger.debug(
                 "No summary data found for today (yet?). Trying to get marquee data from main page."
             )
+            # first get a list of all stock symbols in db
+            listed_equities_table = Table(
+                "listed_equities",
+                MetaData(),
+                autoload=True,
+                autoload_with=db_connect.dbengine,
+            )
+            listed_symbols = []
+            select_stmt = select([listed_equities_table.c.symbol])
+            result = db_connect.dbcon.execute(select_stmt)
+            for row in result:
+                # We only have a single element in each row tuple, which is the date
+                listed_symbols.append(row[0])
             url_main_page = f"https://www.stockex.co.tt/"
             logger.debug("Navigating to " + url_main_page)
             http_get_req = requests.get(
@@ -1177,38 +1190,41 @@ def update_daily_trades():
                             symbol_data_chunks = symbol_data.split(" ")
                             if len(symbol_data_chunks) == 9:
                                 stock_data["symbol"] = symbol_data_chunks[1]
-                                stock_data["date"] = datetime.today()
-                                stock_data["volume_traded"] = int(
-                                    symbol_data_chunks[4].replace(",", "")
-                                )
-                                stock_data["last_sale_price"] = float(
-                                    symbol_data_chunks[6].replace("$", "")
-                                )
-                                stock_data["open_price"] = stock_data["last_sale_price"]
-                                stock_data["close_price"] = stock_data[
-                                    "last_sale_price"
-                                ]
-                                stock_data["high"] = stock_data["last_sale_price"]
-                                stock_data["low"] = stock_data["last_sale_price"]
-                                stock_data["change_dollars"] = float(
-                                    (
-                                        symbol_data_chunks[7]
-                                        .replace("(", "")
-                                        .replace(")", "")
+                                if stock_data["symbol"] in listed_symbols:
+                                    stock_data["date"] = datetime.today()
+                                    stock_data["volume_traded"] = int(
+                                        symbol_data_chunks[4].replace(",", "")
                                     )
-                                )
-                                stock_data["was_traded_today"] = 1
-                                stock_data["value_traded"] = (
-                                    stock_data["volume_traded"]
-                                    * stock_data["last_sale_price"]
-                                )
-                                logger.debug(
-                                    f"Marquee data looks good for {stock_data['symbol']}. Adding to db list."
-                                )
-                                # add dict data to list to be written to db
-                                # only if the vol is >0
-                                if (stock_data["volume_traded"] > 0):
-                                    all_daily_stock_data.append(stock_data)
+                                    stock_data["last_sale_price"] = float(
+                                        symbol_data_chunks[6].replace("$", "")
+                                    )
+                                    stock_data["open_price"] = stock_data[
+                                        "last_sale_price"
+                                    ]
+                                    stock_data["close_price"] = stock_data[
+                                        "last_sale_price"
+                                    ]
+                                    stock_data["high"] = stock_data["last_sale_price"]
+                                    stock_data["low"] = stock_data["last_sale_price"]
+                                    stock_data["change_dollars"] = float(
+                                        (
+                                            symbol_data_chunks[7]
+                                            .replace("(", "")
+                                            .replace(")", "")
+                                        )
+                                    )
+                                    stock_data["was_traded_today"] = 1
+                                    stock_data["value_traded"] = (
+                                        stock_data["volume_traded"]
+                                        * stock_data["last_sale_price"]
+                                    )
+                                    logger.debug(
+                                        f"Marquee data looks good for {stock_data['symbol']}. Adding to db list."
+                                    )
+                                    # add dict data to list to be written to db
+                                    # only if the vol is >0
+                                    if stock_data["volume_traded"] > 0:
+                                        all_daily_stock_data.append(stock_data)
                     else:
                         logger.warning("Marquee is for another date. Ignoring.")
                 except Exception as exc:
