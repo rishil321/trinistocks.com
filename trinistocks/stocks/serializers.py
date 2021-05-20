@@ -10,7 +10,11 @@ from .models import (
     HistoricalDividendInfo,
     HistoricalDividendYield,
     HistoricalIndicesInfo,
+    PortfolioSummary,
+    PortfolioTransactions,
+    User,
 )
+from rest_framework.validators import UniqueTogetherValidator
 
 
 class DailyStockSummarySerializer(serializers.ModelSerializer):
@@ -155,3 +159,50 @@ class OutstandingTradesSerializer(serializers.ModelSerializer):
             "os_offer_vol",
             "volume_traded",
         )
+
+
+class PortfolioSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortfolioSummary
+        fields = (
+            "symbol",
+            "shares_remaining",
+            "average_cost",
+            "book_cost",
+            "current_market_price",
+            "market_value",
+            "total_gain_loss",
+        )
+
+
+class PortfolioTransactionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortfolioTransactions
+        fields = (
+            "symbol",
+            "date",
+            "bought_or_sold",
+            "share_price",
+            "num_shares",
+        )
+
+
+class UserSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        user = User.objects.create_user(**validated_data)
+        return user
+
+    class Meta:
+        model = User
+        fields = (
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "password",
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(), fields=["username", "email"]
+            )
+        ]

@@ -26,7 +26,7 @@ from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, views, response, status
 
 # Imports from local machine
 from . import serializers
@@ -1977,3 +1977,49 @@ class OutstandingTradesApiView(generics.ListCreateAPIView):
         if filter_start_date is not None:
             queryset = queryset.filter(date__gte=filter_start_date)
         return queryset
+
+
+class PortfolioSummaryApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.OutstandingTradesSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return only the objects for the last trading day
+        """
+        queryset = models.DailyStockSummary.objects.all()
+        filter_symbol = self.request.query_params.get("symbol")
+        # check if a date was included in the request
+        filter_start_date = self.request.query_params.get("start_date")
+        if filter_symbol is not None:
+            queryset = queryset.filter(symbol=filter_symbol)
+        if filter_start_date is not None:
+            queryset = queryset.filter(date__gte=filter_start_date)
+        return queryset
+
+
+class UserRecordView(views.APIView):
+    """
+    API View to create or get a list of all the registered
+    users. GET request returns the registered users whereas
+    a POST request allows to create a new user.
+    """
+
+    def get(self, format=None):
+        users = models.User.objects.all()
+        serializer = serializers.UserSerializer(users, many=True)
+        return response.Response(serializer.data)
+
+    def post(self, request):
+        serializer = serializers.UserSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=ValueError):
+            serializer.create(validated_data=request.data)
+            return response.Response(serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(
+            {
+                "error": True,
+                "error_msg": serializer.error_messages,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )

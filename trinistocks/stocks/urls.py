@@ -6,6 +6,7 @@ from django.views.generic.base import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.urlpatterns import format_suffix_patterns
+from rest_framework.authtoken import views as authviews
 
 # Imports from local machine
 from . import views
@@ -118,6 +119,11 @@ urlpatterns = [
     path("api/dividendyields", views.DividendYieldsApiView.as_view()),
     path("api/marketindices", views.MarketIndicesApiView.as_view()),
     path("api/outstandingtrades", views.OutstandingTradesApiView.as_view()),
+    path("api/portfoliosummary", views.PortfolioSummaryApiView.as_view()),
+    path(
+        "api/usertoken",
+        authviews.obtain_auth_token,
+    ),
     path(
         "ads.txt",
         RedirectView.as_view(url=staticfiles_storage.url("stocks/ads.txt")),
