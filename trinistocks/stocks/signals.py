@@ -37,7 +37,7 @@ def password_reset_token_created(
 
     # render email text
     email_plaintext_message = render_to_string(
-        "stocks/account/password_reset_email.txt", context
+        "stocks/account/api_password_reset_email.txt", context
     )
 
     msg = EmailMultiAlternatives(
