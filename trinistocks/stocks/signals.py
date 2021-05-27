@@ -3,6 +3,8 @@ from django.urls import reverse
 from django_rest_passwordreset.signals import reset_password_token_created
 from django.core.mail import send_mail
 
+LOGGER = logging.getLogger("root")
+
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(
@@ -24,3 +26,4 @@ def password_reset_token_created(
         [reset_password_token.user.email],
         fail_silently=False,
     )
+    LOGGER.debug(f"Sent mail to {reset_password_token.user.email} successfully.")
