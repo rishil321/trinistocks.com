@@ -27,6 +27,10 @@ from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from rest_framework import generics, permissions, views, response, status
+from django.contrib.auth.models import User
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 
 # Imports from local machine
 from . import serializers
@@ -2015,11 +2019,54 @@ class UserRecordAPIView(views.APIView):
         serializer = serializers.UserSerializer(data=request.data)
         if serializer.is_valid(raise_exception=ValueError):
             serializer.create(validated_data=request.data)
-            return response.Response(serializer.data, status=status.HTTP_201_CREATED)
-        return response.Response(
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
             {
                 "error": True,
                 "error_msg": serializer.error_messages,
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class ChangePasswordView(generics.UpdateAPIView):
+    """
+    An endpoint for changing the password using the app
+    """
+
+    serializer_class = serializers.ChangePasswordSerializer
+    model = User
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, queryset=None):
+        obj = self.request.user
+        return obj
+
+    def update(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            # if both required passwords were provided, check the old password first
+            if not self.object.check_password(serializer.data.get("old_password")):
+                response = {
+                    "status": "failed",
+                    "code": status.HTTP_401_UNAUTHORIZED,
+                    "message": "Your provided credentials do not seem to match any existing record.",
+                    "data": [],
+                }
+            else:
+                # else update the password with the new password
+                # set_password also hashes the password that the user will get
+                self.object.set_password(serializer.data.get("new_password"))
+                self.object.save()
+                response = {
+                    "status": "success",
+                    "code": status.HTTP_200_OK,
+                    "message": "Your password was updated successfully!",
+                    "data": [],
+                }
+            return Response(response)
+        else:
+            # else the serializer may be missing some required parameter
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

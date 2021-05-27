@@ -206,3 +206,13 @@ class UserSerializer(serializers.ModelSerializer):
                 queryset=User.objects.all(), fields=["username", "email"]
             )
         ]
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    model = User
+
+    """
+    Serializer for password change endpoint.
+    """
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

@@ -124,6 +124,7 @@ urlpatterns = [
         "api/usertoken/",
         authviews.obtain_auth_token,
     ),
+    path("api/passwordchange", views.ChangePasswordView.as_view()),
     path(
         "ads.txt",
         RedirectView.as_view(url=staticfiles_storage.url("stocks/ads.txt")),
