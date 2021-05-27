@@ -224,10 +224,6 @@ LOGGING = {
 ADMINS = [
     ("Rishi", "latchmepersad@gmail.com"),
 ]
-EMAIL_HOST = "localhost"
-EMAIL_PORT = 25
-EMAIL_HOST_USER = ""
-EMAIL_HOST_PASSWORD = ""
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 MANAGERS = ADMINS
 DEFAULT_FROM_EMAIL = "admin@trinistocks.com"

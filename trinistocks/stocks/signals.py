@@ -1,4 +1,4 @@
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import get_connection, EmailMultiAlternatives
 from django.dispatch import receiver
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -39,7 +39,7 @@ def password_reset_token_created(
     email_plaintext_message = render_to_string(
         "stocks/account/api_password_reset_email.txt", context
     )
-
+    connection = get_connection()
     msg = EmailMultiAlternatives(
         # title:
         "Password Reset for {title}".format(title="Some website title"),
