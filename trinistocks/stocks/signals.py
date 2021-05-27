@@ -1,4 +1,4 @@
-from django.core.mail import get_connection, EmailMultiAlternatives
+from django.core.mail import send_mail
 from django.dispatch import receiver
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -39,18 +39,11 @@ def password_reset_token_created(
     email_plaintext_message = render_to_string(
         "stocks/account/api_password_reset_email.txt", context
     )
-    connection = get_connection()
-    connection.open()
-    msg = EmailMultiAlternatives(
-        # title:
-        "Password Reset for {title}".format(title="Some website title"),
-        # message:
+    send_mail(
+        "test",
         email_plaintext_message,
-        # from:
-        "noreply@somehost.local",
-        # to:
-        [reset_password_token.user.email],
+        "admin@trinistocks.com",
+        [context["email"]],
+        fail_silently=False,
     )
-    msg.send()
-    connection.close()
     LOGGER.debug(f"Sent mail to {reset_password_token.user.email} successfully.")
