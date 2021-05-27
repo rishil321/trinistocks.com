@@ -40,7 +40,7 @@ def password_reset_token_created(
         "stocks/account/api_password_reset_email.txt", context
     )
     send_mail(
-        "test",
+        "Reset password for trinistocks.com",
         email_plaintext_message,
         "admin@trinistocks.com",
         [context["email"]],
