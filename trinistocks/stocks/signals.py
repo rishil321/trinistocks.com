@@ -15,11 +15,12 @@ def password_reset_token_created(
 
     send_mail(
         # title:
-        "Password Reset for {title}".format(title="Some website title"),
+        "Password Reset for {title}".format(title="trinistocks"),
         # message:
         email_plaintext_message,
         # from:
-        "noreply@somehost.local",
+        "admin@trinistocks.com",
         # to:
         [reset_password_token.user.email],
+        fail_silently=False,
     )
