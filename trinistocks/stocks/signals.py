@@ -36,8 +36,9 @@ def password_reset_token_created(
     }
 
     # render email text
-    email_html_message = render_to_string("email/user_reset_password.html", context)
-    email_plaintext_message = render_to_string("email/user_reset_password.txt", context)
+    email_plaintext_message = render_to_string(
+        "stocks/account/password_reset_email.txt", context
+    )
 
     msg = EmailMultiAlternatives(
         # title:
@@ -49,6 +50,5 @@ def password_reset_token_created(
         # to:
         [reset_password_token.user.email],
     )
-    msg.attach_alternative(email_html_message, "text/html")
     msg.send()
     LOGGER.debug(f"Sent mail to {reset_password_token.user.email} successfully.")
