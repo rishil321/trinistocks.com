@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "django_tables2",
     "rest_framework",
     "rest_framework.authtoken",
+    "django_rest_passwordreset",
     "django_filters",
     "drf_yasg",
     "corsheaders",
@@ -227,6 +228,7 @@ EMAIL_HOST = "localhost"
 EMAIL_PORT = 25
 EMAIL_HOST_USER = ""
 EMAIL_HOST_PASSWORD = ""
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 MANAGERS = ADMINS
 DEFAULT_FROM_EMAIL = "admin@trinistocks.com"
 

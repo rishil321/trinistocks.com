@@ -121,7 +121,7 @@ urlpatterns = [
     path("api/outstandingtrades", views.OutstandingTradesApiView.as_view()),
     path("api/portfoliosummary", views.PortfolioSummaryApiView.as_view()),
     path(
-        "api/usertoken",
+        "api/usertoken/",
         authviews.obtain_auth_token,
     ),
     path(

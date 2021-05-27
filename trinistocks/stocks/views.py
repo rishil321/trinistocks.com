@@ -1999,7 +1999,7 @@ class PortfolioSummaryApiView(generics.ListCreateAPIView):
         return queryset
 
 
-class UserRecordView(views.APIView):
+class UserRecordAPIView(views.APIView):
     """
     API View to create or get a list of all the registered
     users. GET request returns the registered users whereas
