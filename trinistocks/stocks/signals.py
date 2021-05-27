@@ -40,6 +40,7 @@ def password_reset_token_created(
         "stocks/account/api_password_reset_email.txt", context
     )
     connection = get_connection()
+    connection.open()
     msg = EmailMultiAlternatives(
         # title:
         "Password Reset for {title}".format(title="Some website title"),
@@ -51,4 +52,5 @@ def password_reset_token_created(
         [reset_password_token.user.email],
     )
     msg.send()
+    connection.close()
     LOGGER.debug(f"Sent mail to {reset_password_token.user.email} successfully.")
