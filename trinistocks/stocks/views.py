@@ -2006,6 +2006,8 @@ class PortfolioSummaryApiView(generics.ListCreateAPIView):
 
 
 class CustomAuthToken(ObtainAuthToken):
+    serializer_class = serializers.CustomAuthTokenSerializer
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(
             data=request.data, context={"request": request}
