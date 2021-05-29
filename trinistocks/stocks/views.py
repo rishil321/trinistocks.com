@@ -27,7 +27,6 @@ from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from rest_framework import generics, permissions, views, response, status
-from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -2025,13 +2024,27 @@ class CustomAuthToken(ObtainAuthToken):
         )
 
 
+class UserCreate(generics.CreateAPIView):
+    queryset = models.User.objects.all()
+    serializer_class = serializers.UserSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, format=None):
+        serializer = serializers.UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ChangePasswordView(generics.UpdateAPIView):
     """
     An endpoint for changing the password using the app
     """
 
     serializer_class = serializers.ChangePasswordSerializer
-    model = User
+    model = models.User
     permission_classes = (IsAuthenticated,)
 
     def get_object(self, queryset=None):

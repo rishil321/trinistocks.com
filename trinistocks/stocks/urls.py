@@ -119,7 +119,8 @@ urlpatterns = [
     path("api/marketindices", views.MarketIndicesApiView.as_view()),
     path("api/outstandingtrades", views.OutstandingTradesApiView.as_view()),
     path("api/portfoliosummary", views.PortfolioSummaryApiView.as_view()),
-    path("api/usertoken/", views.CustomAuthToken.as_view()),
+    path("api/createuser", views.UserCreate.as_view()),
+    path("api/usertoken", views.CustomAuthToken.as_view()),
     path("api/passwordchange", views.ChangePasswordView.as_view()),
     path(
         "ads.txt",
