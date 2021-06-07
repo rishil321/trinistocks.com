@@ -2031,11 +2031,31 @@ class UserCreate(generics.CreateAPIView):
 
     def post(self, request, format=None):
         serializer = serializers.UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # first check if user has already created an account
+        username_user = models.User.objects.get(username=request.data["username"])
+        email_user = models.User.objects.get(email=request.data["email"])
+        if username_user and email_user and username_user == email_user:
+            if username_user.is_active:
+                return Response(
+                    data={
+                        "error": "Are you sure this account hasn't been created already?"
+                    },
+                    status=status.HTTP_304_NOT_MODIFIED,
+                )
+            else:
+                # if the username and email match an inactive account, reactivate the account
+                username_user.is_active = True
+                username_user.save()
+                return Response(
+                    data={"message": "Success. Account reactivated."},
+                    status=status.HTTP_201_CREATED,
+                )
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserDelete(generics.DestroyAPIView):
