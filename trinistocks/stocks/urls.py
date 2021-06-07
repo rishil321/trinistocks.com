@@ -120,6 +120,7 @@ urlpatterns = [
     path("api/outstandingtrades", views.OutstandingTradesApiView.as_view()),
     path("api/portfoliosummary", views.PortfolioSummaryApiView.as_view()),
     path("api/createuser", views.UserCreate.as_view()),
+    path("api/deleteuser", views.UserDelete.as_view()),
     path("api/usertoken", views.CustomAuthToken.as_view()),
     path("api/passwordchange", views.ChangePasswordView.as_view()),
     path(

@@ -2038,6 +2038,28 @@ class UserCreate(generics.CreateAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class UserDelete(generics.DestroyAPIView):
+    queryset = models.User.objects.all()
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def delete(self, request, format=None):
+        try:
+            check_username = request.data["username"]
+            if check_username:
+                user = models.User.objects.get(username=check_username)
+                if user:
+                    user.is_active = False
+                    user.save()
+                    return Response(
+                        data=f"Successfully deleted user {check_username}.",
+                        status=status.HTTP_200_OK,
+                    )
+        except Exception as exc:
+            return Response(
+                data="Error: " + exc.args[0], status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 class ChangePasswordView(generics.UpdateAPIView):
     """
     An endpoint for changing the password using the app

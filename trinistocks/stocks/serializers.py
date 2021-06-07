@@ -197,7 +197,7 @@ class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
         required=True, validators=[UniqueValidator(queryset=User.objects.all())]
     )
-    password = serializers.CharField(required=True, min_length=8)
+    password = serializers.CharField(required=True)
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -248,7 +248,7 @@ class CustomAuthTokenSerializer(serializers.Serializer):
                 msg = _("Unable to log in with provided credentials.")
                 raise serializers.ValidationError(msg, code="authorization")
         else:
-            msg = _('Must include "email" and "password".')
+            msg = _('Must include "username" and "password".')
             raise serializers.ValidationError(msg, code="authorization")
 
         attrs["user"] = user
