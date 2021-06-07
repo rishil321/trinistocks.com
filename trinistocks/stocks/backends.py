@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 
 class EmailAuthBackend(ModelBackend):
@@ -16,6 +16,8 @@ class EmailAuthBackend(ModelBackend):
         except UserModel.DoesNotExist:
             return None
         else:
+            if not user.is_active:
+                raise ValidationError("Requested account is inactive.")
             if user.check_password(password):
                 return user
         return None
