@@ -2044,16 +2044,16 @@ class UserDelete(generics.DestroyAPIView):
 
     def delete(self, request, format=None):
         try:
-            check_username = request.data["username"]
-            if check_username:
-                user = models.User.objects.get(username=check_username)
-                if user:
-                    user.is_active = False
-                    user.save()
-                    return Response(
-                        data=f"Successfully deleted user {check_username}.",
-                        status=status.HTTP_200_OK,
-                    )
+            check_user = request.user
+            if check_user:
+                check_user.is_active = False
+                check_user.save()
+                return Response(
+                    data=f"Successfully deleted user {check_user.username}.",
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                raise RuntimeError("No user logged in.")
         except Exception as exc:
             return Response(
                 data="Error: " + exc.args[0], status=status.HTTP_400_BAD_REQUEST
