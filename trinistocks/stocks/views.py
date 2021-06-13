@@ -1994,7 +1994,7 @@ class PortfolioSummaryApiView(generics.ListCreateAPIView):
         Return all objects in the portfolio for the current authorized user
         """
         queryset = models.PortfolioSummary.objects.all().filter(user=self.request.user)
-        return Response(data=queryset, status=status.HTTP_200_OK)
+        return queryset
 
 
 class PortfolioTransactionsApiView(generics.UpdateAPIView):
