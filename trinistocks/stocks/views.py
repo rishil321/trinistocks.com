@@ -1985,23 +1985,65 @@ class OutstandingTradesApiView(generics.ListCreateAPIView):
 
 
 class PortfolioSummaryApiView(generics.ListCreateAPIView):
-    serializer_class = serializers.OutstandingTradesSerializer
+    serializer_class = serializers.PortfolioSummarySerializer
     # require a token to access the api
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
         """
-        Return only the objects for the last trading day
+        Return all objects in the portfolio for the current authorized user
         """
-        queryset = models.DailyStockSummary.objects.all()
-        filter_symbol = self.request.query_params.get("symbol")
-        # check if a date was included in the request
-        filter_start_date = self.request.query_params.get("start_date")
-        if filter_symbol is not None:
-            queryset = queryset.filter(symbol=filter_symbol)
-        if filter_start_date is not None:
-            queryset = queryset.filter(date__gte=filter_start_date)
-        return queryset
+        queryset = models.PortfolioSummary.objects.all().filter(user=self.request.user)
+        return Response(data=queryset, status=status.HTTP_200_OK)
+
+
+class PortfolioTransactionsApiView(generics.UpdateAPIView):
+    serializer_class = serializers.PortfolioTransactionsSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def put(self, request):
+        """
+        Accept put requests for new transactions
+        """
+        try:
+            # do some prechecks
+            if self.request.POST["bought_or_sold"] == "Sold":
+                # check that the user has enough shares to sell
+                shares_remaining = models.PortfolioSummary.objects.filter(
+                    user=self.request.user,
+                    symbol=models.ListedEquities(symbol=self.request.POST["symbol"]),
+                ).first()
+                if not shares_remaining:
+                    raise RuntimeError(
+                        "You don't have any shares of this company remaining."
+                    )
+                else:
+                    # if they have shares in the company, ensure that they have enough
+                    if shares_remaining.shares_remaining < int(
+                        self.request.POST["num_shares"]
+                    ):
+                        raise RuntimeError(
+                            "You are selling more shares than you have left."
+                        )
+            queryset = models.PortfolioTransactions.objects.create(
+                user=self.request.user,
+                symbol=models.ListedEquities(symbol=self.request.POST["symbol"]),
+                date=self.request.POST["date"],
+                bought_or_sold=self.request.POST["bought_or_sold"],
+                share_price=self.request.POST["share_price"],
+                num_shares=self.request.POST["num_shares"],
+            )
+            queryset.save()
+        except Exception as exc:
+            LOGGER.error(
+                "Ran into an error during Portfolio transaction addition", exc_info=exc
+            )
+            return Response(
+                data="Failed to add transaction", status=status.HTTP_400_BAD_REQUEST
+            )
+        else:
+            return Response(data="Success", status=status.HTTP_201_CREATED)
 
 
 class CustomAuthToken(ObtainAuthToken):
