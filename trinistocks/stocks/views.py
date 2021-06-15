@@ -1997,6 +1997,19 @@ class PortfolioSummaryApiView(generics.ListCreateAPIView):
         return queryset
 
 
+class PortfolioSectorsApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.PortfolioSectorsSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return all objects in the portfolio for the current authorized user
+        """
+        queryset = models.PortfolioSectors.objects.all().filter(user=self.request.user)
+        return queryset
+
+
 class PortfolioTransactionsApiView(generics.UpdateAPIView):
     serializer_class = serializers.PortfolioTransactionsSerializer
     # require a token to access the api

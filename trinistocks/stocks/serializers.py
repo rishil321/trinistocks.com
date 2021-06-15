@@ -14,6 +14,7 @@ from .models import (
     HistoricalDividendYield,
     HistoricalIndicesInfo,
     PortfolioSummary,
+    PortfolioSectors,
     PortfolioTransactions,
     User,
 )
@@ -173,6 +174,17 @@ class PortfolioSummarySerializer(serializers.ModelSerializer):
             "average_cost",
             "book_cost",
             "current_market_price",
+            "market_value",
+            "total_gain_loss",
+        )
+
+
+class PortfolioSectorsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortfolioSectors
+        fields = (
+            "sector",
+            "book_cost",
             "market_value",
             "total_gain_loss",
         )
