@@ -363,6 +363,21 @@ class PortfolioSummary(models.Model):
         unique_together = [["user", "symbol"]]
 
 
+class PortfolioSectors(models.Model):
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
+    sector = models.CharField(max_length=100)
+    book_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    market_value = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    total_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+
+
+class Meta:
+    managed = True
+    db_table = "stocks_portfoliosectors"
+    unique_together = [["user", "sector"]]
+
+
 class User(AbstractUser):
     pass
     # add additional fields in here

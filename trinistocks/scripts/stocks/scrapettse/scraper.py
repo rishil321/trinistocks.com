@@ -74,7 +74,7 @@ def scrape_listed_equity_data():
         logger.debug("Now scraping listing data from all listed equities.")
         # This list of dicts will contain all data to be written to the db
         all_listed_equity_data = []
-        listed_stocks_summary_url = "https://www.stockex.co.tt/listed-securities/?IdInstrumentType=1&IdSegment=&IdSector="
+        listed_stocks_summary_url = "https://www.stockex.co.tt/listed-securities/"
         logger.debug("Navigating to " + listed_stocks_summary_url)
         listed_stocks_summary_page = requests.get(
             listed_stocks_summary_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
@@ -87,10 +87,16 @@ def scrape_listed_equity_data():
             logger.debug("Successfully loaded webpage.")
         # get a list of tables from the URL
         dataframe_list = pd.read_html(listed_stocks_summary_page.text)
-        # store the series that lists all the current stock symbols
-        listed_stock_symbols = dataframe_list[0]["Symbol"]
-        # remove the suspended char from the symbols
-        listed_stock_symbols = listed_stock_symbols.str.replace(r"\(S\)", "")
+        # for each dataframe in the list, get the symbols
+        listed_stock_symbols = []
+        for dataframe in dataframe_list:
+            if "Symbol" in dataframe:
+                for symbol in dataframe["Symbol"]:
+                    if symbol:
+                        bad_symbols = ["{{", ".", "(S"]
+                        if all(string not in symbol for string in bad_symbols):
+                            listed_stock_symbols.append(symbol)
+                print(1)
         # Go to the main summary page for each symbol
         for symbol in listed_stock_symbols:
             try:
