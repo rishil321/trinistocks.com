@@ -596,8 +596,14 @@ def update_portfolio_summary_market_values():
         portfolio_summary_df["total_gain_loss"] = (
             portfolio_summary_df["market_value"] - portfolio_summary_df["book_cost"]
         )
+        # calculate the percentage gain or loss
+        portfolio_summary_df["gain_loss_percent"] = (
+            100
+            * portfolio_summary_df["total_gain_loss"]
+            / portfolio_summary_df["book_cost"]
+        )
         # now write the df to the database
-        logger.info("Now writing portfolio book value data to database.")
+        logger.info("Now writing portfolio market value data to database.")
         execute_completed_successfully = False
         execute_failed_times = 0
         portfolio_summary_table = Table(
