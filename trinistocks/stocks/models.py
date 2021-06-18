@@ -356,6 +356,7 @@ class PortfolioSummary(models.Model):
     )
     market_value = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     total_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    gain_loss_percent = models.DecimalField(max_digits=6, decimal_places=2, null=True)
 
     class Meta:
         managed = True
@@ -370,6 +371,7 @@ class PortfolioSectors(models.Model):
     book_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     market_value = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     total_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    gain_loss_percent = models.DecimalField(max_digits=6, decimal_places=2, null=True)
 
 
 class Meta:

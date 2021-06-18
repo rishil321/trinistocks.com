@@ -176,6 +176,7 @@ class PortfolioSummarySerializer(serializers.ModelSerializer):
             "current_market_price",
             "market_value",
             "total_gain_loss",
+            "gain_loss_percent",
         )
 
 
@@ -187,6 +188,7 @@ class PortfolioSectorsSerializer(serializers.ModelSerializer):
             "book_cost",
             "market_value",
             "total_gain_loss",
+            "gain_loss_percent",
         )
 
 
