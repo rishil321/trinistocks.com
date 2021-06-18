@@ -657,7 +657,7 @@ def update_portfolio_sectors_values():
         db_connect = DatabaseConnect()
         # set up our dataframe from the portfolio_summary table
         portfolio_summary_df = pd.io.sql.read_sql(
-            f"SELECT user_id, symbol_id,shares_remaining, book_cost, market_value, average_cost, current_market_price, total_gain_loss \
+            f"SELECT user_id, symbol_id,shares_remaining, book_cost, market_value, average_cost, current_market_price, total_gain_loss, gain_loss_percent \
             FROM portfolio_summary;",
             db_connect.dbengine,
         )
