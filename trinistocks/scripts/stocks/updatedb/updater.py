@@ -685,6 +685,7 @@ def update_portfolio_sectors_values():
                 "book_cost",
                 "market_value",
                 "total_gain_loss",
+                "gain_loss_percent",
             ]
         ].copy()
         # now write the df to the database
