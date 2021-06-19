@@ -384,10 +384,12 @@ class SimulatorGames(models.Model):
     date_created = models.DateField(auto_now_add=True)
     date_ended = models.DateField()
     game_name = models.CharField(max_length=100, unique=True)
+    private = models.BooleanField(default=False)
+    game_code = models.PositiveSmallIntegerField(null=True)
 
     class Meta:
         managed = True
-        unique_together = [["game_id", "game_name"]]
+        unique_together = [["game_code", "game_name"]]
 
 
 class SimulatorPlayers(models.Model):
