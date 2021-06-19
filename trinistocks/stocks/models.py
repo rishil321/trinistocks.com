@@ -332,7 +332,7 @@ class FundamentalAnalysisSummary(models.Model):
 class PortfolioTransactions(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, default=1)
-    symbol = models.ForeignKey(ListedEquities, models.CASCADE, default="AGL")
+    symbol = models.ForeignKey(ListedEquities, models.CASCADE, db_column="symbol")
     date = models.DateField(verbose_name="Date")
     bought_or_sold = models.CharField(max_length=10)
     share_price = models.DecimalField(max_digits=12, decimal_places=2)
@@ -347,7 +347,7 @@ class PortfolioTransactions(models.Model):
 class PortfolioSummary(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, default=1)
-    symbol = models.ForeignKey(ListedEquities, models.CASCADE, default="AGL")
+    symbol = models.ForeignKey(ListedEquities, models.CASCADE, db_column="symbol")
     shares_remaining = models.IntegerField()
     average_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True)
     book_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True)
@@ -373,11 +373,87 @@ class PortfolioSectors(models.Model):
     total_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     gain_loss_percent = models.DecimalField(max_digits=6, decimal_places=2, null=True)
 
+    class Meta:
+        managed = True
+        db_table = "stocks_portfoliosectors"
+        unique_together = [["user", "sector"]]
 
-class Meta:
-    managed = True
-    db_table = "stocks_portfoliosectors"
-    unique_together = [["user", "sector"]]
+
+class SimulatorGames(models.Model):
+    game_id = models.AutoField(primary_key=True, unique=True)
+    date_created = models.DateField(auto_now_add=True)
+    date_ended = models.DateField()
+    game_name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        managed = True
+        unique_together = [["game_id", "game_name"]]
+
+
+class SimulatorPlayers(models.Model):
+    simulator_player_id = models.AutoField(primary_key=True, unique=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
+    simulator_game = models.ForeignKey(
+        SimulatorGames,
+        models.CASCADE,
+        db_column="game_id",
+    )
+    liquid_cash = models.DecimalField(max_digits=10, decimal_places=2, null=False)
+
+    class Meta:
+        managed = True
+        unique_together = [["user", "simulator_game"]]
+
+
+class SimulatorTransactions(models.Model):
+    simulator_transaction_id = models.AutoField(primary_key=True, unique=True)
+    simulator_player = models.ForeignKey(SimulatorPlayers, models.CASCADE)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, db_column="symbol", default="AGL"
+    )
+    date = models.DateField(verbose_name="Date")
+    bought_or_sold = models.CharField(max_length=10)
+    share_price = models.DecimalField(max_digits=12, decimal_places=2)
+    num_shares = models.IntegerField()
+
+    class Meta:
+        managed = True
+        unique_together = [
+            [
+                "simulator_player_id",
+                "date",
+                "symbol",
+                "num_shares",
+                "bought_or_sold",
+            ]
+        ]
+
+
+class SimulatorPortfolios(models.Model):
+    simulator_portfolio_id = models.AutoField(primary_key=True, unique=True)
+    simulator_player_id = models.ForeignKey(
+        SimulatorPlayers,
+        models.CASCADE,
+        db_column="simulator_player_id",
+    )
+    symbol = models.ForeignKey(
+        ListedEquities,
+        models.CASCADE,
+        db_column="symbol",
+    )
+    shares_remaining = models.IntegerField()
+    average_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    book_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    current_market_price = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True
+    )
+    market_value = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    total_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    gain_loss_percent = models.DecimalField(max_digits=6, decimal_places=2, null=True)
+
+    class Meta:
+        managed = True
+        unique_together = [["simulator_player_id", "symbol"]]
 
 
 class User(AbstractUser):
