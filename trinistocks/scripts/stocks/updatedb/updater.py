@@ -450,7 +450,7 @@ def update_portfolio_summary_book_costs():
         with DatabaseConnect() as db_connect:
             # set up our dataframe from the portfolio_transactions table
             transactions_df = pd.io.sql.read_sql(
-                f"SELECT user_id, symbol_id, num_shares, share_price, bought_or_sold \
+                f"SELECT user_id, symbol, num_shares, share_price, bought_or_sold \
                 FROM portfolio_transactions;",
                 db_connect.dbengine,
             )
@@ -458,7 +458,7 @@ def update_portfolio_summary_book_costs():
             # first get the total shares bought
             total_shares_bought_df = (
                 transactions_df[transactions_df.bought_or_sold == "Bought"]
-                .groupby(["user_id", "symbol_id"])
+                .groupby(["user_id", "symbol"])
                 .sum()
                 .reset_index()
             )
@@ -469,7 +469,7 @@ def update_portfolio_summary_book_costs():
             # then get the total shares sold
             total_shares_sold_df = (
                 transactions_df[transactions_df.bought_or_sold == "Sold"]
-                .groupby(["user_id", "symbol_id"])
+                .groupby(["user_id", "symbol"])
                 .sum()
                 .reset_index()
             )
@@ -479,7 +479,7 @@ def update_portfolio_summary_book_costs():
             )
             # first merge both dataframes
             total_bought_sold_df = total_shares_bought_df.merge(
-                total_shares_sold_df, how="outer", on=["user_id", "symbol_id"]
+                total_shares_sold_df, how="outer", on=["user_id", "symbol"]
             )
             # then fill the shares_sold column with 0
             total_bought_sold_df["shares_sold"] = total_bought_sold_df[
@@ -492,7 +492,7 @@ def update_portfolio_summary_book_costs():
             )
             # set up a new df to hold the summary data that we are interested in
             summary_df = total_bought_sold_df[
-                ["user_id", "symbol_id", "shares_remaining"]
+                ["user_id", "symbol", "shares_remaining"]
             ].copy()
             # get the average cost for each share
             avg_cost_df = transactions_df[
@@ -502,7 +502,7 @@ def update_portfolio_summary_book_costs():
             avg_cost_df["book_cost"] = (
                 avg_cost_df["num_shares"] * avg_cost_df["share_price"]
             )
-            avg_cost_df = avg_cost_df.groupby(["user_id", "symbol_id"]).sum()
+            avg_cost_df = avg_cost_df.groupby(["user_id", "symbol"]).sum()
             avg_cost_df.drop(["share_price"], axis=1, inplace=True)
             avg_cost_df = avg_cost_df.reset_index()
             # calculate the average cost for each share purchased
@@ -511,7 +511,7 @@ def update_portfolio_summary_book_costs():
             )
             # add these two new fields to our dataframe to be written to the db
             summary_df = summary_df.merge(
-                avg_cost_df, how="outer", on=["user_id", "symbol_id"]
+                avg_cost_df, how="outer", on=["user_id", "symbol"]
             )
             summary_df.drop(["num_shares"], axis=1, inplace=True)
             # now write the df to the database
@@ -563,7 +563,7 @@ def update_portfolio_summary_market_values():
         db_connect = DatabaseConnect()
         # set up our dataframe from the portfolio_summary table
         portfolio_summary_df = pd.io.sql.read_sql(
-            f"SELECT user_id, symbol_id, shares_remaining, book_cost, average_cost \
+            f"SELECT user_id, symbol, shares_remaining, book_cost, average_cost \
             FROM portfolio_summary;",
             db_connect.dbengine,
         )
@@ -577,11 +577,9 @@ def update_portfolio_summary_market_values():
             f"SELECT symbol, close_price FROM daily_stock_summary WHERE date='{latest_date}';",
             db_connect.dbengine,
         )
-        # rename the symbol column
-        closing_price_df.rename(columns={"symbol": "symbol_id"}, inplace=True)
         # now merge the two dataframes to get the closing price
         portfolio_summary_df = portfolio_summary_df.merge(
-            closing_price_df, how="inner", on=["symbol_id"]
+            closing_price_df, how="inner", on=["symbol"]
         )
         # rename the close price column
         portfolio_summary_df.rename(
