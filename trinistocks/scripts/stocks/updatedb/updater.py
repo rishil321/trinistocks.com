@@ -661,8 +661,6 @@ def update_portfolio_sectors_values():
             FROM portfolio_summary;",
             db_connect.dbengine,
         )
-        # rename the symbol column
-        portfolio_summary_df.rename(columns={"symbol_id": "symbol"}, inplace=True)
         # select the sector and symbol from the listed equities dataframe
         listed_equities_df = pd.io.sql.read_sql(
             f"SELECT symbol,sector \
