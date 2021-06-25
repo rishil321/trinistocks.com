@@ -389,7 +389,6 @@ class SimulatorGames(models.Model):
 
     class Meta:
         managed = True
-        unique_together = [["game_code", "game_name"]]
 
 
 class SimulatorPlayers(models.Model):

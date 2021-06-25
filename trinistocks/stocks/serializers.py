@@ -17,6 +17,10 @@ from .models import (
     PortfolioSectors,
     PortfolioTransactions,
     User,
+    SimulatorGames,
+    SimulatorPlayers,
+    SimulatorTransactions,
+    SimulatorPortfolios,
 )
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
@@ -289,3 +293,55 @@ class ChangePasswordSerializer(serializers.Serializer):
     """
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
+
+
+class SimulatorGamesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SimulatorGames
+        fields = (
+            "date_created",
+            "date_ended",
+            "game_name",
+            "private",
+            "game_code",
+        )
+
+
+class SimulatorPlayersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SimulatorPlayers
+        fields = (
+            "simulator_player_id",
+            "user",
+            "simulator_game",
+            "liquid_cash",
+        )
+
+
+class SimulatorTransactionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SimulatorTransactions
+        fields = (
+            "simulator_player",
+            "symbol",
+            "date",
+            "bought_or_sold",
+            "share_price",
+            "num_shares",
+        )
+
+
+class SimulatorPortfolioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SimulatorPortfolios
+        fields = (
+            "simulator_player_id",
+            "symbol",
+            "shares_remaining",
+            "average_cost",
+            "book_cost",
+            "current_market_price",
+            "market_value",
+            "total_gain_loss",
+            "gain_loss_percent",
+        )

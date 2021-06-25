@@ -2053,7 +2053,8 @@ class PortfolioTransactionsApiView(generics.UpdateAPIView):
                 "Ran into an error during Portfolio transaction addition", exc_info=exc
             )
             return Response(
-                data="Failed to add transaction", status=status.HTTP_400_BAD_REQUEST
+                data="Failed to add transaction. " + str(exc),
+                status=status.HTTP_400_BAD_REQUEST,
             )
         else:
             return Response(data="Success", status=status.HTTP_201_CREATED)
@@ -2176,3 +2177,141 @@ class ChangePasswordView(generics.UpdateAPIView):
         else:
             # else the serializer may be missing some required parameter
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SimulatorGamesApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.SimulatorGamesSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return all objects in the portfolio for the current authorized user
+        """
+        queryset = models.SimulatorGames.objects.all().filter(user=self.request.user)
+        return queryset
+
+    def post(self, request):
+        serializer = serializers.SimulatorGamesSerializer(data=request.data)
+        # check if game code was provided if private game is chosen
+        provided_game_code = request.data["game_code"]
+        is_private = request.data["private"]
+        if is_private and not provided_game_code:
+            return Response(
+                data={
+                    "error": "Please ensure a game code is entered for private games."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # check if the game name was used already
+        check_game_name = models.SimulatorGames.objects.get(
+            game_name=request.data["game_name"]
+        )
+        if check_game_name:
+            return Response(
+                data={"error": "Game name already in use."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SimulatorPlayersApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.SimulatorPlayersSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return all objects in the portfolio for the current authorized user
+        """
+        queryset = models.SimulatorPlayers.objects.all().filter(user=self.request.user)
+        return queryset
+
+    def post(self, request):
+        serializer = serializers.SimulatorPlayersSerializer(data=request.data)
+        # check if liquid cash is not null
+        if not request.data["liquid_cash"]:
+            return Response(
+                data={"error": "Please ensure that you added some starting cash!"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SimulatorTransactionsApiView(generics.UpdateAPIView):
+    serializer_class = serializers.SimulatorTransactionsSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def put(self, request):
+        """
+        Accept put requests for new transactions
+        """
+        try:
+            # do some prechecks
+            if self.request.POST["bought_or_sold"] == "Sold":
+                # check that the user has enough shares to sell
+                shares_remaining = models.SimulatorPortfolios.objects.filter(
+                    user=self.request.user,
+                    symbol=models.ListedEquities(symbol=self.request.POST["symbol"]),
+                ).first()
+                if not shares_remaining:
+                    raise RuntimeError(
+                        "You don't have any shares of this company remaining."
+                    )
+                else:
+                    # if they have shares in the company, ensure that they have enough
+                    if shares_remaining.shares_remaining < int(
+                        self.request.POST["num_shares"]
+                    ):
+                        raise RuntimeError(
+                            "You are selling more shares than you have left."
+                        )
+            queryset = models.SimulatorTransactions.objects.create(
+                simulator_player=models.SimulatorPlayers(
+                    user=self.request.user,
+                    simulator_game=models.SimulatorGames(
+                        game_name=self.request.POST["game_name"]
+                    ),
+                ),
+                symbol=models.ListedEquities(symbol=self.request.POST["symbol"]),
+                date=self.request.POST["date"],
+                bought_or_sold=self.request.POST["bought_or_sold"],
+                share_price=self.request.POST["share_price"],
+                num_shares=self.request.POST["num_shares"],
+            )
+            queryset.save()
+        except Exception as exc:
+            LOGGER.error(
+                "Ran into an error during simulator portfolio transaction addition",
+                exc_info=exc,
+            )
+            return Response(
+                data="Failed to add transaction. " + str(exc),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return Response(data="Success", status=status.HTTP_201_CREATED)
+
+
+class SimulatorPortfoliosApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.SimulatorPortfolioSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return all objects in the portfolio for the current authorized user
+        """
+        queryset = models.SimulatorPortfolios.objects.all().filter(
+            user=self.request.user
+        )
+        return queryset
