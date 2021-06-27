@@ -385,7 +385,7 @@ class SimulatorGames(models.Model):
     date_ended = models.DateField()
     game_name = models.CharField(max_length=100, unique=True)
     private = models.BooleanField(default=False)
-    game_code = models.PositiveSmallIntegerField(null=True)
+    game_code = models.PositiveIntegerField(null=True)
 
     class Meta:
         managed = True
@@ -397,7 +397,7 @@ class SimulatorPlayers(models.Model):
     simulator_game = models.ForeignKey(
         SimulatorGames,
         models.CASCADE,
-        db_column="game_id",
+        db_column="game_name",
     )
     liquid_cash = models.DecimalField(max_digits=10, decimal_places=2, null=False)
 

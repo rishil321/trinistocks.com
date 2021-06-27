@@ -2188,35 +2188,44 @@ class SimulatorGamesApiView(generics.ListCreateAPIView):
         """
         Return all objects in the portfolio for the current authorized user
         """
-        queryset = models.SimulatorGames.objects.all().filter(user=self.request.user)
+        queryset = models.SimulatorGames.objects.all().filter(
+            simulatorplayers=models.SimulatorPlayers.objects.get(user=self.request.user)
+        )
         return queryset
 
     def post(self, request):
-        serializer = serializers.SimulatorGamesSerializer(data=request.data)
-        # check if game code was provided if private game is chosen
-        provided_game_code = request.data["game_code"]
-        is_private = request.data["private"]
-        if is_private and not provided_game_code:
-            return Response(
-                data={
-                    "error": "Please ensure a game code is entered for private games."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+        try:
+            serializer = serializers.SimulatorGamesSerializer(data=request.data)
+            # check if game code was provided if private game is chosen
+            provided_game_code = request.data["game_code"]
+            is_private = request.data["private"]
+            if is_private and not provided_game_code:
+                return Response(
+                    data={
+                        "error": "Please ensure a game code is entered for private games."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # check if the game name was used already
+            check_game_name = models.SimulatorGames.objects.filter(
+                game_name=request.data["game_name"]
             )
-        # check if the game name was used already
-        check_game_name = models.SimulatorGames.objects.get(
-            game_name=request.data["game_name"]
-        )
-        if check_game_name:
-            return Response(
-                data={"error": "Game name already in use."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if check_game_name.count() > 0:
+                return Response(
+                    data={"error": "Game name already in use."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if serializer.is_valid():
+                LOGGER.debug(
+                    f"New simulator game created! Name:{request.data['game_name']}"
+                )
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            LOGGER.error("Problem with Simulator Games POST request", exc_info=exc)
+            return Response(data=str(exc), status=status.HTTP_400_BAD_REQUEST)
 
 
 class SimulatorPlayersApiView(generics.ListCreateAPIView):
@@ -2232,18 +2241,32 @@ class SimulatorPlayersApiView(generics.ListCreateAPIView):
         return queryset
 
     def post(self, request):
-        serializer = serializers.SimulatorPlayersSerializer(data=request.data)
-        # check if liquid cash is not null
-        if not request.data["liquid_cash"]:
-            return Response(
-                data={"error": "Please ensure that you added some starting cash!"},
-                status=status.HTTP_400_BAD_REQUEST,
+        try:
+            # check if liquid cash is not null
+            if not request.data["liquid_cash"]:
+                return Response(
+                    data={"error": "Please ensure that you added some starting cash!"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # first build our serializer data
+            simulator_player_data = {}
+            simulator_player_data["user"] = request.user.id
+            simulator_player_data["liquid_cash"] = request.data["liquid_cash"]
+            # get the simulator game
+            simulator_player_data["simulator_game"] = models.SimulatorGames.objects.get(
+                game_name=request.data["game_name"]
+            ).pk
+            serializer = serializers.SimulatorPlayersSerializer(
+                data=simulator_player_data
             )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            LOGGER.error("Problem with Simulator Players POST request", exc_info=exc)
+            return Response(data=str(exc), status=status.HTTP_400_BAD_REQUEST)
 
 
 class SimulatorTransactionsApiView(generics.UpdateAPIView):
@@ -2257,6 +2280,20 @@ class SimulatorTransactionsApiView(generics.UpdateAPIView):
         """
         try:
             # do some prechecks
+            # check that all keys are in dict
+            required_fields = [
+                "bought_or_sold",
+                "symbol",
+                "num_shares",
+                "game_name",
+                "date",
+                "share_price",
+            ]
+            for field in required_fields:
+                if field not in request.POST:
+                    raise RuntimeError(
+                        f"Please ensure that a value for {field} is included in the PUT request."
+                    )
             if self.request.POST["bought_or_sold"] == "Sold":
                 # check that the user has enough shares to sell
                 shares_remaining = models.SimulatorPortfolios.objects.filter(
@@ -2275,27 +2312,43 @@ class SimulatorTransactionsApiView(generics.UpdateAPIView):
                         raise RuntimeError(
                             "You are selling more shares than you have left."
                         )
-            queryset = models.SimulatorTransactions.objects.create(
-                simulator_player=models.SimulatorPlayers(
-                    user=self.request.user,
-                    simulator_game=models.SimulatorGames(
-                        game_name=self.request.POST["game_name"]
-                    ),
+            # first build our serializer data
+            simulator_transaction_data = {}
+            simulator_transaction_data[
+                "simulator_player"
+            ] = models.SimulatorPlayers.objects.get(
+                user=self.request.user,
+                simulator_game=models.SimulatorGames.objects.get(
+                    game_name=self.request.POST["game_name"]
                 ),
-                symbol=models.ListedEquities(symbol=self.request.POST["symbol"]),
-                date=self.request.POST["date"],
-                bought_or_sold=self.request.POST["bought_or_sold"],
-                share_price=self.request.POST["share_price"],
-                num_shares=self.request.POST["num_shares"],
+            ).pk
+            simulator_transaction_data["symbol"] = models.ListedEquities.objects.get(
+                symbol=self.request.POST["symbol"]
+            ).pk
+            simulator_transaction_data["date"] = self.request.POST["date"]
+            simulator_transaction_data["bought_or_sold"] = self.request.POST[
+                "bought_or_sold"
+            ]
+            simulator_transaction_data["share_price"] = self.request.POST["share_price"]
+            simulator_transaction_data["num_shares"] = self.request.POST["num_shares"]
+            serializer = serializers.SimulatorTransactionsSerializer(
+                data=simulator_transaction_data
             )
-            queryset.save()
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             LOGGER.error(
                 "Ran into an error during simulator portfolio transaction addition",
                 exc_info=exc,
             )
             return Response(
-                data="Failed to add transaction. " + str(exc),
+                data="Failed to add transaction. "
+                + type(exc).__name__
+                + ": "
+                + str(exc),
                 status=status.HTTP_400_BAD_REQUEST,
             )
         else:
@@ -2312,6 +2365,11 @@ class SimulatorPortfoliosApiView(generics.ListCreateAPIView):
         Return all objects in the portfolio for the current authorized user
         """
         queryset = models.SimulatorPortfolios.objects.all().filter(
-            user=self.request.user
+            simulator_player_id=models.SimulatorPlayers.objects.get(
+                user=self.request.user,
+                simulator_game=models.SimulatorGames.objects.get(
+                    game_name=self.request.GET["game_name"]
+                ),
+            )
         )
         return queryset
