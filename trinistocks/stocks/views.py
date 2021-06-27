@@ -2198,8 +2198,11 @@ class SimulatorGamesApiView(generics.ListCreateAPIView):
             serializer = serializers.SimulatorGamesSerializer(data=request.data)
             if serializer.is_valid():
                 # check if game code was provided if private game is chosen
-                provided_game_code = request.data["game_code"]
-                is_private = request.data["private"]
+                if "private" in request.data:
+                    is_private = request.data["private"]
+                    provided_game_code = None
+                    if "game_code" in request.data:
+                        provided_game_code = request.data["game_code"]
                 if is_private and not provided_game_code:
                     return Response(
                         data={
