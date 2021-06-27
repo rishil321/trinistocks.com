@@ -125,7 +125,6 @@ urlpatterns = [
     path("api/simulatorplayers", views.SimulatorPlayersApiView.as_view()),
     path("api/simulatortransactions", views.SimulatorTransactionsApiView.as_view()),
     path("api/simulatorportfolios", views.SimulatorPortfoliosApiView.as_view()),
-    path("api/simulatorgames", views.SimulatorGamesApiView.as_view()),
     path("api/createuser", views.UserCreate.as_view()),
     path("api/deleteuser", views.UserDelete.as_view()),
     path("api/usertoken", views.CustomAuthToken.as_view()),

@@ -2196,36 +2196,33 @@ class SimulatorGamesApiView(generics.ListCreateAPIView):
     def post(self, request):
         try:
             serializer = serializers.SimulatorGamesSerializer(data=request.data)
-            # check if game code was provided if private game is chosen
-            provided_game_code = request.data["game_code"]
-            is_private = request.data["private"]
-            if is_private and not provided_game_code:
-                return Response(
-                    data={
-                        "error": "Please ensure a game code is entered for private games."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            # check if the game name was used already
-            check_game_name = models.SimulatorGames.objects.filter(
-                game_name=request.data["game_name"]
-            )
-            if check_game_name.count() > 0:
-                return Response(
-                    data={"error": "Game name already in use."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
             if serializer.is_valid():
+                # check if game code was provided if private game is chosen
+                provided_game_code = request.data["game_code"]
+                is_private = request.data["private"]
+                if is_private and not provided_game_code:
+                    return Response(
+                        data={
+                            "error": "Please ensure a game code is entered for private games."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                serializer.save()
                 LOGGER.debug(
                     f"New simulator game created! Name:{request.data['game_name']}"
                 )
-                serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             LOGGER.error("Problem with Simulator Games POST request", exc_info=exc)
-            return Response(data=str(exc), status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                data="Problem with Simulator Games POST request"
+                + type(exc).__name__
+                + ": "
+                + str(exc),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class SimulatorPlayersApiView(generics.ListCreateAPIView):
@@ -2243,7 +2240,7 @@ class SimulatorPlayersApiView(generics.ListCreateAPIView):
     def post(self, request):
         try:
             # check if liquid cash is not null
-            if not request.data["liquid_cash"]:
+            if "liquid_cash" not in request.data:
                 return Response(
                     data={"error": "Please ensure that you added some starting cash!"},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -2266,7 +2263,10 @@ class SimulatorPlayersApiView(generics.ListCreateAPIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             LOGGER.error("Problem with Simulator Players POST request", exc_info=exc)
-            return Response(data=str(exc), status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                data=type(exc).__name__ + ": " + str(exc),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class SimulatorTransactionsApiView(generics.UpdateAPIView):
