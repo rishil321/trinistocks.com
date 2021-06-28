@@ -2184,26 +2184,16 @@ class SimulatorGamesApiView(generics.ListCreateAPIView):
     # require a token to access the api
     permission_classes = (permissions.IsAuthenticated,)
 
-    def get(self, request):
+    def get_queryset(self):
         """
         Return all objects in the portfolio for the current authorized user
         """
-        try:
-            queryset = models.SimulatorGames.objects.all().filter(
-                simulatorplayers=models.SimulatorPlayers.objects.get(
-                    user=self.request.user
-                )
+        queryset = models.SimulatorGames.objects.all().filter(
+            simulatorplayers=models.SimulatorPlayers.objects.get(
+                user=self.request.user
             )
-            return Response(data=queryset, status=status.HTTP_200_OK)
-        except Exception as exc:
-            LOGGER.error("Problem with Simulator Games GET request", exc_info=exc)
-            return Response(
-                data="Problem with Simulator Games GET request"
-                + type(exc).__name__
-                + ": "
-                + str(exc),
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        )
+        return queryset
 
     def post(self, request):
         try:
