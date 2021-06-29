@@ -2188,10 +2188,12 @@ class SimulatorGamesApiView(generics.ListCreateAPIView):
         """
         Return all objects in the portfolio for the current authorized user
         """
+        # first build list of all simulator players linked to this user
+        simulator_players = models.SimulatorPlayers.objects.all().filter(
+            user=self.request.user
+        )
         queryset = models.SimulatorGames.objects.all().filter(
-            simulatorplayers=models.SimulatorPlayers.objects.get(
-                user=self.request.user
-            )
+            simulatorplayers__in=simulator_players
         )
         return queryset
 
