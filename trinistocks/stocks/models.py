@@ -384,6 +384,7 @@ class SimulatorGames(models.Model):
     date_created = models.DateField(auto_now_add=True)
     date_ended = models.DateField()
     game_name = models.CharField(max_length=100, unique=True)
+    starting_cash = models.PositiveIntegerField(null=False, default=10000)
     private = models.BooleanField(default=False)
     game_code = models.PositiveIntegerField(null=True)
 

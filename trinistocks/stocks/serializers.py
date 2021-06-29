@@ -302,6 +302,7 @@ class SimulatorGamesSerializer(serializers.ModelSerializer):
             "date_created",
             "date_ended",
             "game_name",
+            "starting_cash",
             "private",
             "game_code",
         )
