@@ -299,9 +299,10 @@ class SimulatorGamesSerializer(serializers.ModelSerializer):
     class Meta:
         model = SimulatorGames
         fields = (
+            "game_id",
+            "game_name",
             "date_created",
             "date_ended",
-            "game_name",
             "starting_cash",
             "private",
             "game_code",
