@@ -1904,6 +1904,21 @@ class StockPriceApiView(generics.ListCreateAPIView):
         return queryset
 
 
+class LatestStockPriceApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.LatestStockPriceSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return the latest stock price for all stocks
+        """
+        queryset = models.DailyStockSummary.objects.raw(
+            "SELECT t.daily_share_id,t.symbol,t.date,t.close_price FROM daily_stock_summary t INNER JOIN (SELECT daily_share_id,symbol,MAX(date) AS MaxDate FROM daily_stock_summary WHERE close_price <> 0.00 GROUP BY symbol) tm ON t.symbol = tm.symbol AND t.date = tm.MaxDate"
+        )
+        return queryset
+
+
 class DividendPaymentsApiView(generics.ListCreateAPIView):
     serializer_class = serializers.DividendPaymentsSerializer
     # require a token to access the api

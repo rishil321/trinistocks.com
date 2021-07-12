@@ -120,6 +120,16 @@ class StockPriceSerializer(serializers.ModelSerializer):
         )
 
 
+class LatestStockPriceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyStockSummary
+        fields = (
+            "symbol",
+            "date",
+            "close_price",
+        )
+
+
 class DividendPaymentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricalDividendInfo

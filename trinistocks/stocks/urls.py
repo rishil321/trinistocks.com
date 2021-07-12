@@ -114,6 +114,7 @@ urlpatterns = [
     path("api/technicalanalysis", views.TechnicalAnalysisApiView.as_view()),
     path("api/fundamentalanalysis", views.FundamentalAnalysisApiView.as_view()),
     path("api/stockprices", views.StockPriceApiView.as_view()),
+    path("api/lateststockprices", views.LatestStockPriceApiView.as_view()),
     path("api/dividendpayments", views.DividendPaymentsApiView.as_view()),
     path("api/dividendyields", views.DividendYieldsApiView.as_view()),
     path("api/marketindices", views.MarketIndicesApiView.as_view()),
