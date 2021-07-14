@@ -2263,28 +2263,64 @@ class SimulatorPlayersApiView(generics.ListCreateAPIView):
 
     def post(self, request):
         try:
-            # check if liquid cash is not null
-            if "liquid_cash" not in request.data:
-                return Response(
-                    data={"error": "Please ensure that you added some starting cash!"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            # first build our serializer data
-            simulator_player_data = {}
-            simulator_player_data["user"] = request.user.id
-            simulator_player_data["liquid_cash"] = request.data["liquid_cash"]
-            # get the simulator game
-            simulator_player_data["simulator_game"] = models.SimulatorGames.objects.get(
+            # check if this is an update request
+            simulator_game_check = models.SimulatorGames.objects.filter(
                 game_name=request.data["game_name"]
-            ).pk
-            serializer = serializers.SimulatorPlayersSerializer(
-                data=simulator_player_data
             )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            if simulator_game_check.count() > 0:
+                simulator_player = models.SimulatorPlayers.objects.filter(
+                    user=request.user.id,
+                    simulator_game=models.SimulatorGames.objects.get(
+                        game_name=request.data["game_name"]
+                    ).pk,
+                )
+                if simulator_player.count() > 0:
+                    # get the existing serializer
+                    simulator_player_data = {}
+                    simulator_player_data["user"] = request.user.id
+                    simulator_player_data["liquid_cash"] = request.data["liquid_cash"]
+                    # get the simulator game
+                    simulator_player_data[
+                        "simulator_game"
+                    ] = models.SimulatorGames.objects.get(
+                        game_name=request.data["game_name"]
+                    ).pk
+                    serializer = serializers.SimulatorPlayersSerializer(
+                        simulator_player[0], data=simulator_player_data
+                    )
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(
+                            serializer.data, status=status.HTTP_202_ACCEPTED
+                        )
+                    else:
+                        return Response(
+                            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                        )
+                else:
+                    # else this a create request
+                    # first build our serializer data
+                    simulator_player_data = {}
+                    simulator_player_data["user"] = request.user.id
+                    simulator_player_data["liquid_cash"] = request.data["liquid_cash"]
+                    # get the simulator game
+                    simulator_player_data[
+                        "simulator_game"
+                    ] = models.SimulatorGames.objects.get(
+                        game_name=request.data["game_name"]
+                    ).pk
+                    serializer = serializers.SimulatorPlayersSerializer(
+                        data=simulator_player_data
+                    )
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=status.HTTP_201_CREATED)
+                    else:
+                        return Response(
+                            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                        )
             else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                raise RuntimeError("No simulator games with this name found.")
         except Exception as exc:
             LOGGER.error("Problem with Simulator Players POST request", exc_info=exc)
             return Response(
