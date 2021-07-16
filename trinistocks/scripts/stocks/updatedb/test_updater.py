@@ -49,12 +49,20 @@ def test_update_portfolio_summary_book_costs():
     assert updater.update_portfolio_summary_book_costs() == 0
 
 
+def test_update_simulator_portfolio_summary_book_costs():
+    assert updater.update_simulator_portfolio_summary_book_costs() == 0
+
+
 def test_update_portfolio_summary_market_values():
     assert updater.update_portfolio_summary_market_values() == 0
 
 
 def test_update_portfolio_sectors():
     assert updater.update_portfolio_sectors_values() == 0
+
+
+def test_update_simulator_portfolio_sectors_values():
+    assert updater.update_simulator_portfolio_sectors_values() == 0
 
 
 def test_main():

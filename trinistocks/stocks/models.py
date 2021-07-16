@@ -458,6 +458,25 @@ class SimulatorPortfolios(models.Model):
         unique_together = [["simulator_player_id", "symbol"]]
 
 
+class SimulatorPortfolioSectors(models.Model):
+
+    simulator_player_id = models.ForeignKey(
+        SimulatorPlayers,
+        models.CASCADE,
+        db_column="simulator_player_id",
+    )
+    sector = models.CharField(max_length=100)
+    book_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    market_value = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    total_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    gain_loss_percent = models.DecimalField(max_digits=6, decimal_places=2, null=True)
+
+    class Meta:
+        managed = True
+        db_table = "stocks_simulatorportfoliosectors"
+        unique_together = [["simulator_player_id", "sector"]]
+
+
 class User(AbstractUser):
     pass
     # add additional fields in here

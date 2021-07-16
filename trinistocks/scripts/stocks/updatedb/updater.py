@@ -549,6 +549,213 @@ def update_portfolio_summary_book_costs():
         custom_logging.flush_smtp_logger()
 
 
+def update_simulator_portfolio_summary_book_costs():
+    """
+    Select all records from the stocks_simulatortransactions table, then
+    calculate and upsert the following fields in the stocks_simulatorportfolios table
+    (shares_remaining, average_cost, book_cost)
+    """
+    logger = logging.getLogger(LOGGERNAME)
+    logger.info("Now trying to update the book values in all simulator portfolios.")
+    # set up the db connection
+    try:
+        with DatabaseConnect() as db_connect:
+            # set up our dataframe from the stocks_simulatortransactions table
+            transactions_df = pd.io.sql.read_sql(
+                f"SELECT simulator_player_id, symbol, num_shares, share_price, bought_or_sold \
+                FROM stocks_simulatortransactions;",
+                db_connect.dbengine,
+            )
+            # get the number of shares remaining in the portfolio for each user
+            # first get the total shares bought
+            total_shares_bought_df = (
+                transactions_df[transactions_df.bought_or_sold == "Buy"]
+                .groupby(["simulator_player_id", "symbol"])
+                .sum()
+                .reset_index()
+            )
+            total_shares_bought_df.drop(["share_price"], axis=1, inplace=True)
+            total_shares_bought_df.rename(
+                columns={"num_shares": "shares_bought"}, inplace=True
+            )
+            # then get the total shares sold
+            total_shares_sold_df = (
+                transactions_df[transactions_df.bought_or_sold == "Sell"]
+                .groupby(["simulator_player_id", "symbol"])
+                .sum()
+                .reset_index()
+            )
+            total_shares_sold_df.drop(["share_price"], axis=1, inplace=True)
+            total_shares_sold_df.rename(
+                columns={"num_shares": "shares_sold"}, inplace=True
+            )
+            # first merge both dataframes
+            total_bought_sold_df = total_shares_bought_df.merge(
+                total_shares_sold_df, how="outer", on=["simulator_player_id", "symbol"]
+            )
+            # then fill the shares_sold column with 0
+            total_bought_sold_df["shares_sold"] = total_bought_sold_df[
+                "shares_sold"
+            ].replace(np.NaN, 0)
+            # then find the difference to get our number of shares remaining for each user
+            total_bought_sold_df["shares_remaining"] = (
+                total_bought_sold_df["shares_bought"]
+                - total_bought_sold_df["shares_sold"]
+            )
+            # set up a new df to hold the summary data that we are interested in
+            summary_df = total_bought_sold_df[
+                ["simulator_player_id", "symbol", "shares_remaining"]
+            ].copy()
+            # get the average cost for each share
+            avg_cost_df = transactions_df[
+                transactions_df.bought_or_sold == "Buy"
+            ].copy()
+            # calculate the total book cost for shares purchased
+            avg_cost_df["book_cost"] = (
+                avg_cost_df["num_shares"] * avg_cost_df["share_price"]
+            )
+            avg_cost_df = avg_cost_df.groupby(["simulator_player_id", "symbol"]).sum()
+            avg_cost_df.drop(["share_price"], axis=1, inplace=True)
+            avg_cost_df = avg_cost_df.reset_index()
+            # calculate the average cost for each share purchased
+            avg_cost_df["average_cost"] = (
+                avg_cost_df["book_cost"] / avg_cost_df["num_shares"]
+            )
+            # add these two new fields to our dataframe to be written to the db
+            summary_df = summary_df.merge(
+                avg_cost_df, how="outer", on=["simulator_player_id", "symbol"]
+            )
+            summary_df.drop(["num_shares"], axis=1, inplace=True)
+            # now write the df to the database
+            logger.info("Now writing portfolio book value data to database.")
+            execute_completed_successfully = False
+            execute_failed_times = 0
+            portfolio_summary_table = Table(
+                "stocks_simulatorportfolios",
+                MetaData(),
+                autoload=True,
+                autoload_with=db_connect.dbengine,
+            )
+            while not execute_completed_successfully and execute_failed_times < 5:
+                try:
+                    insert_stmt = insert(portfolio_summary_table).values(
+                        summary_df.to_dict("records")
+                    )
+                    upsert_stmt = insert_stmt.on_duplicate_key_update(
+                        {x.name: x for x in insert_stmt.inserted}
+                    )
+                    result = db_connect.dbcon.execute(upsert_stmt)
+                    execute_completed_successfully = True
+                    logger.info("Successfully wrote portfolio book value data to db.")
+                    logger.info(
+                        "Number of rows affected in the stocks_simulatorportfolios table was "
+                        + str(result.rowcount)
+                    )
+                except sqlalchemy.exc.OperationalError as operr:
+                    logger.warning(str(operr))
+                    time.sleep(1)
+                    execute_failed_times += 1
+            return 0
+    except Exception as exc:
+        logger.exception(
+            "Could not complete simulator portfolio summary book costs data update."
+        )
+        custom_logging.flush_smtp_logger()
+
+
+def update_simulator_portfolio_summary_market_values():
+    """
+    Select all records from the stocks_simulatorportfolios table, then
+    calculate and upsert the following fields in the stocks_simulatorportfolios table
+    (current_market_prices, market_value, total_gain_loss)
+    """
+    logger = logging.getLogger(LOGGERNAME)
+    logger.info("Now trying to update the market value in all simulator portfolios.")
+    db_connect = None
+    try:
+        # set up the db connection
+        db_connect = DatabaseConnect()
+        # set up our dataframe from the portfolio_summary table
+        portfolio_summary_df = pd.io.sql.read_sql(
+            f"SELECT simulator_player_id, symbol, shares_remaining, book_cost, average_cost \
+            FROM stocks_simulatorportfolios;",
+            db_connect.dbengine,
+        )
+        # get the last date that we have scraped data for
+        latest_date = pd.io.sql.read_sql(
+            f"SELECT date FROM daily_stock_summary WHERE os_bid_vol !=0 ORDER BY date DESC LIMIT 1;",
+            db_connect.dbengine,
+        )["date"][0]
+        # get the closing price for all shares on this date
+        closing_price_df = pd.io.sql.read_sql(
+            f"SELECT symbol, close_price FROM daily_stock_summary WHERE date='{latest_date}';",
+            db_connect.dbengine,
+        )
+        # now merge the two dataframes to get the closing price
+        portfolio_summary_df = portfolio_summary_df.merge(
+            closing_price_df, how="inner", on=["symbol"]
+        )
+        # rename the close price column
+        portfolio_summary_df.rename(
+            columns={"close_price": "current_market_price"}, inplace=True
+        )
+        # calculate the market value of the remaining shares in the portfolio
+        portfolio_summary_df["market_value"] = (
+            portfolio_summary_df["current_market_price"]
+            * portfolio_summary_df["shares_remaining"]
+        )
+        # calculate the total gain or loss
+        portfolio_summary_df["total_gain_loss"] = (
+            portfolio_summary_df["market_value"] - portfolio_summary_df["book_cost"]
+        )
+        # calculate the percentage gain or loss
+        portfolio_summary_df["gain_loss_percent"] = (
+            100
+            * portfolio_summary_df["total_gain_loss"]
+            / portfolio_summary_df["book_cost"]
+        )
+        # now write the df to the database
+        logger.info("Now writing portfolio market value data to database.")
+        execute_completed_successfully = False
+        execute_failed_times = 0
+        portfolio_summary_table = Table(
+            "stocks_simulatorportfolios",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connect.dbengine,
+        )
+        while not execute_completed_successfully and execute_failed_times < 5:
+            try:
+                portfolio_summary_insert_stmt = insert(portfolio_summary_table).values(
+                    portfolio_summary_df.to_dict("records")
+                )
+                portfolio_summary_upsert_stmt = (
+                    portfolio_summary_insert_stmt.on_duplicate_key_update(
+                        {x.name: x for x in portfolio_summary_insert_stmt.inserted}
+                    )
+                )
+                result = db_connect.dbcon.execute(portfolio_summary_upsert_stmt)
+                execute_completed_successfully = True
+                logger.info("Successfully wrote portfolio market value data to db.")
+                logger.info(
+                    "Number of rows affected in the portfolio_summary table was "
+                    + str(result.rowcount)
+                )
+            except sqlalchemy.exc.OperationalError as operr:
+                logger.warning(str(operr))
+                time.sleep(1)
+                execute_failed_times += 1
+        return 0
+    except Exception as exc:
+        logger.exception("Could not complete portfolio summary data update.")
+        custom_logging.flush_smtp_logger()
+    finally:
+        # Always close the database connection
+        if db_connect is not None:
+            db_connect.close()
+            logger.info("Successfully closed database connection.")
+
+
 def update_portfolio_summary_market_values():
     """
     Select all records from the portfolio_summary table, then
@@ -705,6 +912,94 @@ def update_portfolio_sectors_values():
                 result = db_connect.dbcon.execute(upsert_stmt)
                 execute_completed_successfully = True
                 logger.info("Successfully wrote portfolio sector value data to db.")
+                logger.info(
+                    "Number of rows affected in the portfolio_sector table was "
+                    + str(result.rowcount)
+                )
+            except sqlalchemy.exc.OperationalError as operr:
+                logger.warning(str(operr))
+                time.sleep(1)
+                execute_failed_times += 1
+        return 0
+    except Exception as exc:
+        logger.exception("Could not complete portfolio sector data update.")
+        custom_logging.flush_smtp_logger()
+    finally:
+        # Always close the database connection
+        if db_connect is not None:
+            db_connect.close()
+            logger.info("Successfully closed database connection.")
+
+
+def update_simulator_portfolio_sectors_values():
+    """
+    Select all records from the stocks_simulatorportfolios table, then
+    calculate and upsert the fields in the stocks_portfoliosectors table
+    """
+    logger = logging.getLogger(LOGGERNAME)
+    logger.info(
+        "Now trying to update the portfolio sector values in all simulator portfolios."
+    )
+    db_connect = None
+    try:
+        # set up the db connection
+        db_connect = DatabaseConnect()
+        # set up our dataframe from the portfolio_summary table
+        portfolio_summary_df = pd.io.sql.read_sql(
+            f"SELECT simulator_player_id, symbol,shares_remaining, book_cost, market_value, average_cost, current_market_price, total_gain_loss, gain_loss_percent \
+            FROM stocks_simulatorportfolios;",
+            db_connect.dbengine,
+        )
+        # select the sector and symbol from the listed equities dataframe
+        listed_equities_df = pd.io.sql.read_sql(
+            f"SELECT symbol,sector \
+            FROM listed_equities;",
+            db_connect.dbengine,
+        )
+        # now merge the two dataframes to get the sectors for each symbol
+        portfolio_summary_df = portfolio_summary_df.merge(
+            listed_equities_df, how="inner", on=["symbol"]
+        )
+        # now group the df by user
+        portfolio_summary_df = (
+            portfolio_summary_df.groupby(["simulator_player_id", "sector"])
+            .sum()
+            .reset_index()
+        )
+        # create a new df with the columns that we need
+        portfolio_sector_df = portfolio_summary_df[
+            [
+                "simulator_player_id",
+                "sector",
+                "book_cost",
+                "market_value",
+                "total_gain_loss",
+                "gain_loss_percent",
+            ]
+        ].copy()
+        # now write the df to the database
+        logger.info("Now writing simulator portfolio sector data to database.")
+        execute_completed_successfully = False
+        execute_failed_times = 0
+        portfolio_sector_table = Table(
+            "stocks_simulatorportfoliosectors",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connect.dbengine,
+        )
+        while not execute_completed_successfully and execute_failed_times < 5:
+            try:
+                insert_stmt = insert(portfolio_sector_table).values(
+                    portfolio_sector_df.to_dict("records")
+                )
+                upsert_stmt = insert_stmt.on_duplicate_key_update(
+                    {x.name: x for x in insert_stmt.inserted}
+                )
+                result = db_connect.dbcon.execute(upsert_stmt)
+                execute_completed_successfully = True
+                logger.info(
+                    "Successfully wrote simulator portfolio sector value data to db."
+                )
                 logger.info(
                     "Number of rows affected in the portfolio_sector table was "
                     + str(result.rowcount)
