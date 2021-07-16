@@ -2401,11 +2401,11 @@ class SimulatorTransactionsApiView(generics.UpdateAPIView):
             )
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
                 updater.update_simulator_portfolio_summary_book_costs()
                 # update the market values
                 updater.update_simulator_portfolio_summary_market_values()
                 updater.update_simulator_portfolio_sectors_values()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
