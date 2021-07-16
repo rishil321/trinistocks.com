@@ -357,3 +357,16 @@ class SimulatorPortfolioSerializer(serializers.ModelSerializer):
             "total_gain_loss",
             "gain_loss_percent",
         )
+
+
+class SimulatorPortfolioSectorsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SimulatorPortfolios
+        fields = (
+            "simulator_player_id",
+            "sector",
+            "book_cost",
+            "market_value",
+            "total_gain_loss",
+            "gain_loss_percent",
+        )
