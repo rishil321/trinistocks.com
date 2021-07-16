@@ -2442,3 +2442,23 @@ class SimulatorPortfoliosApiView(generics.ListCreateAPIView):
             )
         )
         return queryset
+
+
+class SimulatorPortfolioSectorsApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.SimulatorPortfolioSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return all objects in the portfolio for the current authorized user
+        """
+        queryset = models.SimulatorPortfolioSectors.objects.all().filter(
+            simulator_player_id=models.SimulatorPlayers.objects.get(
+                user=self.request.user,
+                simulator_game=models.SimulatorGames.objects.get(
+                    game_name=self.request.GET["game_name"]
+                ),
+            )
+        )
+        return queryset
