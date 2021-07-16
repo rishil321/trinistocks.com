@@ -1591,6 +1591,7 @@ class PortfolioTransactionsView(LoginRequiredMixin, FormView):
             updater.update_portfolio_summary_book_costs()
             # update the market values
             updater.update_portfolio_summary_market_values()
+            updater.update_portfolio_sectors_values()
         except IntegrityError as exc:
             context[
                 "general_error"
@@ -2063,6 +2064,10 @@ class PortfolioTransactionsApiView(generics.UpdateAPIView):
                 num_shares=self.request.POST["num_shares"],
             )
             queryset.save()
+            updater.update_portfolio_summary_book_costs()
+            # update the market values
+            updater.update_portfolio_summary_market_values()
+            updater.update_portfolio_sectors_values()
         except Exception as exc:
             LOGGER.error(
                 "Ran into an error during Portfolio transaction addition", exc_info=exc
@@ -2397,6 +2402,10 @@ class SimulatorTransactionsApiView(generics.UpdateAPIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+                updater.update_simulator_portfolio_summary_book_costs()
+                # update the market values
+                updater.update_simulator_portfolio_summary_market_values()
+                updater.update_simulator_portfolio_sectors_values()
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:

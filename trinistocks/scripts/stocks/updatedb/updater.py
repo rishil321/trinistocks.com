@@ -1057,6 +1057,12 @@ def main(args):
                     multipool.apply(update_portfolio_summary_book_costs, ())
                     multipool.apply(update_portfolio_summary_market_values, ())
                     multipool.apply(update_portfolio_sectors_values, ())
+                    # update the simulator portfolio data for all simulator players
+                    multipool.apply(update_simulator_portfolio_summary_book_costs, ())
+                    multipool.apply(
+                        update_simulator_portfolio_summary_market_values, ()
+                    )
+                    multipool.apply(update_simulator_portfolio_sectors_values, ())
                 multipool.close()
                 multipool.join()
                 logger.info(os.path.basename(__file__) + " executed successfully.")
