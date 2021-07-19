@@ -21,6 +21,7 @@ from .models import (
     SimulatorPlayers,
     SimulatorTransactions,
     SimulatorPortfolios,
+    SimulatorPortfolioSectors,
 )
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
@@ -361,7 +362,7 @@ class SimulatorPortfolioSerializer(serializers.ModelSerializer):
 
 class SimulatorPortfolioSectorsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SimulatorPortfolios
+        model = SimulatorPortfolioSectors
         fields = (
             "simulator_player_id",
             "sector",

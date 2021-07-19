@@ -2445,7 +2445,7 @@ class SimulatorPortfoliosApiView(generics.ListCreateAPIView):
 
 
 class SimulatorPortfolioSectorsApiView(generics.ListCreateAPIView):
-    serializer_class = serializers.SimulatorPortfolioSerializer
+    serializer_class = serializers.SimulatorPortfolioSectorsSerializer
     # require a token to access the api
     permission_classes = (permissions.IsAuthenticated,)
 
