@@ -931,6 +931,88 @@ def update_portfolio_sectors_values():
             logger.info("Successfully closed database connection.")
 
 
+def update_simulator_games():
+    """
+    Select all records from the stocks_simulatorgames table, then
+    calculate and upsert the fields in the stocks_simulatorgames table
+    """
+    logger = logging.getLogger(LOGGERNAME)
+    logger.info("Now trying to update the simulator games.")
+    db_connect = None
+    try:
+        # set up the db connection
+        db_connect = DatabaseConnect()
+        # set up our dataframe from the portfolio_summary table
+        portfolio_summary_df = pd.io.sql.read_sql(
+            f"SELECT user_id, symbol,shares_remaining, book_cost, market_value, average_cost, current_market_price, total_gain_loss, gain_loss_percent \
+            FROM portfolio_summary;",
+            db_connect.dbengine,
+        )
+        # select the sector and symbol from the listed equities dataframe
+        listed_equities_df = pd.io.sql.read_sql(
+            f"SELECT symbol,sector \
+            FROM listed_equities;",
+            db_connect.dbengine,
+        )
+        # now merge the two dataframes to get the sectors for each symbol
+        portfolio_summary_df = portfolio_summary_df.merge(
+            listed_equities_df, how="inner", on=["symbol"]
+        )
+        # now group the df by user
+        portfolio_summary_df = (
+            portfolio_summary_df.groupby(["user_id", "sector"]).sum().reset_index()
+        )
+        # create a new df with the columns that we need
+        portfolio_sector_df = portfolio_summary_df[
+            [
+                "user_id",
+                "sector",
+                "book_cost",
+                "market_value",
+                "total_gain_loss",
+                "gain_loss_percent",
+            ]
+        ].copy()
+        # now write the df to the database
+        logger.info("Now writing portfolio sector data to database.")
+        execute_completed_successfully = False
+        execute_failed_times = 0
+        portfolio_sector_table = Table(
+            "stocks_portfoliosectors",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connect.dbengine,
+        )
+        while not execute_completed_successfully and execute_failed_times < 5:
+            try:
+                insert_stmt = insert(portfolio_sector_table).values(
+                    portfolio_sector_df.to_dict("records")
+                )
+                upsert_stmt = insert_stmt.on_duplicate_key_update(
+                    {x.name: x for x in insert_stmt.inserted}
+                )
+                result = db_connect.dbcon.execute(upsert_stmt)
+                execute_completed_successfully = True
+                logger.info("Successfully wrote portfolio sector value data to db.")
+                logger.info(
+                    "Number of rows affected in the portfolio_sector table was "
+                    + str(result.rowcount)
+                )
+            except sqlalchemy.exc.OperationalError as operr:
+                logger.warning(str(operr))
+                time.sleep(1)
+                execute_failed_times += 1
+        return 0
+    except Exception as exc:
+        logger.exception("Could not complete portfolio sector data update.")
+        custom_logging.flush_smtp_logger()
+    finally:
+        # Always close the database connection
+        if db_connect is not None:
+            db_connect.close()
+            logger.info("Successfully closed database connection.")
+
+
 def update_simulator_portfolio_sectors_values():
     """
     Select all records from the stocks_simulatorportfolios table, then

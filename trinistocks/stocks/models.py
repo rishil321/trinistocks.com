@@ -383,10 +383,12 @@ class SimulatorGames(models.Model):
     game_id = models.AutoField(primary_key=True, unique=True)
     date_created = models.DateField(auto_now_add=True)
     date_ended = models.DateField()
+    is_active = models.BooleanField(default=True)
     game_name = models.CharField(max_length=100, unique=True)
     starting_cash = models.PositiveIntegerField(null=False, default=10000)
     private = models.BooleanField(default=False)
     game_code = models.PositiveIntegerField(null=True)
+    num_players = models.PositiveIntegerField(default=1)
 
     class Meta:
         managed = True
@@ -401,6 +403,11 @@ class SimulatorPlayers(models.Model):
         db_column="game_name",
     )
     liquid_cash = models.DecimalField(max_digits=10, decimal_places=2, null=False)
+    overall_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    overall_gain_loss_percent = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True
+    )
+    current_position = models.PositiveIntegerField(null=True)
 
     class Meta:
         managed = True
