@@ -934,7 +934,7 @@ def update_portfolio_sectors_values():
 def update_simulator_games():
     """
     Select all records from the stocks_simulatorgames table, then
-    calculate and upsert the fields in the stocks_simulatorgames table
+    calculate and upsert the interesting fields in the stocks_simulatorgames table
     """
     logger = logging.getLogger(LOGGERNAME)
     logger.info("Now trying to update the simulator games.")
@@ -942,28 +942,27 @@ def update_simulator_games():
     try:
         # set up the db connection
         db_connect = DatabaseConnect()
-        # set up our dataframe from the portfolio_summary table
-        portfolio_summary_df = pd.io.sql.read_sql(
-            f"SELECT user_id, symbol,shares_remaining, book_cost, market_value, average_cost, current_market_price, total_gain_loss, gain_loss_percent \
-            FROM portfolio_summary;",
+        # set up our dataframes from the db tables
+        simulator_games_df = pd.io.sql.read_sql(
+            f"SELECT game_id, date_ended,is_active, starting_cash, num_players \
+            FROM stocks_simulatorgames;",
             db_connect.dbengine,
         )
-        # select the sector and symbol from the listed equities dataframe
-        listed_equities_df = pd.io.sql.read_sql(
-            f"SELECT symbol,sector \
-            FROM listed_equities;",
+        simulator_players_df = pd.io.sql.read_sql(
+            f"SELECT simulator_player_id, game_name,liquid_cash, overall_gain_loss, overall_gain_loss_percent,current_position \
+            FROM stocks_simulatorgames;",
             db_connect.dbengine,
         )
         # now merge the two dataframes to get the sectors for each symbol
-        portfolio_summary_df = portfolio_summary_df.merge(
+        simulator_games_df = simulator_games_df.merge(
             listed_equities_df, how="inner", on=["symbol"]
         )
         # now group the df by user
-        portfolio_summary_df = (
-            portfolio_summary_df.groupby(["user_id", "sector"]).sum().reset_index()
+        simulator_games_df = (
+            simulator_games_df.groupby(["user_id", "sector"]).sum().reset_index()
         )
         # create a new df with the columns that we need
-        portfolio_sector_df = portfolio_summary_df[
+        portfolio_sector_df = simulator_games_df[
             [
                 "user_id",
                 "sector",

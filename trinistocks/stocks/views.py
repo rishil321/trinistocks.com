@@ -2280,6 +2280,7 @@ class SimulatorPlayersApiView(generics.ListCreateAPIView):
                     ).pk,
                 )
                 if simulator_player.count() > 0:
+                    # if the simulator player already exists
                     # get the existing serializer
                     simulator_player_data = {}
                     simulator_player_data["user"] = request.user.id
@@ -2319,6 +2320,12 @@ class SimulatorPlayersApiView(generics.ListCreateAPIView):
                     )
                     if serializer.is_valid():
                         serializer.save()
+                        # also increment the simulator game player count
+                        simulator_game = models.SimulatorGames.objects.get(
+                            game_name=request.data["game_name"]
+                        )
+                        simulator_game.num_players += 1
+                        simulator_game.save()
                         return Response(serializer.data, status=status.HTTP_201_CREATED)
                     else:
                         return Response(

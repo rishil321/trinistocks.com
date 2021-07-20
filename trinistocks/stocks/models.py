@@ -388,7 +388,7 @@ class SimulatorGames(models.Model):
     starting_cash = models.PositiveIntegerField(null=False, default=10000)
     private = models.BooleanField(default=False)
     game_code = models.PositiveIntegerField(null=True)
-    num_players = models.PositiveIntegerField(default=1)
+    num_players = models.PositiveIntegerField(default=0)
 
     class Meta:
         managed = True
@@ -400,7 +400,6 @@ class SimulatorPlayers(models.Model):
     simulator_game = models.ForeignKey(
         SimulatorGames,
         models.CASCADE,
-        db_column="game_name",
     )
     liquid_cash = models.DecimalField(max_digits=10, decimal_places=2, null=False)
     overall_gain_loss = models.DecimalField(max_digits=20, decimal_places=2, null=True)
