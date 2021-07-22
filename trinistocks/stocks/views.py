@@ -2206,15 +2206,9 @@ class SimulatorGamesApiView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         """
-        Return all objects in the portfolio for the current authorized user
+        Return certain simulator games, depending on the GET parameters supplied
         """
-        # first build list of all simulator players linked to this user
-        # simulator_players = models.SimulatorPlayers.objects.all().filter(
-        #     user=self.request.user
-        # )
-        # queryset = models.SimulatorGames.objects.all().filter(
-        #     simulatorplayers__in=simulator_players
-        # )
+        # return all simulator games
         queryset = models.SimulatorGames.objects.all()
         return queryset
 
@@ -2260,10 +2254,17 @@ class SimulatorPlayersApiView(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        """
-        Return all objects in the portfolio for the current authorized user
-        """
-        queryset = models.SimulatorPlayers.objects.all().filter(user=self.request.user)
+        """"""
+        if "game_name" in request.data:
+            queryset = models.SimulatorPlayers.objects.all().filter(
+                simulator_game=models.SimulatorGames.objects.get(
+                    game_name=request.data["game_name"]
+                ).pk
+            )
+        else:
+            queryset = models.SimulatorPlayers.objects.all().filter(
+                user=self.request.user
+            )
         return queryset
 
     def post(self, request):

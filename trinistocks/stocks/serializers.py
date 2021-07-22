@@ -317,6 +317,7 @@ class SimulatorGamesSerializer(serializers.ModelSerializer):
             "starting_cash",
             "private",
             "game_code",
+            "num_players",
         )
 
 
@@ -328,6 +329,10 @@ class SimulatorPlayersSerializer(serializers.ModelSerializer):
             "user",
             "simulator_game",
             "liquid_cash",
+            "overall_gain_loss",
+            "overall_gain_loss_percent",
+            "current_portfolio_value",
+            "current_position",
         )
 
 
