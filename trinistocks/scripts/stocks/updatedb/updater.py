@@ -21,11 +21,12 @@ import multiprocessing
 import json
 import time
 import argparse
+from datetime import date
 
 # Imports from the cheese factory
 from pid import PidFile
 import requests
-from sqlalchemy import create_engine, Table, select, MetaData, text, and_
+from sqlalchemy import create_engine, Table, select, MetaData, text, and_, update
 from sqlalchemy.dialects.mysql import insert
 import sqlalchemy.exc
 
@@ -944,57 +945,143 @@ def update_simulator_games():
         db_connect = DatabaseConnect()
         # set up our dataframes from the db tables
         simulator_games_df = pd.io.sql.read_sql(
-            f"SELECT game_id, date_ended,is_active, starting_cash, num_players \
+            f"SELECT game_id, date_created,date_ended,game_name,game_code,private,is_active, starting_cash, num_players \
             FROM stocks_simulatorgames;",
             db_connect.dbengine,
         )
         simulator_players_df = pd.io.sql.read_sql(
-            f"SELECT simulator_player_id, game_name,liquid_cash, overall_gain_loss, overall_gain_loss_percent,current_position \
-            FROM stocks_simulatorgames;",
+            f"SELECT simulator_player_id, simulator_game_id,liquid_cash, user_id,overall_gain_loss_percent,current_position \
+            FROM stocks_simulatorplayers;",
             db_connect.dbengine,
         )
-        # now merge the two dataframes to get the sectors for each symbol
-        simulator_games_df = simulator_games_df.merge(
-            listed_equities_df, how="inner", on=["symbol"]
+        simulator_portfolio_df = pd.io.sql.read_sql(
+            f"SELECT simulator_player_id,total_gain_loss \
+            FROM stocks_simulatorportfolios;",
+            db_connect.dbengine,
         )
-        # now group the df by user
-        simulator_games_df = (
-            simulator_games_df.groupby(["user_id", "sector"]).sum().reset_index()
+        # first calculate the overall gain/loss for each simulator player
+        simulator_portfolio_df = (
+            simulator_portfolio_df.groupby(["simulator_player_id"]).sum().reset_index()
         )
-        # create a new df with the columns that we need
-        portfolio_sector_df = simulator_games_df[
+        # rename the total_gain_loss column
+        simulator_portfolio_df.rename(
+            columns={"total_gain_loss": "overall_gain_loss"}, inplace=True
+        )
+        # merge this df with the simulator players df
+        simulator_players_df = simulator_players_df.merge(
+            simulator_portfolio_df, how="inner", on=["simulator_player_id"]
+        )
+        # rename the simulator_game_id field
+        simulator_players_df.rename(
+            columns={"simulator_game_id": "game_id"}, inplace=True
+        )
+        #  merge with the simulator games df
+        simulator_players_df = simulator_players_df.merge(
+            simulator_games_df, how="inner", on=["game_id"]
+        )
+        # set up a new df column to track current portfolio value ( liquid cash + overall gain)
+        simulator_players_df["current_portfolio_value"] = (
+            simulator_players_df["overall_gain_loss"]
+            + simulator_players_df["liquid_cash"]
+        )
+        # calculate the overall gain/loss percentage
+        simulator_players_df["overall_gain_loss_percent"] = (
+            100
+            * (
+                simulator_players_df["current_portfolio_value"]
+                - simulator_players_df["starting_cash"]
+            )
+            / simulator_players_df["starting_cash"]
+        )
+        # then group by simulator game and sort by portfolio value
+        simulator_players_df["current_position"] = (
+            simulator_players_df.sort_values(
+                ["game_id", "current_portfolio_value"], ascending=False
+            )
+            .groupby(["game_id"])
+            .rank()
+        )
+        # for each simulator game, check if the game needs be marked as inactive
+        simulator_players_df["is_active"] = simulator_players_df.apply(
+            lambda x: (1 if (x["date_ended"] > date.today()) else 0),
+            axis=1,
+        )
+        # copy the fields we need to the individual fields to write back to the database
+        simulator_games_df = simulator_players_df[
             [
-                "user_id",
-                "sector",
-                "book_cost",
-                "market_value",
-                "total_gain_loss",
-                "gain_loss_percent",
+                "game_id",
+                "date_created",
+                "date_ended",
+                "game_name",
+                "game_code",
+                "private",
+                "is_active",
+                "starting_cash",
+                "num_players",
             ]
         ].copy()
+        simulator_games_df["game_code"] = simulator_games_df["game_code"].replace(
+            np.NaN, None
+        )
+        simulator_players_df = simulator_players_df[
+            [
+                "simulator_player_id",
+                "game_id",
+                "liquid_cash",
+                "user_id",
+                "overall_gain_loss",
+                "overall_gain_loss_percent",
+                "current_position",
+            ]
+        ].copy()
+        simulator_players_df.rename(
+            columns={
+                "game_id": "simulator_game_id",
+            },
+            inplace=True,
+        )
         # now write the df to the database
         logger.info("Now writing portfolio sector data to database.")
         execute_completed_successfully = False
         execute_failed_times = 0
-        portfolio_sector_table = Table(
-            "stocks_portfoliosectors",
+        simulator_games_table = Table(
+            "stocks_simulatorgames",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connect.dbengine,
+        )
+        simulator_players_table = Table(
+            "stocks_simulatorplayers",
             MetaData(),
             autoload=True,
             autoload_with=db_connect.dbengine,
         )
         while not execute_completed_successfully and execute_failed_times < 5:
             try:
-                insert_stmt = insert(portfolio_sector_table).values(
-                    portfolio_sector_df.to_dict("records")
+                insert_stmt = insert(simulator_games_table).values(
+                    simulator_games_df.to_dict("records")
                 )
                 upsert_stmt = insert_stmt.on_duplicate_key_update(
                     {x.name: x for x in insert_stmt.inserted}
                 )
                 result = db_connect.dbcon.execute(upsert_stmt)
                 execute_completed_successfully = True
-                logger.info("Successfully wrote portfolio sector value data to db.")
+                logger.info("Successfully wrote simulator game data to db.")
                 logger.info(
-                    "Number of rows affected in the portfolio_sector table was "
+                    "Number of rows affected in the simulator game table was "
+                    + str(result.rowcount)
+                )
+                insert_stmt = insert(simulator_players_table).values(
+                    simulator_players_df.to_dict("records")
+                )
+                upsert_stmt = insert_stmt.on_duplicate_key_update(
+                    {x.name: x for x in insert_stmt.inserted}
+                )
+                result = db_connect.dbcon.execute(upsert_stmt)
+                execute_completed_successfully = True
+                logger.info("Successfully wrote simulator player data to db.")
+                logger.info(
+                    "Number of rows affected in the simulator player table was "
                     + str(result.rowcount)
                 )
             except sqlalchemy.exc.OperationalError as operr:
@@ -1003,7 +1090,7 @@ def update_simulator_games():
                 execute_failed_times += 1
         return 0
     except Exception as exc:
-        logger.exception("Could not complete portfolio sector data update.")
+        logger.exception("Could not complete simulator game data update.")
         custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
@@ -1144,6 +1231,7 @@ def main(args):
                         update_simulator_portfolio_summary_market_values, ()
                     )
                     multipool.apply(update_simulator_portfolio_sectors_values, ())
+                    multipool.apply(update_simulator_games, ())
                 multipool.close()
                 multipool.join()
                 logger.info(os.path.basename(__file__) + " executed successfully.")

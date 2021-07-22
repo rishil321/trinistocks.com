@@ -406,6 +406,9 @@ class SimulatorPlayers(models.Model):
     overall_gain_loss_percent = models.DecimalField(
         max_digits=6, decimal_places=2, null=True
     )
+    current_portfolio_value = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True
+    )
     current_position = models.PositiveIntegerField(null=True)
 
     class Meta:
