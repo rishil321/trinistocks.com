@@ -1013,16 +1013,12 @@ def update_simulator_games():
                 "date_created",
                 "date_ended",
                 "game_name",
-                "game_code",
                 "private",
                 "is_active",
                 "starting_cash",
                 "num_players",
             ]
         ].copy()
-        simulator_games_df["game_code"] = simulator_games_df["game_code"].replace(
-            np.NaN, None
-        )
         simulator_players_df = simulator_players_df[
             [
                 "simulator_player_id",
