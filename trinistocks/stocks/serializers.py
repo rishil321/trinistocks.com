@@ -322,11 +322,14 @@ class SimulatorGamesSerializer(serializers.ModelSerializer):
 
 
 class SimulatorPlayersSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(read_only=True, source="user.username")
+
     class Meta:
         model = SimulatorPlayers
         fields = (
             "simulator_player_id",
             "user",
+            "username",
             "simulator_game",
             "liquid_cash",
             "overall_gain_loss",
