@@ -1028,6 +1028,7 @@ def update_simulator_games():
                 "overall_gain_loss",
                 "overall_gain_loss_percent",
                 "current_position",
+                "current_portfolio_value",
             ]
         ].copy()
         simulator_players_df.rename(
