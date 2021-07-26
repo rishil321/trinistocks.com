@@ -1040,6 +1040,7 @@ def update_simulator_games():
                 "current_portfolio_value",
             ]
         ].copy()
+        simulator_players_df = simulator_players_df.replace(np.NaN, None)
         simulator_players_df.rename(
             columns={
                 "game_id": "simulator_game_id",
