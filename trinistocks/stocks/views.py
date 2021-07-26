@@ -2255,10 +2255,10 @@ class SimulatorPlayersApiView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         """"""
-        if "game_name" in request.data:
+        if "game_name" in self.request.data:
             queryset = models.SimulatorPlayers.objects.all().filter(
                 simulator_game=models.SimulatorGames.objects.get(
-                    game_name=request.data["game_name"]
+                    game_name=self.request.data["game_name"]
                 ).pk
             )
         else:
