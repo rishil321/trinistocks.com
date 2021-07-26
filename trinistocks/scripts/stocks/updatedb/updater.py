@@ -980,10 +980,18 @@ def update_simulator_games():
             simulator_games_df, how="inner", on=["game_id"]
         )
         # set up a new df column to track current portfolio value ( liquid cash + overall gain)
-        simulator_players_df["current_portfolio_value"] = (
-            simulator_players_df["overall_gain_loss"]
-            + simulator_players_df["liquid_cash"]
-        )
+        # simulator_players_df["current_portfolio_value"] = (
+        #     simulator_players_df["overall_gain_loss"]
+        #     + simulator_players_df["liquid_cash"]
+        # )
+        simulator_players_df["current_portfolio_value"] = simulator_players_df[
+            "liquid_cash"
+        ]
+        for index, row in simulator_players_df.iterrows():
+            if row["overall_gain_loss"] != np.nan:
+                row["current_portfolio_value"] = (
+                    row["liquid_cash"] + row["overall_gain_loss"]
+                )
         # calculate the overall gain/loss percentage
         simulator_players_df["overall_gain_loss_percent"] = (
             100
