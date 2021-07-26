@@ -987,6 +987,7 @@ def update_simulator_games():
         simulator_players_df["current_portfolio_value"] = simulator_players_df[
             "liquid_cash"
         ]
+        print(simulator_players_df["current_portfolio_value"])
         for index, row in simulator_players_df.iterrows():
             if row["overall_gain_loss"] != np.nan:
                 row["current_portfolio_value"] = (
