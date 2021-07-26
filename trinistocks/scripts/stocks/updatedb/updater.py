@@ -969,7 +969,7 @@ def update_simulator_games():
         )
         # merge this df with the simulator players df
         simulator_players_df = simulator_players_df.merge(
-            simulator_portfolio_df, how="inner", on=["simulator_player_id"]
+            simulator_portfolio_df, how="outer", on=["simulator_player_id"]
         )
         # rename the simulator_game_id field
         simulator_players_df.rename(
