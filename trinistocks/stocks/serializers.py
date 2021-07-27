@@ -318,6 +318,7 @@ class SimulatorGamesSerializer(serializers.ModelSerializer):
             "private",
             "game_code",
             "num_players",
+            "is_active",
         )
 
 
