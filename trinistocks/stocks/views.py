@@ -2031,6 +2031,15 @@ class PortfolioTransactionsApiView(generics.UpdateAPIView):
     # require a token to access the api
     permission_classes = (permissions.IsAuthenticated,)
 
+    def get_queryset(self):
+        """
+        Return all portfolio transactions for the current authorized user
+        """
+        queryset = models.PortfolioTransactions.objects.all().filter(
+            user=self.request.user
+        )
+        return queryset
+
     def put(self, request):
         """
         Accept put requests for new transactions
