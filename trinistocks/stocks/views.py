@@ -2026,7 +2026,7 @@ class PortfolioSectorsApiView(generics.ListCreateAPIView):
         return queryset
 
 
-class PortfolioTransactionsApiView(generics.UpdateAPIView):
+class PortfolioTransactionsApiView(generics.RetrieveUpdateAPIView):
     serializer_class = serializers.PortfolioTransactionsSerializer
     # require a token to access the api
     permission_classes = (permissions.IsAuthenticated,)
