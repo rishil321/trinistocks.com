@@ -2026,7 +2026,7 @@ class PortfolioSectorsApiView(generics.ListCreateAPIView):
         return queryset
 
 
-class PortfolioTransactionsApiView(generics.RetrieveUpdateAPIView):
+class PortfolioTransactionPutApiView(generics.UpdateAPIView):
     serializer_class = serializers.PortfolioTransactionsSerializer
     # require a token to access the api
     permission_classes = (permissions.IsAuthenticated,)
@@ -2088,6 +2088,19 @@ class PortfolioTransactionsApiView(generics.RetrieveUpdateAPIView):
         else:
             return Response(data="Success", status=status.HTTP_201_CREATED)
 
+class PortfolioTransactionsGetApiView(generics.ListAPIView):
+    serializer_class = serializers.PortfolioTransactionsSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return all portfolio transactions for the current authorized user
+        """
+        queryset = models.PortfolioTransactions.objects.all().filter(
+            user=self.request.user
+        )
+        return queryset
 
 class CustomAuthToken(ObtainAuthToken):
     serializer_class = serializers.CustomAuthTokenSerializer
