@@ -48,6 +48,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # region CONSTANTS
 # Put your constants here. These should be named in CAPS
+HTTP_GET_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+}
 
 # The timeout to set for multiprocessing tasks (in seconds)
 MULTIPROCESSING_TIMEOUT = 60 * 60
@@ -77,7 +80,9 @@ def scrape_listed_equity_data():
         listed_stocks_summary_url = "https://www.stockex.co.tt/listed-securities/"
         logger.debug("Navigating to " + listed_stocks_summary_url)
         listed_stocks_summary_page = requests.get(
-            listed_stocks_summary_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+            listed_stocks_summary_url,
+            timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+            headers=HTTP_GET_HEADERS,
         )
         if listed_stocks_summary_page.status_code != 200:
             raise requests.exceptions.HTTPError(
@@ -103,7 +108,9 @@ def scrape_listed_equity_data():
                 per_stock_url = f"https://www.stockex.co.tt/manage-stock/{symbol}/"
                 logger.debug("Navigating to " + per_stock_url)
                 equity_page = requests.get(
-                    per_stock_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                    per_stock_url,
+                    timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                    headers=HTTP_GET_HEADERS,
                 )
                 if equity_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
@@ -227,7 +234,9 @@ def scrape_listed_equity_data():
         logger.debug("Now trying to fetch symbol ids for news")
         news_url = "https://www.stockex.co.tt/news/"
         logger.debug(f"Navigating to {news_url}")
-        equity_page = requests.get(news_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+        equity_page = requests.get(
+            news_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS, headers=HTTP_GET_HEADERS
+        )
         if equity_page.status_code != 200:
             raise requests.exceptions.HTTPError("Could not load URL. " + news_url)
         logger.debug("Successfully loaded webpage.")
@@ -360,7 +369,9 @@ def scrape_historical_indices_data():
         for ttse_index in all_ttse_indices:
             index_url = f"https://www.stockex.co.tt/indices/?indexId={ttse_index['id']}"
             logger.debug("Navigating to " + index_url)
-            index_page = requests.get(index_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+            index_page = requests.get(
+                index_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS, headers=HTTP_GET_HEADERS
+            )
             if index_page.status_code != 200:
                 raise requests.exceptions.HTTPError(f"Could not load URL: {index_page}")
             else:
@@ -448,7 +459,9 @@ def scrape_dividend_data():
                     )
                     logger.debug("Navigating to " + equity_dividend_url)
                     equity_dividend_page = requests.get(
-                        equity_dividend_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                        equity_dividend_url,
+                        timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                        headers=HTTP_GET_HEADERS,
                     )
                     if equity_dividend_page.status_code != 200:
                         raise requests.exceptions.HTTPError(
@@ -627,7 +640,9 @@ def scrape_equity_summary_data(
                 )
                 logger.debug(f"Navigating to {url_summary_page} {pid_string}")
                 http_get_req = requests.get(
-                    url_summary_page, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                    url_summary_page,
+                    timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                    headers=HTTP_GET_HEADERS,
                 )
                 if http_get_req.status_code != 200:
                     raise requests.exceptions.HTTPError(
@@ -1009,7 +1024,9 @@ def update_daily_trades():
             f"https://www.stockex.co.tt/market-quote/?TradeDate={today_date}"
         )
         logger.debug("Navigating to " + urlsummarypage)
-        http_get_req = requests.get(urlsummarypage, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+        http_get_req = requests.get(
+            urlsummarypage, timeout=WEBPAGE_LOAD_TIMEOUT_SECS, headers=HTTP_GET_HEADERS
+        )
         if http_get_req.status_code != 200:
             raise requests.exceptions.HTTPError(
                 "Could not load URL to update latest daily data " + urlsummarypage
@@ -1158,7 +1175,9 @@ def update_daily_trades():
             url_main_page = f"https://www.stockex.co.tt/"
             logger.debug("Navigating to " + url_main_page)
             http_get_req = requests.get(
-                url_main_page, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                url_main_page,
+                timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                headers=HTTP_GET_HEADERS,
             )
             if http_get_req.status_code != 200:
                 raise requests.exceptions.HTTPError(
@@ -1314,7 +1333,9 @@ def update_technical_analysis_data():
                     + " to fetch technical summary data."
                 )
                 http_get_req = requests.get(
-                    stock_summary_page, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                    stock_summary_page,
+                    timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                    headers=HTTP_GET_HEADERS,
                 )
                 if http_get_req.status_code != 200:
                     raise requests.exceptions.HTTPError(
@@ -1470,7 +1491,11 @@ def parse_news_data_per_stock(symbols_to_fetch_for, start_date, end_date):
                 # Construct the full URL using the symbol
                 news_url = f"https://www.stockex.co.tt/news/?symbol={symbol['symbol_id']}&category=&date={start_date}&date_to={end_date}&search&page={page_num}#search_c"
                 logger.debug("Navigating to " + news_url)
-                news_page = requests.get(news_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                news_page = requests.get(
+                    news_url,
+                    timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                    headers=HTTP_GET_HEADERS,
+                )
                 if news_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. " + news_page
@@ -1493,7 +1518,9 @@ def parse_news_data_per_stock(symbols_to_fetch_for, start_date, end_date):
                         # load the link to get the main article page
                         logger.debug("Now clicking news link. Navigating to " + link)
                         news_page = requests.get(
-                            link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                            link,
+                            timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                            headers=HTTP_GET_HEADERS,
                         )
                         if news_page.status_code != 200:
                             raise requests.exceptions.HTTPError(
