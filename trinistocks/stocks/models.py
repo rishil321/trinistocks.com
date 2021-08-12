@@ -440,6 +440,23 @@ class SimulatorTransactions(models.Model):
         ]
 
 
+class MonitoredStocks(models.Model):
+    monitored_stock_id = models.AutoField(primary_key=True, unique=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, default=1)
+    symbol = models.ForeignKey(
+        ListedEquities, models.CASCADE, db_column="symbol", default="AGL"
+    )
+
+    class Meta:
+        managed = True
+        unique_together = [
+            [
+                "user",
+                "symbol",
+            ]
+        ]
+
+
 class SimulatorPortfolios(models.Model):
     simulator_portfolio_id = models.AutoField(primary_key=True, unique=True)
     simulator_player_id = models.ForeignKey(
