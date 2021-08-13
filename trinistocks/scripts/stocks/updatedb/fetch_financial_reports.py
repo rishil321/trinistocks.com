@@ -56,6 +56,9 @@ ANNUAL_STATEMENTS_START_DATE_STRING = "2020-01-01"
 TOMORROW_DATE = datetime.strftime(datetime.now() + relativedelta(days=1), "%Y-%m-%d")
 LOGGERNAME = "fetch_financial_reports.py"
 OUTSTANDINGREPORTEMAIL = "latchmepersad@gmail.com"
+HTTP_GET_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+}
 
 # Put your global variables here.
 
@@ -108,7 +111,9 @@ def fetch_annual_reports():
         annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
         logger.debug(f"Navigating to {annual_reports_url}")
         annual_reports_page = requests.get(
-            annual_reports_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+            annual_reports_url,
+            timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+            headers=HTTP_GET_HEADERS,
         )
         if annual_reports_page.status_code != 200:
             raise requests.exceptions.HTTPError(
@@ -127,7 +132,9 @@ def fetch_annual_reports():
         pdf_reports = []
         for link in report_page_links:
             try:
-                report_page = requests.get(link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                report_page = requests.get(
+                    link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS, headers=HTTP_GET_HEADERS
+                )
                 if report_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. " + annual_reports_url
@@ -183,7 +190,9 @@ def fetch_annual_reports():
             else:
                 # else download this new pdf report
                 # get the http response
-                http_response_obj = requests.get(pdf["pdf_link"], stream=True)
+                http_response_obj = requests.get(
+                    pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
+                )
                 # save contents of response (pdf report) to the local file
                 logger.debug(f"Now downloading file {local_filename}. Please wait.")
                 with open(full_local_path, "wb") as local_pdf_file:
@@ -242,7 +251,9 @@ def fetch_audited_statements():
         annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
         logger.debug(f"Navigating to {annual_statements_url}")
         annual_statements_page = requests.get(
-            annual_statements_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+            annual_statements_url,
+            timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+            headers=HTTP_GET_HEADERS,
         )
         if annual_statements_page.status_code != 200:
             raise requests.exceptions.HTTPError(
@@ -261,7 +272,9 @@ def fetch_audited_statements():
         pdf_reports = []
         for link in report_page_links:
             try:
-                report_page = requests.get(link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                report_page = requests.get(
+                    link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS, headers=HTTP_GET_HEADERS
+                )
                 if report_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. " + annual_statements_url
@@ -317,7 +330,9 @@ def fetch_audited_statements():
             else:
                 # else download this new pdf report
                 # get the http response
-                http_response_obj = requests.get(pdf["pdf_link"], stream=True)
+                http_response_obj = requests.get(
+                    pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
+                )
                 # save contents of response (pdf report) to the local file
                 logger.debug(f"Now downloading file {local_filename}. Please wait.")
                 with open(full_local_path, "wb") as local_pdf_file:
@@ -376,7 +391,9 @@ def fetch_quarterly_statements():
         quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}&date={QUARTERLY_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
         logger.debug(f"Navigating to {quarterly_statements_url}")
         quarterly_statements_page = requests.get(
-            quarterly_statements_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+            quarterly_statements_url,
+            timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+            headers=HTTP_GET_HEADERS,
         )
         if quarterly_statements_page.status_code != 200:
             raise requests.exceptions.HTTPError(
@@ -400,7 +417,9 @@ def fetch_quarterly_statements():
         pdf_reports = []
         for link in report_page_links:
             try:
-                report_page = requests.get(link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                report_page = requests.get(
+                    link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS, headers=HTTP_GET_HEADERS
+                )
                 if report_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. " + quarterly_statements_url
@@ -460,7 +479,9 @@ def fetch_quarterly_statements():
             else:
                 # else download this new pdf report
                 # get the http response
-                http_response_obj = requests.get(pdf["pdf_link"], stream=True)
+                http_response_obj = requests.get(
+                    pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
+                )
                 # save contents of response (pdf report) to the local file
                 logger.debug(f"Now downloading file {local_filename}. Please wait.")
                 with open(full_local_path, "wb") as local_pdf_file:
@@ -516,7 +537,9 @@ def alert_me_new_annual_reports():
             )
             logger.debug(f"Navigating to {annual_reports_url}")
             annual_reports_page = requests.get(
-                annual_reports_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                annual_reports_url,
+                timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                headers=HTTP_GET_HEADERS,
             )
             if annual_reports_page.status_code != 200:
                 raise requests.exceptions.HTTPError(
@@ -535,7 +558,11 @@ def alert_me_new_annual_reports():
             pdf_reports = []
             for link in report_page_links:
                 try:
-                    report_page = requests.get(link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                    report_page = requests.get(
+                        link,
+                        timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                        headers=HTTP_GET_HEADERS,
+                    )
                     if report_page.status_code != 200:
                         raise requests.exceptions.HTTPError(
                             "Could not load URL. " + annual_reports_url
@@ -652,7 +679,9 @@ def alert_me_new_audited_statements():
             annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}"
             logger.debug(f"Navigating to {annual_statements_url}")
             annual_statements_page = requests.get(
-                annual_statements_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                annual_statements_url,
+                timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                headers=HTTP_GET_HEADERS,
             )
             if annual_statements_page.status_code != 200:
                 raise requests.exceptions.HTTPError(
@@ -673,7 +702,11 @@ def alert_me_new_audited_statements():
             pdf_reports = []
             for link in report_page_links:
                 try:
-                    report_page = requests.get(link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                    report_page = requests.get(
+                        link,
+                        timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                        headers=HTTP_GET_HEADERS,
+                    )
                     if report_page.status_code != 200:
                         raise requests.exceptions.HTTPError(
                             "Could not load URL. " + annual_statements_url
@@ -787,7 +820,9 @@ def alert_me_new_quarterly_statements():
             quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}"
             logger.debug(f"Navigating to {quarterly_statements_url}")
             quarterly_statements_page = requests.get(
-                quarterly_statements_url, timeout=WEBPAGE_LOAD_TIMEOUT_SECS
+                quarterly_statements_url,
+                timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                headers=HTTP_GET_HEADERS,
             )
             if quarterly_statements_page.status_code != 200:
                 raise requests.exceptions.HTTPError(
@@ -811,7 +846,11 @@ def alert_me_new_quarterly_statements():
             pdf_reports = []
             for link in report_page_links:
                 try:
-                    report_page = requests.get(link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS)
+                    report_page = requests.get(
+                        link,
+                        timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
+                        headers=HTTP_GET_HEADERS,
+                    )
                     if report_page.status_code != 200:
                         raise requests.exceptions.HTTPError(
                             "Could not load URL. " + quarterly_statements_url
