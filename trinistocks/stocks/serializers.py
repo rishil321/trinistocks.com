@@ -22,6 +22,7 @@ from .models import (
     SimulatorTransactions,
     SimulatorPortfolios,
     SimulatorPortfolioSectors,
+    MonitoredStocks,
 )
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
