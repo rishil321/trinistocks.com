@@ -380,3 +380,12 @@ class SimulatorPortfolioSectorsSerializer(serializers.ModelSerializer):
             "total_gain_loss",
             "gain_loss_percent",
         )
+
+
+class MonitoredStocksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MonitoredStocks
+        fields = (
+            "user",
+            "symbol",
+        )

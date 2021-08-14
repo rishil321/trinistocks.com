@@ -2088,6 +2088,7 @@ class PortfolioTransactionPutApiView(generics.UpdateAPIView):
         else:
             return Response(data="Success", status=status.HTTP_201_CREATED)
 
+
 class PortfolioTransactionsGetApiView(generics.ListAPIView):
     serializer_class = serializers.PortfolioTransactionsSerializer
     # require a token to access the api
@@ -2101,6 +2102,7 @@ class PortfolioTransactionsGetApiView(generics.ListAPIView):
             user=self.request.user
         )
         return queryset
+
 
 class CustomAuthToken(ObtainAuthToken):
     serializer_class = serializers.CustomAuthTokenSerializer
@@ -2492,3 +2494,58 @@ class SimulatorPortfolioSectorsApiView(generics.ListCreateAPIView):
             )
         )
         return queryset
+
+
+class MonitoredStocksApiView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = serializers.MonitoredStocksSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return all monitored stocks for the current user
+        """
+        queryset = models.MonitoredStocks.objects.all().filter(user=self.request.user)
+        return queryset
+
+    def put(self, request):
+        """
+        Accept put requests for adding a new stock to be monitored
+        """
+        try:
+            queryset = models.MonitoredStocks.objects.create(
+                user=self.request.user,
+                symbol=models.ListedEquities(symbol=self.request.POST["symbol"]),
+            )
+            queryset.save()
+        except Exception as exc:
+            LOGGER.error(
+                "Ran into an error during symbol monitoring addition", exc_info=exc
+            )
+            return Response(
+                data="Failed to add symbol to be monitored. " + str(exc),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return Response(data="Success", status=status.HTTP_201_CREATED)
+        
+    def delete(self, request):
+        """
+        Accept delete requests for removing a stock from monitoring
+        """
+        try:
+            queryset = models.MonitoredStocks.objects.delete(
+                user=self.request.user,
+                symbol=models.ListedEquities(symbol=self.request.POST["symbol"]),
+            )
+            queryset.save()
+        except Exception as exc:
+            LOGGER.error(
+                "Ran into an error during symbol monitoring deletion", exc_info=exc
+            )
+            return Response(
+                data="Failed to remove symbol from being monitored. " + str(exc),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return Response(data="Success", status=status.HTTP_202_ACCEPTED)

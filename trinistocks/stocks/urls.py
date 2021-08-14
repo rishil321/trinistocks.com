@@ -131,6 +131,7 @@ urlpatterns = [
         "api/simulatorportfoliosectors",
         views.SimulatorPortfolioSectorsApiView.as_view(),
     ),
+    path("api/stockmonitoring", views.MonitoredStocksApiView.as_view()),
     path("api/createuser", views.UserCreate.as_view()),
     path("api/deleteuser", views.UserDelete.as_view()),
     path("api/usertoken", views.CustomAuthToken.as_view()),
