@@ -2528,10 +2528,10 @@ class MonitoredStocksApiView(generics.RetrieveUpdateDestroyAPIView):
             )
         else:
             return Response(data="Success", status=status.HTTP_201_CREATED)
-        
-    def delete(self, request):
+
+    def patch(self, request):
         """
-        Accept delete requests for removing a stock from monitoring
+        Accept patch requests for removing a stock from monitoring
         """
         try:
             queryset = models.MonitoredStocks.objects.delete(
