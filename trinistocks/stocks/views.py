@@ -2522,11 +2522,11 @@ class MonitoredStocksApiView(generics.ListCreateAPIView):
                         ),
                     )
                 elif self.request.POST["operation"] == "remove_monitor":
-                    queryset = models.MonitoredStocks.objects.delete(
+                    queryset = models.MonitoredStocks.objects.filter(
                         user=self.request.user,
                         symbol=models.ListedEquities(
                             symbol=self.request.POST["symbol"]
-                        ),
+                        ).delete(),
                     )
             queryset.save()
         except Exception as exc:
