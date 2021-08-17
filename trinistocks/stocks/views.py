@@ -2521,20 +2521,21 @@ class MonitoredStocksApiView(generics.ListCreateAPIView):
                             symbol=self.request.POST["symbol"]
                         ),
                     )
+                    queryset.save()
                 elif self.request.POST["operation"] == "remove_monitor":
                     queryset = models.MonitoredStocks.objects.filter(
                         user=self.request.user,
                         symbol=models.ListedEquities(
                             symbol=self.request.POST["symbol"]
-                        ).delete(),
-                    )
-            queryset.save()
+                        ),
+                    ).delete()
         except Exception as exc:
             LOGGER.error(
-                "Ran into an error during symbol monitoring addition", exc_info=exc
+                "Ran into an error during symbol monitoring addition/deletion.",
+                exc_info=exc,
             )
             return Response(
-                data="Failed to add symbol to be monitored. " + str(exc),
+                data="Failed to add/delete symbol monitoring. " + str(exc),
                 status=status.HTTP_400_BAD_REQUEST,
             )
         else:
