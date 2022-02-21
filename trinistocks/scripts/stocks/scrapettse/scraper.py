@@ -46,7 +46,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from .. import logging_configs
 
 dictConfig(logging_configs.LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 # endregion IMPORTS
 
 # region CONSTANTS

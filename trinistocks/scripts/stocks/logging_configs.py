@@ -5,13 +5,9 @@ LOGGING_CONFIG = {
     'loggers': {
         '': {  # root logger
             'level': 'NOTSET',
-            'handlers': ['debug_console_handler', 'info_rotating_file_handler', 'error_file_handler',
+            'handlers': ['debug_rotating_file_handler', 'debug_console_handler', 'info_rotating_file_handler',
+                         'error_file_handler',
                          'critical_mail_handler'],
-        },
-        'scripts.stocks.scrapettse.scraper': {
-            'level': 'DEBUG',
-            'propagate': False,
-            'handlers': ['info_rotating_file_handler', 'error_file_handler'],
         },
     },
     'handlers': {
@@ -25,7 +21,7 @@ LOGGING_CONFIG = {
             'level': 'DEBUG',
             'formatter': 'info',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join('scripts','debug.log'),
+            'filename': os.path.join('logs', 'stocks.scripts.debug.log'),
             'mode': 'a',
             'maxBytes': 1048576 * 10,
             'backupCount': 10
@@ -34,17 +30,19 @@ LOGGING_CONFIG = {
             'level': 'INFO',
             'formatter': 'info',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join('scripts','info.log'),
+            'filename': os.path.join('logs', 'stocks.scripts.info.log'),
             'mode': 'a',
-            'maxBytes': 1048576,
+            'maxBytes': 1048576 * 10,
             'backupCount': 10
         },
         'error_file_handler': {
-            'level': 'WARNING',
+            'level': 'ERROR',
             'formatter': 'error',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join('scripts','error.log'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join('logs', 'stocks.scripts.error.log'),
             'mode': 'a',
+            'maxBytes': 1048576 * 10,
+            'backupCount': 10
         },
         'critical_mail_handler': {
             'level': 'CRITICAL',
@@ -58,7 +56,7 @@ LOGGING_CONFIG = {
     },
     'formatters': {
         'info': {
-            'format': '%(asctime)s-%(levelname)s-%(name)s|%(funcName)s|%(lineno)s-%(message)s'
+            'format': '%(asctime)s-%(levelname)s-%(name)s:%(module)s|%(funcName)s|%(lineno)s-%(message)s'
         },
         'error': {
             'format': '%(asctime)s-%(levelname)s-%(name)s-%(process)d::%(module)s|%(lineno)s:: %(message)s'
