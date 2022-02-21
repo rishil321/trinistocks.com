@@ -1,0 +1,109 @@
+2022-02-20 21:10:12,739-DEBUG-PidFile:base|setup|89-<pid.win32.PidFile object at 0x00000170B01E93C0> entering setup
+2022-02-20 21:10:12,739-DEBUG-PidFile:base|create|194-<pid.win32.PidFile object at 0x00000170B01E93C0> create pidfile: C:\Users\RISHI-~1\AppData\Local\Temp\scraper.py.pid
+2022-02-20 21:10:12,747-DEBUG-PidFile:base|check|181-<pid.win32.PidFile object at 0x00000170B01E93C0> check pidfile: C:\Users\RISHI-~1\AppData\Local\Temp\scraper.py.pid
+2022-02-20 21:10:16,898-DEBUG-root:scraper|main|1735-Now starting TTSE scraper.
+2022-02-20 21:10:16,903-DEBUG-root:scraper|main|1757-End of day scraper called.
+2022-02-20 21:10:16,938-DEBUG-scraper:scraper|scrape_listed_equity_data|81-Now scraping listing data from all listed equities.
+2022-02-20 21:10:16,938-DEBUG-scraper:scraper|scrape_listed_equity_data|85-Navigating to https://www.stockex.co.tt/listed-securities/
+2022-02-20 21:10:16,938-DEBUG-scraper:scraper|check_num_equities_in_sector|301-Now computing number of equities in each sector.
+2022-02-20 21:10:16,938-DEBUG-scraper:scraper|scrape_dividend_data|441-Now trying to scrape dividend data
+2022-02-20 21:10:16,943-DEBUG-scripts.database_ops:database_ops|__init__|36-Creating a new DatabaseConnect object.
+2022-02-20 21:10:16,943-DEBUG-scripts.database_ops:database_ops|__init__|36-Creating a new DatabaseConnect object.
+2022-02-20 21:10:16,938-DEBUG-scraper:scraper|update_equity_summary_data|929-Now updating daily market summary data.
+2022-02-20 21:10:16,943-DEBUG-scripts.database_ops:database_ops|__init__|36-Creating a new DatabaseConnect object.
+2022-02-20 21:10:16,954-INFO-scripts.database_ops:database_ops|__init__|41-Connected to database successfully
+2022-02-20 21:10:16,954-INFO-scripts.database_ops:database_ops|__init__|41-Connected to database successfully
+2022-02-20 21:10:16,954-DEBUG-scraper:scraper|update_equity_summary_data|933-Successfully connected to database.
+2022-02-20 21:10:16,954-DEBUG-scraper:scraper|update_equity_summary_data|935-Reading existing data from tables in database...
+2022-02-20 21:10:16,964-INFO-scripts.database_ops:database_ops|__init__|41-Connected to database successfully
+2022-02-20 21:10:16,994-DEBUG-scraper:scraper|update_equity_summary_data|943-Creating list of dates to fetch.
+2022-02-20 21:10:17,030-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for AGL
+2022-02-20 21:10:17,030-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/AGL
+2022-02-20 21:10:17,045-DEBUG-scraper:scraper|check_num_equities_in_sector|338-Database update successful. Number of rows affected was 23
+2022-02-20 21:10:17,045-DEBUG-scripts.database_ops:database_ops|close|60-Database connection closed successfully.
+2022-02-20 21:10:17,263-DEBUG-scraper:scraper|update_equity_summary_data|954-Getting all dates that are not already fetched and are not weekends.
+2022-02-20 21:10:17,263-DEBUG-scraper:scraper|update_equity_summary_data|969-List of dates to fetch built. Now splitting list by core.
+2022-02-20 21:10:17,268-DEBUG-scraper:scraper|update_equity_summary_data|971-This machine has 12 logical CPU cores.
+2022-02-20 21:10:17,268-DEBUG-scraper:scraper|update_equity_summary_data|979-Lists split successfully.
+2022-02-20 21:10:19,864-DEBUG-scraper:scraper|scrape_listed_equity_data|96-Successfully loaded webpage.
+2022-02-20 21:10:19,905-DEBUG-scraper:scraper|scrape_listed_equity_data|112-Navigating to https://www.stockex.co.tt/manage-stock/SBTT/
+2022-02-20 21:10:23,951-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:10:24,779-DEBUG-scraper:scraper|scrape_dividend_data|480-Dividend data present for AGL
+2022-02-20 21:10:24,966-DEBUG-scraper:scraper|scrape_dividend_data|521-Successfully fetched dividend data for AGL
+2022-02-20 21:10:24,967-DEBUG-scraper:scraper|scrape_dividend_data|531-Now writing dividend data for AGL to db.
+2022-02-20 21:10:24,994-DEBUG-scraper:scraper|scrape_dividend_data|559-Number of rows affected in the historical_dividend_info table was 52
+2022-02-20 21:10:24,994-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for AHL
+2022-02-20 21:10:24,994-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/AHL
+2022-02-20 21:10:25,946-DEBUG-scraper:scraper|scrape_listed_equity_data|123-Successfully loaded webpage.
+2022-02-20 21:10:28,760-DEBUG-scraper:scraper|scrape_listed_equity_data|226-Successfully added basic listing data for: Scotiabank Trinidad & Tobago Limited
+2022-02-20 21:10:28,760-DEBUG-scraper:scraper|scrape_listed_equity_data|112-Navigating to https://www.stockex.co.tt/manage-stock/GHL/
+2022-02-20 21:10:33,242-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:10:34,159-DEBUG-scraper:scraper|scrape_dividend_data|480-Dividend data present for AHL
+2022-02-20 21:10:34,170-DEBUG-scraper:scraper|scrape_dividend_data|521-Successfully fetched dividend data for AHL
+2022-02-20 21:10:34,171-DEBUG-scraper:scraper|scrape_dividend_data|531-Now writing dividend data for AHL to db.
+2022-02-20 21:10:34,190-DEBUG-scraper:scraper|scrape_dividend_data|559-Number of rows affected in the historical_dividend_info table was 36
+2022-02-20 21:10:34,191-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for AMBL
+2022-02-20 21:10:34,191-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/AMBL
+2022-02-20 21:10:37,236-DEBUG-scraper:scraper|scrape_listed_equity_data|123-Successfully loaded webpage.
+2022-02-20 21:10:40,169-DEBUG-scraper:scraper|scrape_listed_equity_data|226-Successfully added basic listing data for: Guardian Holdings Limited
+2022-02-20 21:10:40,169-DEBUG-scraper:scraper|scrape_listed_equity_data|112-Navigating to https://www.stockex.co.tt/manage-stock/GKC/
+2022-02-20 21:10:40,286-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:10:41,154-DEBUG-scraper:scraper|scrape_dividend_data|480-Dividend data present for AMBL
+2022-02-20 21:10:41,165-DEBUG-scraper:scraper|scrape_dividend_data|521-Successfully fetched dividend data for AMBL
+2022-02-20 21:10:41,167-DEBUG-scraper:scraper|scrape_dividend_data|531-Now writing dividend data for AMBL to db.
+2022-02-20 21:10:41,192-DEBUG-scraper:scraper|scrape_dividend_data|559-Number of rows affected in the historical_dividend_info table was 50
+2022-02-20 21:10:41,193-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for AMCL
+2022-02-20 21:10:41,193-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/AMCL
+2022-02-20 21:10:46,355-DEBUG-scraper:scraper|scrape_listed_equity_data|123-Successfully loaded webpage.
+2022-02-20 21:10:47,241-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:10:48,198-DEBUG-scraper:scraper|scrape_dividend_data|480-Dividend data present for AMCL
+2022-02-20 21:10:48,207-DEBUG-scraper:scraper|scrape_dividend_data|521-Successfully fetched dividend data for AMCL
+2022-02-20 21:10:48,208-DEBUG-scraper:scraper|scrape_dividend_data|531-Now writing dividend data for AMCL to db.
+2022-02-20 21:10:48,234-DEBUG-scraper:scraper|scrape_dividend_data|559-Number of rows affected in the historical_dividend_info table was 52
+2022-02-20 21:10:48,234-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for CALYP
+2022-02-20 21:10:48,234-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/CALYP
+2022-02-20 21:10:49,261-DEBUG-scraper:scraper|scrape_listed_equity_data|226-Successfully added basic listing data for: GraceKennedy Limited
+2022-02-20 21:10:49,262-DEBUG-scraper:scraper|scrape_listed_equity_data|112-Navigating to https://www.stockex.co.tt/manage-stock/UCL/
+2022-02-20 21:10:54,045-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:10:54,329-DEBUG-scraper:scraper|scrape_dividend_data|480-Dividend data present for CALYP
+2022-02-20 21:10:54,339-DEBUG-scraper:scraper|scrape_dividend_data|521-Successfully fetched dividend data for CALYP
+2022-02-20 21:10:54,339-DEBUG-scraper:scraper|scrape_dividend_data|531-Now writing dividend data for CALYP to db.
+2022-02-20 21:10:54,370-DEBUG-scraper:scraper|scrape_dividend_data|559-Number of rows affected in the historical_dividend_info table was 48
+2022-02-20 21:10:54,370-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for CIF
+2022-02-20 21:10:54,370-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/CIF
+2022-02-20 21:10:55,620-DEBUG-scraper:scraper|scrape_listed_equity_data|123-Successfully loaded webpage.
+2022-02-20 21:10:58,565-DEBUG-scraper:scraper|scrape_listed_equity_data|226-Successfully added basic listing data for: Unilever Caribbean Limited
+2022-02-20 21:10:58,565-DEBUG-scraper:scraper|scrape_listed_equity_data|112-Navigating to https://www.stockex.co.tt/manage-stock/AHL/
+2022-02-20 21:11:00,324-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:11:00,762-DEBUG-scraper:scraper|scrape_dividend_data|480-Dividend data present for CIF
+2022-02-20 21:11:00,772-DEBUG-scraper:scraper|scrape_dividend_data|521-Successfully fetched dividend data for CIF
+2022-02-20 21:11:00,772-DEBUG-scraper:scraper|scrape_dividend_data|531-Now writing dividend data for CIF to db.
+2022-02-20 21:11:00,790-DEBUG-scraper:scraper|scrape_dividend_data|559-Number of rows affected in the historical_dividend_info table was 38
+2022-02-20 21:11:00,790-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for CINE1
+2022-02-20 21:11:00,790-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/CINE1
+2022-02-20 21:11:05,315-DEBUG-scraper:scraper|scrape_listed_equity_data|123-Successfully loaded webpage.
+2022-02-20 21:11:06,133-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:11:06,323-DEBUG-scraper:scraper|scrape_dividend_data|564-No dividend data found for CINE1. Skipping.
+2022-02-20 21:11:06,324-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for CPFD
+2022-02-20 21:11:06,324-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/CPFD
+2022-02-20 21:11:08,116-DEBUG-scraper:scraper|scrape_listed_equity_data|226-Successfully added basic listing data for: Angostura Holdings Limited
+2022-02-20 21:11:08,117-DEBUG-scraper:scraper|scrape_listed_equity_data|112-Navigating to https://www.stockex.co.tt/manage-stock/OCM/
+2022-02-20 21:11:12,086-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:11:12,387-DEBUG-scraper:scraper|scrape_dividend_data|564-No dividend data found for CPFD. Skipping.
+2022-02-20 21:11:12,387-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for CPFV
+2022-02-20 21:11:12,387-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/CPFV
+2022-02-20 21:11:14,485-DEBUG-scraper:scraper|scrape_listed_equity_data|123-Successfully loaded webpage.
+2022-02-20 21:11:16,977-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:11:17,290-DEBUG-scraper:scraper|scrape_dividend_data|480-Dividend data present for CPFV
+2022-02-20 21:11:17,299-DEBUG-scraper:scraper|scrape_dividend_data|521-Successfully fetched dividend data for CPFV
+2022-02-20 21:11:17,300-DEBUG-scraper:scraper|scrape_dividend_data|531-Now writing dividend data for CPFV to db.
+2022-02-20 21:11:17,315-DEBUG-scraper:scraper|scrape_dividend_data|559-Number of rows affected in the historical_dividend_info table was 16
+2022-02-20 21:11:17,316-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for EHL
+2022-02-20 21:11:17,316-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/EHL
+2022-02-20 21:11:17,346-DEBUG-scraper:scraper|scrape_listed_equity_data|226-Successfully added basic listing data for: One Caribbean Media Limited
+2022-02-20 21:11:17,346-DEBUG-scraper:scraper|scrape_listed_equity_data|112-Navigating to https://www.stockex.co.tt/manage-stock/NFM/
+2022-02-20 21:11:22,633-DEBUG-scraper:scraper|scrape_dividend_data|474-Successfully loaded webpage.
+2022-02-20 21:11:22,772-DEBUG-scraper:scraper|scrape_dividend_data|564-No dividend data found for EHL. Skipping.
+2022-02-20 21:11:22,772-DEBUG-scraper:scraper|scrape_dividend_data|457-Now attempting to fetch dividend data for FCGFH
+2022-02-20 21:11:22,773-DEBUG-scraper:scraper|scrape_dividend_data|463-Navigating to https://www.stockex.co.tt/manage-stock/FCGFH
+2022-02-20 21:11:23,370-DEBUG-scraper:scraper|scrape_listed_equity_data|123-Successfully loaded webpage.
