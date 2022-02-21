@@ -24,7 +24,7 @@ import sqlalchemy.exc
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy import create_engine, Table, select, MetaData, text, and_
 import requests
-
+from logging.config import dictConfig
 from pid import PidFile
 import logging
 import os
@@ -43,7 +43,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Imports from the cheese factory
 
 # Imports from the local filesystem
+from .. import logging_configs
 
+dictConfig(logging_configs.LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 # endregion IMPORTS
 
 # region CONSTANTS
@@ -58,6 +61,7 @@ WEBPAGE_LOAD_TIMEOUT_SECS = 60
 # Define a start date to use for the full updates
 TTSE_RECORDS_START_DATE = "2017-01-01"
 LOGGERNAME = "scraper"
+
 
 # endregion CONSTANTS
 
@@ -101,7 +105,6 @@ def scrape_listed_equity_data():
                         bad_symbols = ["{{", ".", "(S"]
                         if all(string not in symbol for string in bad_symbols):
                             listed_stock_symbols.append(symbol)
-                print(1)
         # Go to the main summary page for each symbol
         for symbol in listed_stock_symbols:
             try:
@@ -124,9 +127,9 @@ def scrape_listed_equity_data():
                 per_stock_page_soup = BeautifulSoup(equity_page.text, "lxml")
                 equity_data["security_name"] = (
                     per_stock_page_soup.find(text="Security:")
-                    .find_parent("h2")
-                    .find_next("h2")
-                    .text.title()
+                        .find_parent("h2")
+                        .find_next("h2")
+                        .text.title()
                 )
                 # apply some custom formatting to our names
                 if equity_data["security_name"] == "Agostini S Limited":
@@ -140,8 +143,8 @@ def scrape_listed_equity_data():
                 elif equity_data["security_name"] == "Clico Investment Fund":
                     equity_data["security_name"] = "CLICO Investment Fund"
                 elif (
-                    equity_data["security_name"]
-                    == "Firstcaribbean International Bank Limited"
+                        equity_data["security_name"]
+                        == "Firstcaribbean International Bank Limited"
                 ):
                     equity_data[
                         "security_name"
@@ -151,7 +154,7 @@ def scrape_listed_equity_data():
                 elif equity_data["security_name"] == "Jmmb Group Limited":
                     equity_data["security_name"] = "JMMB Group Limited"
                 elif (
-                    equity_data["security_name"] == "Mpc Caribbean Clean Energy Limited"
+                        equity_data["security_name"] == "Mpc Caribbean Clean Energy Limited"
                 ):
                     equity_data["security_name"] = "MPC Caribbean Clean Energy Limited"
                 elif equity_data["security_name"] == "Ncb Financial Group Limited":
@@ -160,9 +163,9 @@ def scrape_listed_equity_data():
                     equity_data["security_name"] = "Trinidad And Tobago NGL Limited"
                 equity_sector = (
                     per_stock_page_soup.find(text="Sector:")
-                    .find_parent("h2")
-                    .find_next("h2")
-                    .text.title()
+                        .find_parent("h2")
+                        .find_next("h2")
+                        .text.title()
                 )
                 if equity_sector != "Status:":
                     equity_data["sector"] = equity_sector
@@ -172,21 +175,21 @@ def scrape_listed_equity_data():
                     equity_data["sector"] = "Manufacturing II"
                 equity_data["status"] = (
                     per_stock_page_soup.find(text="Status:")
-                    .find_parent("h2")
-                    .find_next("h2")
-                    .text.title()
+                        .find_parent("h2")
+                        .find_next("h2")
+                        .text.title()
                 )
                 equity_data["financial_year_end"] = (
                     per_stock_page_soup.find(text="Financial Year End:")
-                    .find_parent("h2")
-                    .find_next("h2")
-                    .text
+                        .find_parent("h2")
+                        .find_next("h2")
+                        .text
                 )
                 website_url = (
                     per_stock_page_soup.find(text="Website:")
-                    .find_parent("h2")
-                    .find_next("h2")
-                    .text
+                        .find_parent("h2")
+                        .find_next("h2")
+                        .text
                 )
                 if website_url != "Issuers":
                     equity_data["website_url"] = website_url
@@ -477,7 +480,8 @@ def scrape_dividend_data():
                         logger.debug(f"Dividend data present for {symbol}")
                         # remove the columns we don't need
                         dividend_table.drop(
-                            dividend_table.columns[[0, 2]], axis=1, inplace=True
+                            ["Payment Type", "Ex-Dividend Date", "Payment Date"], axis=1,
+                            inplace=True
                         )
                         # set the column names
                         dividend_table.rename(
@@ -500,8 +504,8 @@ def scrape_dividend_data():
                         if symbol == "GMLP":
                             # compute the actual dividend value per share, based on the percentage and par value ($50)
                             dividend_table["dividend_amount"] = (
-                                50 / 100
-                            ) * pd.to_numeric(
+                                                                        50 / 100
+                                                                ) * pd.to_numeric(
                                 dividend_table["dividend_amount"].str.replace("%", ""),
                                 errors="coerce",
                             )
@@ -536,8 +540,8 @@ def scrape_dividend_data():
                         execute_completed_successfully = False
                         execute_failed_times = 0
                         while (
-                            not execute_completed_successfully
-                            and execute_failed_times < 5
+                                not execute_completed_successfully
+                                and execute_failed_times < 5
                         ):
                             try:
                                 insert_stmt = insert(
@@ -565,11 +569,11 @@ def scrape_dividend_data():
         return 0
     except Exception:
         logger.exception("Error encountered while scraping dividend data.")
-        custom_logging.flush_smtp_logger()
+        # custom_logging.flush_smtp_logger()
 
 
 def scrape_equity_summary_data(
-    dates_to_fetch,
+        dates_to_fetch,
 ):
     """
     In a new process, use the requests, beautifulsoup and pandas libs to scrape data from
@@ -709,7 +713,7 @@ def scrape_equity_summary_data(
                     execute_completed_successfully = False
                     execute_failed_times = 0
                     while (
-                        not execute_completed_successfully and execute_failed_times < 5
+                            not execute_completed_successfully and execute_failed_times < 5
                     ):
                         try:
                             insert_stmt = insert(historical_indices_info_table).values(
@@ -765,8 +769,8 @@ def scrape_equity_summary_data(
                             ].map(
                                 lambda x: 1
                                 if (
-                                    datetime.strptime(x, "%d-%m-%Y")
-                                    == datetime.strptime(fetch_date, "%Y-%m-%d")
+                                        datetime.strptime(x, "%d-%m-%Y")
+                                        == datetime.strptime(fetch_date, "%Y-%m-%d")
                                 )
                                 else 0,
                                 na_action="ignore",
@@ -849,7 +853,7 @@ def scrape_equity_summary_data(
                     execute_completed_successfully = False
                     execute_failed_times = 0
                     while (
-                        not execute_completed_successfully and execute_failed_times < 5
+                            not execute_completed_successfully and execute_failed_times < 5
                     ):
                         try:
                             insert_stmt = insert(daily_stock_summary_table).values(
@@ -955,7 +959,7 @@ def update_equity_summary_data(start_date):
         while fetch_date < datetime.now():
             # if we do not have info on this date already and this is a weekday (stock markets close on weekends)
             if (fetch_date.date() not in dates_already_recorded) and (
-                fetch_date.weekday() < 5
+                    fetch_date.weekday() < 5
             ):
                 # add this date to be fetched
                 dates_to_fetch.append(fetch_date.strftime("%Y-%m-%d"))
@@ -968,7 +972,7 @@ def update_equity_summary_data(start_date):
         list_length = len(dates_to_fetch)
         dates_to_fetch_sublists = [
             dates_to_fetch[
-                i * list_length // num_cores : (i + 1) * list_length // num_cores
+            i * list_length // num_cores: (i + 1) * list_length // num_cores
             ]
             for i in range(num_cores)
         ]
@@ -1077,8 +1081,8 @@ def update_daily_trades():
                     ].map(
                         lambda x: 1
                         if (
-                            datetime.strptime(x, "%d-%m-%Y")
-                            == datetime.strptime(today_date, "%Y-%m-%d")
+                                datetime.strptime(x, "%d-%m-%Y")
+                                == datetime.strptime(today_date, "%Y-%m-%d")
                         )
                         else 0,
                         na_action="ignore",
@@ -1203,8 +1207,8 @@ def update_daily_trades():
                         0
                     ]
                     if (
-                        datetime.strptime(marquee_text_date, "%d %b %Y").date()
-                        == datetime.today().date()
+                            datetime.strptime(marquee_text_date, "%d %b %Y").date()
+                            == datetime.today().date()
                     ):
                         # if the marquee is showing data for today, then try to parse and store it
                         logger.info("Marquee is for today. Continuing.")
@@ -1234,14 +1238,14 @@ def update_daily_trades():
                                     stock_data["change_dollars"] = float(
                                         (
                                             symbol_data_chunks[7]
-                                            .replace("(", "")
-                                            .replace(")", "")
+                                                .replace("(", "")
+                                                .replace(")", "")
                                         )
                                     )
                                     stock_data["was_traded_today"] = 1
                                     stock_data["value_traded"] = (
-                                        stock_data["volume_traded"]
-                                        * stock_data["last_sale_price"]
+                                            stock_data["volume_traded"]
+                                            * stock_data["last_sale_price"]
                                     )
                                     logger.debug(
                                         f"Marquee data looks good for {stock_data['symbol']}. Adding to db list."
@@ -1374,7 +1378,7 @@ def update_technical_analysis_data():
                 # first calculate the SMAs
                 # calculate sma20
                 closing_quotes_last_20d_df = pd.io.sql.read_sql(
-                    f"SELECT date,close_price FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 20;",
+                    f"SELECT close_price FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 20;",
                     db_connect.dbengine,
                 )
                 sma20_df = closing_quotes_last_20d_df.rolling(window=20).mean()
@@ -1382,7 +1386,7 @@ def update_technical_analysis_data():
                 stock_technical_data["sma_20"] = sma20_df["close_price"].iloc[-1]
                 # calculate sma200
                 closing_quotes_last200d_df = pd.io.sql.read_sql(
-                    f"SELECT date,close_price FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 200;",
+                    f"SELECT close_price FROM daily_stock_summary WHERE symbol='{symbol}' order by date desc limit 200;",
                     db_connect.dbengine,
                 )
                 sma200_df = closing_quotes_last200d_df.rolling(window=200).mean()
@@ -1396,8 +1400,8 @@ def update_technical_analysis_data():
                 )
                 # using apply function to create a new column for the stock percent change
                 stock_change_df["change_percent"] = (
-                    stock_change_df["change_dollars"] * 100
-                ) / stock_change_df["close_price"]
+                                                            stock_change_df["change_dollars"] * 100
+                                                    ) / stock_change_df["close_price"]
                 # get the market percentage change
                 market_change_df = pd.io.sql.read_sql(
                     f"SELECT change_percent FROM historical_indices_info WHERE index_name='Composite Totals' order by date desc limit 365;",
@@ -1405,10 +1409,10 @@ def update_technical_analysis_data():
                 )
                 # now calculate the beta
                 stock_change_df["beta"] = (
-                    stock_change_df["change_percent"]
-                    .rolling(window=365)
-                    .cov(other=market_change_df["change_percent"])
-                ) / market_change_df["change_percent"].rolling(window=365).var()
+                                              stock_change_df["change_percent"]
+                                                  .rolling(window=365)
+                                                  .cov(other=market_change_df["change_percent"])
+                                          ) / market_change_df["change_percent"].rolling(window=365).var()
                 # store the beta
                 stock_technical_data["beta"] = stock_change_df["beta"].iloc[-1]
                 # now calculate the adtv
@@ -1468,10 +1472,10 @@ def update_technical_analysis_data():
             "Could not load URL in time. Maybe website is down? " + str(timeerr)
         )
     except requests.exceptions.HTTPError as httperr:
-        logger.error(str(httperr))
-    except Exception:
-        logger.exception("Could not complete technical analysis summary data update.")
-        custom_logging.flush_smtp_logger()
+        logger.error("Error!", exc_info=httperr)
+    except Exception as exc:
+        logger.error("Could not complete technical analysis summary data update.", exc_info=exc)
+        # custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
         if db_connect is not None:
@@ -1543,7 +1547,7 @@ def parse_news_data_per_stock(symbols_to_fetch_for, start_date, end_date):
                         category = None
                         for possible_category in category_type_soup:
                             if possible_category.string is not None and (
-                                possible_category.string.strip() in possible_categories
+                                    possible_category.string.strip() in possible_categories
                             ):
                                 category = possible_category.string.strip()
                         if not category:
@@ -1575,8 +1579,8 @@ def parse_news_data_per_stock(symbols_to_fetch_for, start_date, end_date):
                                 if len(possible_title.string.strip().split("–")) == 2:
                                     title = (
                                         possible_title.string.strip()
-                                        .split("–")[1]
-                                        .strip()
+                                            .split("–")[1]
+                                            .strip()
                                     )
                                 else:
                                     title = possible_title.string.strip()
@@ -1591,9 +1595,9 @@ def parse_news_data_per_stock(symbols_to_fetch_for, start_date, end_date):
                         )
                         for possible_link in link_soup:
                             if (
-                                len(possible_link.contents) > 1
-                                and "href" in possible_link.contents[1].attrs
-                                and possible_link.contents[1].attrs["href"].strip()
+                                    len(possible_link.contents) > 1
+                                    and "href" in possible_link.contents[1].attrs
+                                    and possible_link.contents[1].attrs["href"].strip()
                             ):
                                 link = possible_link.contents[1].attrs["href"].strip()
                         if not link:
@@ -1656,7 +1660,7 @@ def scrape_newsroom_data(start_date, end_date):
         ]
         # submit the work to the thread workers
         with concurrent.futures.ThreadPoolExecutor(
-            max_workers=num_threads, thread_name_prefix="fetch_news_data"
+                max_workers=num_threads, thread_name_prefix="fetch_news_data"
         ) as executor:
             future_to_news_fetch = {
                 executor.submit(
@@ -1711,25 +1715,23 @@ def scrape_newsroom_data(start_date, end_date):
 def main(args):
     """The main steps in coordinating the scraping"""
     try:
-        # Set up logging for this module
-        q_listener, q, logger = custom_logging.setup_logging(
-            logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
-            loggername=LOGGERNAME,
-            stdoutlogginglevel=logging.DEBUG,
-            smtploggingenabled=True,
-            smtplogginglevel=logging.ERROR,
-            smtpmailhost="localhost",
-            smtpfromaddr="server1@trinistats.com",
-            smtptoaddr=["latchmepersad@gmail.com"],
-            smtpsubj="Automated report from Python script: "
-            + os.path.basename(__file__),
-        )
+        # # Set up logging for this module
+        # q_listener, q, logger = custom_logging.setup_logging(
+        #     logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
+        #     loggername=LOGGERNAME,
+        #     stdoutlogginglevel=logging.DEBUG,
+        #     smtploggingenabled=True,
+        #     smtplogginglevel=logging.ERROR,
+        #     smtpmailhost="localhost",
+        #     smtpfromaddr="server1@trinistats.com",
+        #     smtptoaddr=["latchmepersad@gmail.com"],
+        #     smtpsubj="Automated report from Python script: "
+        #              + os.path.basename(__file__),
+        # )
         # Set up a pidfile to ensure that only one instance of this script runs at a time
         with PidFile(piddir=tempfile.gettempdir()):
             # run all functions within a multiprocessing pool
-            with multiprocessing.Pool(
-                os.cpu_count(), custom_logging.logging_worker_init, [q]
-            ) as multipool:
+            with multiprocessing.Pool(os.cpu_count()) as multipool:
                 logger.debug("Now starting TTSE scraper.")
                 # check if this is the intradaily update (run inside the trading day)
                 if args.intradaily_update:
@@ -1762,7 +1764,7 @@ def main(args):
                     elif args.catchup:
                         logger.debug("Catchup scraper called.")
                         start_date = (
-                            datetime.now() + relativedelta(months=-1)
+                                datetime.now() + relativedelta(months=-1)
                         ).strftime("%Y-%m-%d")
                         end_date = datetime.now().strftime("%Y-%m-%d")
                         scrape_all_newsroom_data_result = multipool.apply_async(
@@ -1816,7 +1818,7 @@ def main(args):
                 multipool.close()
                 multipool.join()
                 logger.debug(os.path.basename(__file__) + " was completed.")
-                q_listener.stop()
+                # q_listener.stop()
                 return 0
     except Exception as exc:
         logger.exception(f"Error in script {os.path.basename(__file__)}", exc_info=exc)
