@@ -989,7 +989,6 @@ def update_simulator_games():
         simulator_players_df["current_portfolio_value"] = simulator_players_df[
             "liquid_cash"
         ]
-        print(simulator_players_df["current_portfolio_value"])
         for index, row in simulator_players_df.iterrows():
             if row["overall_gain_loss"] != np.nan:
                 row["current_portfolio_value"] = (
@@ -1005,13 +1004,10 @@ def update_simulator_games():
                 / simulator_players_df["starting_cash"]
         )
         # then group by simulator game and sort by portfolio value
-        simulator_players_df["current_position"] = (
-            simulator_players_df.sort_values(
-                ["game_id", "current_portfolio_value"], ascending=False
-            )
-                .groupby(["game_id"])
-                .rank()
-        )
+        # simulator_players_df["current_position"] = simulator_players_df.sort_values(
+        #     ["game_id", "current_portfolio_value"], ascending=False).groupby(["game_id"]).rank(method='min')
+        simulator_players_df["current_position"] = simulator_players_df.groupby("game_id")[
+            "current_portfolio_value"].rank("first", ascending=True)
         # for each simulator game, check if the game needs be marked as inactive
         simulator_players_df["is_active"] = simulator_players_df.apply(
             lambda x: (1 if (x["date_ended"] > date.today()) else 0),
