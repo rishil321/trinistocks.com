@@ -46,6 +46,7 @@ from ..crosslisted_symbols import (
 # Put your constants here. These should be named in CAPS.
 LOGGERNAME = "updater.py"
 
+
 # endregion CONSTANTS
 # Put your global variables here.
 
@@ -134,23 +135,23 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     calculated_ratios_df["report_type"] = "quarterly"
                 # calculate the return on equity
                 calculated_ratios_df["RoE"] = (
-                    calculated_ratios_df["net_income"]
-                    / calculated_ratios_df["total_shareholders_equity"]
+                        calculated_ratios_df["net_income"]
+                        / calculated_ratios_df["total_shareholders_equity"]
                 )
                 # now calculate the return on invested capital
                 calculated_ratios_df["RoIC"] = (
-                    calculated_ratios_df["profit_after_tax"]
-                    / calculated_ratios_df["total_shareholders_equity"]
+                        calculated_ratios_df["profit_after_tax"]
+                        / calculated_ratios_df["total_shareholders_equity"]
                 )
                 # now calculate the working capital
                 calculated_ratios_df["working_capital"] = (
-                    calculated_ratios_df["total_assets"]
-                    - calculated_ratios_df["total_liabilities"]
+                        calculated_ratios_df["total_assets"]
+                        - calculated_ratios_df["total_liabilities"]
                 )
                 # and the current ratio
                 calculated_ratios_df["current_ratio"] = (
-                    calculated_ratios_df["total_assets"]
-                    / calculated_ratios_df["total_liabilities"]
+                        calculated_ratios_df["total_assets"]
+                        / calculated_ratios_df["total_liabilities"]
                 )
                 calculated_ratios_df[
                     "share_price_conversion_rates"
@@ -165,16 +166,17 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     axis=1,
                 )
                 calculated_ratios_df["price_to_earnings_ratio"] = (
-                    calculated_ratios_df["close_price"]
-                    * calculated_ratios_df["share_price_conversion_rates"]
-                ) / calculated_ratios_df["basic_earnings_per_share"]
+                                                                          calculated_ratios_df["close_price"]
+                                                                          * calculated_ratios_df[
+                                                                              "share_price_conversion_rates"]
+                                                                  ) / calculated_ratios_df["basic_earnings_per_share"]
                 # calculate cash per share
                 calculated_ratios_df["cash_per_share"] = (
-                    calculated_ratios_df["cash_cash_equivalents"]
-                ) / (
-                    calculated_ratios_df["total_shares_outstanding"]
-                    * calculated_ratios_df["share_price_conversion_rates"]
-                )
+                                                             calculated_ratios_df["cash_cash_equivalents"]
+                                                         ) / (
+                                                                 calculated_ratios_df["total_shares_outstanding"]
+                                                                 * calculated_ratios_df["share_price_conversion_rates"]
+                                                         )
                 # calculate dividend yield and dividend payout ratio
                 # add the dividend conversion rates for this df as well
                 # first note that dividends are paid in various currencies, so we need to convert them all to TTD
@@ -199,47 +201,49 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                 )
                 # note that the price_to_earnings_df contains the share price
                 calculated_ratios_df["dividend_yield"] = (
-                    100
-                    * (
-                        calculated_ratios_df["dividends_per_share"]
-                        * calculated_ratios_df["dividend_conversion_rates"]
-                    )
-                    / (
-                        calculated_ratios_df["close_price"]
-                        * calculated_ratios_df["dividend_stock_price_conversion_rates"]
-                    )
+                        100
+                        * (
+                                calculated_ratios_df["dividends_per_share"]
+                                * calculated_ratios_df["dividend_conversion_rates"]
+                        )
+                        / (
+                                calculated_ratios_df["close_price"]
+                                * calculated_ratios_df["dividend_stock_price_conversion_rates"]
+                        )
                 )
                 # now dividend payout ratio
                 calculated_ratios_df["dividend_payout_ratio"] = (
-                    100
-                    * calculated_ratios_df["dividends_per_share"]
-                    / calculated_ratios_df["basic_earnings_per_share"]
+                        100
+                        * calculated_ratios_df["dividends_per_share"]
+                        / calculated_ratios_df["basic_earnings_per_share"]
                 )
                 # now calculate the eps growth rate
                 calculated_ratios_df["EPS_growth_rate"] = (
-                    calculated_ratios_df["basic_earnings_per_share"].diff() * 100
+                        calculated_ratios_df["basic_earnings_per_share"].diff() * 100
                 )
                 # now calculate the price to earnings-to-growth ratio
                 calculated_ratios_df["PEG"] = (
-                    calculated_ratios_df["price_to_earnings_ratio"]
-                    / calculated_ratios_df["EPS_growth_rate"]
+                        calculated_ratios_df["price_to_earnings_ratio"]
+                        / calculated_ratios_df["EPS_growth_rate"]
                 )
                 # calculate the book value per share (BVPS)
                 calculated_ratios_df["book_value_per_share"] = (
-                    calculated_ratios_df["total_assets"]
-                    - calculated_ratios_df["total_liabilities"]
-                ) / calculated_ratios_df["total_shares_outstanding"]
+                                                                       calculated_ratios_df["total_assets"]
+                                                                       - calculated_ratios_df["total_liabilities"]
+                                                               ) / calculated_ratios_df["total_shares_outstanding"]
                 # calculate the price to book ratio
                 calculated_ratios_df["price_to_book_ratio"] = (
-                    calculated_ratios_df["close_price"]
-                    * calculated_ratios_df["share_price_conversion_rates"]
-                ) / (
-                    (
-                        calculated_ratios_df["total_assets"]
-                        - calculated_ratios_df["total_liabilities"]
-                    )
-                    / calculated_ratios_df["total_shares_outstanding"]
-                )
+                                                                      calculated_ratios_df["close_price"]
+                                                                      * calculated_ratios_df[
+                                                                          "share_price_conversion_rates"]
+                                                              ) / (
+                                                                      (
+                                                                              calculated_ratios_df["total_assets"]
+                                                                              - calculated_ratios_df[
+                                                                                  "total_liabilities"]
+                                                                      )
+                                                                      / calculated_ratios_df["total_shares_outstanding"]
+                                                              )
                 # replace inf with None
                 calculated_ratios_df = calculated_ratios_df.replace(
                     [np.inf, -np.inf], None
@@ -282,9 +286,7 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
                     ~calculated_ratios_df["date"].isnull()
                 ]
                 # remove the null values
-                calculated_ratios_df = calculated_ratios_df.where(
-                    pd.notnull(calculated_ratios_df), None
-                )
+                calculated_ratios_df = calculated_ratios_df.replace({np.nan: None})
                 # now write the df to the database
                 logger.info("Now writing fundamental data to database.")
                 execute_completed_successfully = False
@@ -380,15 +382,15 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
         )
         # now calculate the dividend yields
         yearly_dividends_df["dividend_yield"] = (
-            100
-            * (
-                yearly_dividends_df["dividend_amount"]
-                * yearly_dividends_df["dividend_conversion_rates"]
-            )
-            / (
-                yearly_dividends_df["close_price"]
-                * yearly_dividends_df["share_price_conversion_rates"]
-            )
+                100
+                * (
+                        yearly_dividends_df["dividend_amount"]
+                        * yearly_dividends_df["dividend_conversion_rates"]
+                )
+                / (
+                        yearly_dividends_df["close_price"]
+                        * yearly_dividends_df["share_price_conversion_rates"]
+                )
         )
         # drop the columns that we don't need
         yearly_dividends_df.drop(
@@ -459,9 +461,9 @@ def update_portfolio_summary_book_costs():
             # first get the total shares bought
             total_shares_bought_df = (
                 transactions_df[transactions_df.bought_or_sold == "Bought"]
-                .groupby(["user_id", "symbol"])
-                .sum()
-                .reset_index()
+                    .groupby(["user_id", "symbol"])
+                    .sum()
+                    .reset_index()
             )
             total_shares_bought_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_bought_df.rename(
@@ -470,9 +472,9 @@ def update_portfolio_summary_book_costs():
             # then get the total shares sold
             total_shares_sold_df = (
                 transactions_df[transactions_df.bought_or_sold == "Sold"]
-                .groupby(["user_id", "symbol"])
-                .sum()
-                .reset_index()
+                    .groupby(["user_id", "symbol"])
+                    .sum()
+                    .reset_index()
             )
             total_shares_sold_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_sold_df.rename(
@@ -488,8 +490,8 @@ def update_portfolio_summary_book_costs():
             ].replace(np.NaN, 0)
             # then find the difference to get our number of shares remaining for each user
             total_bought_sold_df["shares_remaining"] = (
-                total_bought_sold_df["shares_bought"]
-                - total_bought_sold_df["shares_sold"]
+                    total_bought_sold_df["shares_bought"]
+                    - total_bought_sold_df["shares_sold"]
             )
             # set up a new df to hold the summary data that we are interested in
             summary_df = total_bought_sold_df[
@@ -498,17 +500,17 @@ def update_portfolio_summary_book_costs():
             # get the average cost for each share
             avg_cost_df = transactions_df[
                 transactions_df.bought_or_sold == "Bought"
-            ].copy()
+                ].copy()
             # calculate the total book cost for shares purchased
             avg_cost_df["book_cost"] = (
-                avg_cost_df["num_shares"] * avg_cost_df["share_price"]
+                    avg_cost_df["num_shares"] * avg_cost_df["share_price"]
             )
             avg_cost_df = avg_cost_df.groupby(["user_id", "symbol"]).sum()
             avg_cost_df.drop(["share_price"], axis=1, inplace=True)
             avg_cost_df = avg_cost_df.reset_index()
             # calculate the average cost for each share purchased
             avg_cost_df["average_cost"] = (
-                avg_cost_df["book_cost"] / avg_cost_df["num_shares"]
+                    avg_cost_df["book_cost"] / avg_cost_df["num_shares"]
             )
             # add these two new fields to our dataframe to be written to the db
             summary_df = summary_df.merge(
@@ -571,9 +573,9 @@ def update_simulator_portfolio_summary_book_costs():
             # first get the total shares bought
             total_shares_bought_df = (
                 transactions_df[transactions_df.bought_or_sold == "Buy"]
-                .groupby(["simulator_player_id", "symbol"])
-                .sum()
-                .reset_index()
+                    .groupby(["simulator_player_id", "symbol"])
+                    .sum()
+                    .reset_index()
             )
             total_shares_bought_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_bought_df.rename(
@@ -582,9 +584,9 @@ def update_simulator_portfolio_summary_book_costs():
             # then get the total shares sold
             total_shares_sold_df = (
                 transactions_df[transactions_df.bought_or_sold == "Sell"]
-                .groupby(["simulator_player_id", "symbol"])
-                .sum()
-                .reset_index()
+                    .groupby(["simulator_player_id", "symbol"])
+                    .sum()
+                    .reset_index()
             )
             total_shares_sold_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_sold_df.rename(
@@ -600,8 +602,8 @@ def update_simulator_portfolio_summary_book_costs():
             ].replace(np.NaN, 0)
             # then find the difference to get our number of shares remaining for each user
             total_bought_sold_df["shares_remaining"] = (
-                total_bought_sold_df["shares_bought"]
-                - total_bought_sold_df["shares_sold"]
+                    total_bought_sold_df["shares_bought"]
+                    - total_bought_sold_df["shares_sold"]
             )
             # set up a new df to hold the summary data that we are interested in
             summary_df = total_bought_sold_df[
@@ -610,17 +612,17 @@ def update_simulator_portfolio_summary_book_costs():
             # get the average cost for each share
             avg_cost_df = transactions_df[
                 transactions_df.bought_or_sold == "Buy"
-            ].copy()
+                ].copy()
             # calculate the total book cost for shares purchased
             avg_cost_df["book_cost"] = (
-                avg_cost_df["num_shares"] * avg_cost_df["share_price"]
+                    avg_cost_df["num_shares"] * avg_cost_df["share_price"]
             )
             avg_cost_df = avg_cost_df.groupby(["simulator_player_id", "symbol"]).sum()
             avg_cost_df.drop(["share_price"], axis=1, inplace=True)
             avg_cost_df = avg_cost_df.reset_index()
             # calculate the average cost for each share purchased
             avg_cost_df["average_cost"] = (
-                avg_cost_df["book_cost"] / avg_cost_df["num_shares"]
+                    avg_cost_df["book_cost"] / avg_cost_df["num_shares"]
             )
             # add these two new fields to our dataframe to be written to the db
             summary_df = summary_df.merge(
@@ -702,18 +704,18 @@ def update_simulator_portfolio_summary_market_values():
         )
         # calculate the market value of the remaining shares in the portfolio
         portfolio_summary_df["market_value"] = (
-            portfolio_summary_df["current_market_price"]
-            * portfolio_summary_df["shares_remaining"]
+                portfolio_summary_df["current_market_price"]
+                * portfolio_summary_df["shares_remaining"]
         )
         # calculate the total gain or loss
         portfolio_summary_df["total_gain_loss"] = (
-            portfolio_summary_df["market_value"] - portfolio_summary_df["book_cost"]
+                portfolio_summary_df["market_value"] - portfolio_summary_df["book_cost"]
         )
         # calculate the percentage gain or loss
         portfolio_summary_df["gain_loss_percent"] = (
-            100
-            * portfolio_summary_df["total_gain_loss"]
-            / portfolio_summary_df["book_cost"]
+                100
+                * portfolio_summary_df["total_gain_loss"]
+                / portfolio_summary_df["book_cost"]
         )
         # now write the df to the database
         logger.info("Now writing portfolio market value data to database.")
@@ -795,18 +797,18 @@ def update_portfolio_summary_market_values():
         )
         # calculate the market value of the remaining shares in the portfolio
         portfolio_summary_df["market_value"] = (
-            portfolio_summary_df["current_market_price"]
-            * portfolio_summary_df["shares_remaining"]
+                portfolio_summary_df["current_market_price"]
+                * portfolio_summary_df["shares_remaining"]
         )
         # calculate the total gain or loss
         portfolio_summary_df["total_gain_loss"] = (
-            portfolio_summary_df["market_value"] - portfolio_summary_df["book_cost"]
+                portfolio_summary_df["market_value"] - portfolio_summary_df["book_cost"]
         )
         # calculate the percentage gain or loss
         portfolio_summary_df["gain_loss_percent"] = (
-            100
-            * portfolio_summary_df["total_gain_loss"]
-            / portfolio_summary_df["book_cost"]
+                100
+                * portfolio_summary_df["total_gain_loss"]
+                / portfolio_summary_df["book_cost"]
         )
         # now write the df to the database
         logger.info("Now writing portfolio market value data to database.")
@@ -991,24 +993,24 @@ def update_simulator_games():
         for index, row in simulator_players_df.iterrows():
             if row["overall_gain_loss"] != np.nan:
                 row["current_portfolio_value"] = (
-                    row["liquid_cash"] + row["overall_gain_loss"]
+                        row["liquid_cash"] + row["overall_gain_loss"]
                 )
         # calculate the overall gain/loss percentage
         simulator_players_df["overall_gain_loss_percent"] = (
-            100
-            * (
-                simulator_players_df["current_portfolio_value"]
-                - simulator_players_df["starting_cash"]
-            )
-            / simulator_players_df["starting_cash"]
+                100
+                * (
+                        simulator_players_df["current_portfolio_value"]
+                        - simulator_players_df["starting_cash"]
+                )
+                / simulator_players_df["starting_cash"]
         )
         # then group by simulator game and sort by portfolio value
         simulator_players_df["current_position"] = (
             simulator_players_df.sort_values(
                 ["game_id", "current_portfolio_value"], ascending=False
             )
-            .groupby(["game_id"])
-            .rank()
+                .groupby(["game_id"])
+                .rank()
         )
         # for each simulator game, check if the game needs be marked as inactive
         simulator_players_df["is_active"] = simulator_players_df.apply(
@@ -1138,8 +1140,8 @@ def update_simulator_portfolio_sectors_values():
         # now group the df by user
         portfolio_summary_df = (
             portfolio_summary_df.groupby(["simulator_player_id", "sector"])
-            .sum()
-            .reset_index()
+                .sum()
+                .reset_index()
         )
         # create a new df with the columns that we need
         portfolio_sector_df = portfolio_summary_df[
@@ -1208,11 +1210,11 @@ def main(args):
             smtpfromaddr="server1@trinistats.com",
             smtptoaddr=["latchmepersad@gmail.com"],
             smtpsubj="Automated report from Python script: "
-            + os.path.basename(__file__),
+                     + os.path.basename(__file__),
         )
         with PidFile(piddir=tempfile.gettempdir()):
             with multiprocessing.Pool(
-                os.cpu_count(), custom_logging.logging_worker_init, [q]
+                    os.cpu_count(), custom_logging.logging_worker_init, [q]
             ) as multipool:
                 logger.info("Now starting trinistats stocks updater module.")
                 if args.daily_update:
