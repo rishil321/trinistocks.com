@@ -19,6 +19,8 @@ import argparse
 import re
 
 # Imports from the cheese factory
+from logging.config import dictConfig
+
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 from pid import PidFile
@@ -35,9 +37,11 @@ from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
 # Imports from the local filesystem
-from ... import custom_logging
 from ...database_ops import DatabaseConnect
+from .. import logging_configs
 
+dictConfig(logging_configs.LOGGING_CONFIG)
+logger = logging.getLogger()
 # Put your constants here. These should be named in CAPS.
 TTSE_NEWS_CATEGORIES = {
     "annual_reports": 56,
@@ -59,6 +63,7 @@ OUTSTANDINGREPORTEMAIL = "latchmepersad@gmail.com"
 HTTP_GET_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
 }
+
 
 # Put your global variables here.
 
@@ -408,8 +413,8 @@ def fetch_quarterly_statements():
         report_page_links = []
         for link in news_div.find_all("a", href=True):
             if link.attrs["href"] and (
-                "unaudited" in link.attrs["href"].lower()
-                or "financial" in link.attrs["href"].lower()
+                    "unaudited" in link.attrs["href"].lower()
+                    or "financial" in link.attrs["href"].lower()
             ):
                 report_page_links.append(link.attrs["href"])
         # now navigate to each link
@@ -837,8 +842,8 @@ def alert_me_new_quarterly_statements():
             report_page_links = []
             for link in news_div.find_all("a", href=True):
                 if link.attrs["href"] and (
-                    "unaudited" in link.attrs["href"].lower()
-                    or "financial" in link.attrs["href"].lower()
+                        "unaudited" in link.attrs["href"].lower()
+                        or "financial" in link.attrs["href"].lower()
                 ):
                     report_page_links.append(link.attrs["href"])
             # now navigate to each link
@@ -947,7 +952,7 @@ def main(args):
         with PidFile(piddir=tempfile.gettempdir()):
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(
-                os.cpu_count(), custom_logging.logging_worker_init, [q]
+                    os.cpu_count(), custom_logging.logging_worker_init, [q]
             ) as multipool:
                 logger.debug(
                     "Downloading latest fundamental reports from the TTSE site."

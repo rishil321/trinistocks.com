@@ -44,7 +44,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Imports from the local filesystem
 from .. import logging_configs
-
 dictConfig(logging_configs.LOGGING_CONFIG)
 logger = logging.getLogger()
 # endregion IMPORTS

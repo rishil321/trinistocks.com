@@ -14,6 +14,8 @@ Description of this module/script goes here
 import sys
 import logging
 import os
+from logging.config import dictConfig
+
 import pandas as pd
 import numpy as np
 import tempfile
@@ -32,19 +34,22 @@ import sqlalchemy.exc
 
 # Imports from the local filesystem
 from ...database_ops import DatabaseConnect
-from ... import custom_logging
 from ..crosslisted_symbols import (
     USD_DIVIDEND_SYMBOLS,
     JMD_DIVIDEND_SYMBOLS,
     BBD_DIVIDEND_SYMBOLS,
     USD_STOCK_SYMBOLS,
 )
+from .. import logging_configs
+
+dictConfig(logging_configs.LOGGING_CONFIG)
+logger = logging.getLogger()
+
 
 # endregion IMPORTS
 
 # region CONSTANTS
 # Put your constants here. These should be named in CAPS.
-LOGGERNAME = "updater.py"
 
 
 # endregion CONSTANTS
@@ -57,7 +62,6 @@ LOGGERNAME = "updater.py"
 
 
 def fetch_latest_currency_conversion_rates():
-    logger = logging.getLogger(LOGGERNAME)
     logger.debug("Now trying to fetch latest currency conversions.")
     api_response_ttd = requests.get(
         url="https://fcsapi.com/api-v2/forex/base_latest?symbol=TTD&type=forex&access_key=o9zfwlibfXciHoFO4LQU2NfTwt2vEk70DAiOH1yb2ao4tBhNmm"
@@ -85,7 +89,6 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
     """
     Calculate the important ratios for fundamental analysis, based off our manually entered data from the financial statements
     """
-    logger = logging.getLogger(LOGGERNAME)
     raw_data_table_names = ["raw_annual_data", "raw_quarterly_data"]
     calculated_fundamental_ratios_table_name = "calculated_fundamental_ratios"
     daily_stock_summary_table_name = "daily_stock_summary"
@@ -315,14 +318,12 @@ def calculate_fundamental_analysis_ratios(TTD_JMD, TTD_USD, TTD_BBD):
         return 0
     except Exception as exc:
         logger.exception("Could not complete fundamental data update.", exc_info=exc)
-        custom_logging.flush_smtp_logger()
 
 
 def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
     """Use the historical dividend info table
     to calculate dividend yields per year
     """
-    logger = logging.getLogger(LOGGERNAME)
     daily_stock_summary_table_name = "daily_stock_summary"
     historical_dividend_info_table_name = "historical_dividend_info"
     historical_dividend_yield_table_name = "historical_dividend_yield"
@@ -446,7 +447,6 @@ def update_portfolio_summary_book_costs():
     calculate and upsert the following fields in the portfolio_summary table
     (shares_remaining, average_cost, book_cost)
     """
-    logger = logging.getLogger(LOGGERNAME)
     logger.info("Now trying to update the book value in all portfolios.")
     # set up the db connection
     try:
@@ -549,7 +549,6 @@ def update_portfolio_summary_book_costs():
             return 0
     except Exception as exc:
         logger.exception("Could not complete portfolio summary book costs data update.")
-        custom_logging.flush_smtp_logger()
 
 
 def update_simulator_portfolio_summary_book_costs():
@@ -558,7 +557,6 @@ def update_simulator_portfolio_summary_book_costs():
     calculate and upsert the following fields in the stocks_simulatorportfolios table
     (shares_remaining, average_cost, book_cost)
     """
-    logger = logging.getLogger(LOGGERNAME)
     logger.info("Now trying to update the book values in all simulator portfolios.")
     # set up the db connection
     try:
@@ -663,7 +661,6 @@ def update_simulator_portfolio_summary_book_costs():
         logger.exception(
             "Could not complete simulator portfolio summary book costs data update."
         )
-        custom_logging.flush_smtp_logger()
 
 
 def update_simulator_portfolio_summary_market_values():
@@ -672,7 +669,6 @@ def update_simulator_portfolio_summary_market_values():
     calculate and upsert the following fields in the stocks_simulatorportfolios table
     (current_market_prices, market_value, total_gain_loss)
     """
-    logger = logging.getLogger(LOGGERNAME)
     logger.info("Now trying to update the market value in all simulator portfolios.")
     db_connect = None
     try:
@@ -751,7 +747,6 @@ def update_simulator_portfolio_summary_market_values():
         return 0
     except Exception as exc:
         logger.exception("Could not complete portfolio summary data update.")
-        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
         if db_connect is not None:
@@ -765,7 +760,6 @@ def update_portfolio_summary_market_values():
     calculate and upsert the following fields in the portfolio_summary table
     (current_market_prices, market_value, total_gain_loss)
     """
-    logger = logging.getLogger(LOGGERNAME)
     logger.info("Now trying to update the market value in all portfolios.")
     db_connect = None
     try:
@@ -844,7 +838,6 @@ def update_portfolio_summary_market_values():
         return 0
     except Exception as exc:
         logger.exception("Could not complete portfolio summary data update.")
-        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
         if db_connect is not None:
@@ -857,7 +850,6 @@ def update_portfolio_sectors_values():
     Select all records from the portfolio_summary table, then
     calculate and upsert the fields in the stocks_portfoliosectors table
     """
-    logger = logging.getLogger(LOGGERNAME)
     logger.info("Now trying to update the portfolio sector values in all portfolios.")
     db_connect = None
     try:
@@ -926,7 +918,6 @@ def update_portfolio_sectors_values():
         return 0
     except Exception as exc:
         logger.exception("Could not complete portfolio sector data update.")
-        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
         if db_connect is not None:
@@ -939,7 +930,6 @@ def update_simulator_games():
     Select all records from the stocks_simulatorgames table, then
     calculate and upsert the interesting fields in the stocks_simulatorgames table
     """
-    logger = logging.getLogger(LOGGERNAME)
     logger.info("Now trying to update the simulator games.")
     db_connect = None
     try:
@@ -1096,7 +1086,6 @@ def update_simulator_games():
         return 0
     except Exception as exc:
         logger.exception("Could not complete simulator game data update.")
-        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
         if db_connect is not None:
@@ -1109,7 +1098,6 @@ def update_simulator_portfolio_sectors_values():
     Select all records from the stocks_simulatorportfolios table, then
     calculate and upsert the fields in the stocks_portfoliosectors table
     """
-    logger = logging.getLogger(LOGGERNAME)
     logger.info(
         "Now trying to update the portfolio sector values in all simulator portfolios."
     )
@@ -1184,7 +1172,6 @@ def update_simulator_portfolio_sectors_values():
         return 0
     except Exception as exc:
         logger.exception("Could not complete portfolio sector data update.")
-        custom_logging.flush_smtp_logger()
     finally:
         # Always close the database connection
         if db_connect is not None:
@@ -1195,24 +1182,9 @@ def update_simulator_portfolio_sectors_values():
 def main(args):
     """Main function for updating portfolio data"""
     try:
-        # set up logging
-        q_listener, q, logger = custom_logging.setup_logging(
-            logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
-            loggername=LOGGERNAME,
-            stdoutlogginglevel=logging.DEBUG,
-            smtploggingenabled=True,
-            smtplogginglevel=logging.ERROR,
-            smtpmailhost="localhost",
-            smtpfromaddr="server1@trinistats.com",
-            smtptoaddr=["latchmepersad@gmail.com"],
-            smtpsubj="Automated report from Python script: "
-                     + os.path.basename(__file__),
-        )
         with PidFile(piddir=tempfile.gettempdir()):
-            with multiprocessing.Pool(
-                    os.cpu_count(), custom_logging.logging_worker_init, [q]
-            ) as multipool:
-                logger.info("Now starting trinistats stocks updater module.")
+            with multiprocessing.Pool(os.cpu_count()) as multipool:
+                logger.info("Now starting stocks updater module.")
                 if args.daily_update:
                     multipool.apply(update_portfolio_summary_market_values, ())
                 else:
@@ -1240,7 +1212,6 @@ def main(args):
                 multipool.close()
                 multipool.join()
                 logger.info(os.path.basename(__file__) + " executed successfully.")
-                q_listener.stop()
         return 0
     except Exception:
         logging.exception("Error in script " + os.path.basename(__file__))
