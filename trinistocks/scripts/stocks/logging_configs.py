@@ -21,7 +21,7 @@ LOGGING_CONFIG = {
             'level': 'DEBUG',
             'formatter': 'info',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'stocks.scripts.debug.log'),
+            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.error.log'),
             'mode': 'a',
             'maxBytes': 1048576 * 10,
             'backupCount': 10
@@ -30,7 +30,7 @@ LOGGING_CONFIG = {
             'level': 'INFO',
             'formatter': 'info',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'stocks.scripts.info.log'),
+            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.error.log'),
             'mode': 'a',
             'maxBytes': 1048576 * 10,
             'backupCount': 10
@@ -39,7 +39,7 @@ LOGGING_CONFIG = {
             'level': 'ERROR',
             'formatter': 'error',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'stocks.scripts.error.log'),
+            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.error.log'),
             'mode': 'a',
             'maxBytes': 1048576 * 10,
             'backupCount': 10
