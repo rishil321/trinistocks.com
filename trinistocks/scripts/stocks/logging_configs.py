@@ -19,18 +19,18 @@ LOGGING_CONFIG = {
         },
         'debug_rotating_file_handler': {
             'level': 'DEBUG',
-            'formatter': 'info',
+            'formatter': 'error',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.error.log'),
+            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.info.log'),
             'mode': 'a',
             'maxBytes': 1048576 * 10,
             'backupCount': 10
         },
         'info_rotating_file_handler': {
             'level': 'INFO',
-            'formatter': 'info',
+            'formatter': 'error',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.error.log'),
+            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.info.log'),
             'mode': 'a',
             'maxBytes': 1048576 * 10,
             'backupCount': 10
@@ -59,7 +59,7 @@ LOGGING_CONFIG = {
             'format': '%(asctime)s-%(levelname)s-%(name)s:%(module)s|%(funcName)s|%(lineno)s-%(message)s'
         },
         'error': {
-            'format': '%(asctime)s-%(levelname)s-%(name)s-%(process)d::%(module)s|%(lineno)s:: %(message)s'
+            'format': '%(asctime)s-%(levelname)s-%(module)s-%(funcName)s:%(message)s'
         },
     },
 
