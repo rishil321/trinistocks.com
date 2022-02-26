@@ -934,25 +934,13 @@ def alert_me_new_quarterly_statements():
 
 def main(args):
     """The main function to coordinate the functions defined above"""
-    # Set up logging for this module
-    q_listener, q, logger = custom_logging.setup_logging(
-        logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
-        loggername=LOGGERNAME,
-        stdoutlogginglevel=logging.INFO,
-        smtploggingenabled=True,
-        smtplogginglevel=logging.ERROR,
-        smtpmailhost="localhost",
-        smtpfromaddr="server1@trinistats.com",
-        smtptoaddr=["latchmepersad@gmail.com"],
-        smtpsubj="Automated report from Python script: " + os.path.basename(__file__),
-    )
     try:
         logger = logging.getLogger(LOGGERNAME)
         # Set up a pidfile to ensure that only one instance of this script runs at a time
         with PidFile(piddir=tempfile.gettempdir()):
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(
-                    os.cpu_count(), custom_logging.logging_worker_init, [q]
+                    os.cpu_count()
             ) as multipool:
                 logger.debug(
                     "Downloading latest fundamental reports from the TTSE site."
@@ -1034,11 +1022,9 @@ trinistocks.com
                 else:
                     logger.error("Could not send report to {OUTSTANDINGREPORTEMAIL}")
             logger.info(os.path.basename(__file__) + " executed successfully.")
-        q_listener.stop()
         return 0
     except Exception as exc:
         logger.exception("Error in script " + os.path.basename(__file__), exc_info=exc)
-        custom_logging.flush_smtp_logger()
 
 
 # If this script is being run from the command-line, then run the main() function
