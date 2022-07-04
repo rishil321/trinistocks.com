@@ -518,7 +518,7 @@ def update_portfolio_summary_book_costs():
             )
             summary_df.drop(["num_shares"], axis=1, inplace=True)
             # now recalculate the book cost to account for sold shares
-            summary_df['book_cost'] = (summary_df['shares_remaining']* summary_df['average_cost'])
+            summary_df['book_cost'] = (summary_df['shares_remaining'] * summary_df['average_cost'])
             # now write the df to the database
             logger.info("Now writing portfolio book value data to database.")
             execute_completed_successfully = False
@@ -715,6 +715,9 @@ def update_simulator_portfolio_summary_market_values():
                 * portfolio_summary_df["total_gain_loss"]
                 / portfolio_summary_df["book_cost"]
         )
+        portfolio_summary_df["gain_loss_percent"] = portfolio_summary_df[
+            "gain_loss_percent"
+        ].replace(np.NaN, 0)
         # now write the df to the database
         logger.info("Now writing portfolio market value data to database.")
         execute_completed_successfully = False
