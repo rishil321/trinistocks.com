@@ -447,7 +447,7 @@ def update_portfolio_summary_book_costs():
     calculate and upsert the following fields in the portfolio_summary table
     (shares_remaining, average_cost, book_cost)
     """
-    logger.info("Now trying to update the book value in all portfolios.")
+    logger.info("Now trying to update the book costs in all portfolios.")
     # set up the db connection
     try:
         with DatabaseConnect() as db_connect:
@@ -517,6 +517,8 @@ def update_portfolio_summary_book_costs():
                 avg_cost_df, how="outer", on=["user_id", "symbol"]
             )
             summary_df.drop(["num_shares"], axis=1, inplace=True)
+            # now recalculate the book cost to account for sold shares
+            summary_df['book_cost'] = (summary_df['shares_remaining']* summary_df['average_cost'])
             # now write the df to the database
             logger.info("Now writing portfolio book value data to database.")
             execute_completed_successfully = False
