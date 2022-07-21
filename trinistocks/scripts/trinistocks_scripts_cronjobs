@@ -1,0 +1,11 @@
+# these are the environmental variables for the crontab only
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PYTHONDONTWRITEBYTECODE=1
+PYTHONUNBUFFERED=1
+# must be ended with a new line "LF" (Unix) and not "CRLF" (Windows)
+0 9,10,11,12,13,14 * * 1,2,3,4,5 . /etc/profile; cd /trinistocks/ && python3 -m scripts.stocks.scrapettse.scraper -id >> /var/log/cron.log 2&1 &
+0 18 * * 1,2,3,4,5 . /etc/profile; cd /trinistocks/ && python3 -m scripts.stocks.scrapettse.scraper -eod >> /var/log/cron.log 2&1 &
+0 0 * * 1,2,3,4,5 . /etc/profile; cd /trinistocks/ && python3 -m scripts.stocks.updatedb.updater >> /var/log/cron.log 2&1 &
+0 19 * * 5 . /etc/profile; cd /trinistocks/ && python3 -m scripts.stocks.updatedb.fetch_financial_reports >> /var/log/cron.log 2&1 &
+# An empty line is required at the end of this file for a valid cron file.

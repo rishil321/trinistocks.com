@@ -2,7 +2,7 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Poetry (trinistocks.com)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Remote Python 3.10.5 Docker Compose (trinistocks_django_web_app at [C:\Users\Rishi-Desktop\Mega Sync\Code\trinistocks.com\trinistocks\docker-compose.yml])" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  DJANGO_DB_HOST: 192.168.101.131
+  DJANGO_DB_PASSWORD: remotedjangosecret
+  DJANGO_DB_USER: remote_django
+  testvariable1: hello1
+  testvariable2: hello2
+  testvariable3: '#hello4'
+  testvariable4: ~!@##!@$%#$^#%^()$%tryrthi!1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: trinistocks-background-scripts-trinistocks--env
+  name: trinistocks--env

@@ -465,10 +465,12 @@ def update_portfolio_summary_book_costs():
                     .sum()
                     .reset_index()
             )
-            total_shares_bought_df.drop(["share_price"], axis=1, inplace=True)
+            # total_shares_bought_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_bought_df.rename(
                 columns={"num_shares": "shares_bought"}, inplace=True
             )
+            total_shares_bought_df['total_transaction_cost'] = total_shares_bought_df['share_price'] * \
+                                                               total_shares_bought_df['shares_bought']
             # then get the total shares sold
             total_shares_sold_df = (
                 transactions_df[transactions_df.bought_or_sold == "Sold"]
@@ -476,10 +478,12 @@ def update_portfolio_summary_book_costs():
                     .sum()
                     .reset_index()
             )
-            total_shares_sold_df.drop(["share_price"], axis=1, inplace=True)
+            # total_shares_sold_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_sold_df.rename(
                 columns={"num_shares": "shares_sold"}, inplace=True
             )
+            total_shares_sold_df['total_transaction_cost'] = total_shares_sold_df['share_price'] * \
+                                                             total_shares_sold_df['shares_bought']
             # first merge both dataframes
             total_bought_sold_df = total_shares_bought_df.merge(
                 total_shares_sold_df, how="outer", on=["user_id", "symbol"]
@@ -487,6 +491,9 @@ def update_portfolio_summary_book_costs():
             # then fill the shares_sold column with 0
             total_bought_sold_df["shares_sold"] = total_bought_sold_df[
                 "shares_sold"
+            ].replace(np.NaN, 0)
+            total_bought_sold_df["total_transaction_cost"] = total_bought_sold_df[
+                "total_transaction_cost"
             ].replace(np.NaN, 0)
             # then find the difference to get our number of shares remaining for each user
             total_bought_sold_df["shares_remaining"] = (

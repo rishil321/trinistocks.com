@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """This Python script is used to store credentials that we want to .gitignore"""
-dbusername = "script"
+dbusername = "remote_script"
 dbpassword = "scriptsecretpassword"
-dbaddress = "127.0.0.1"
+dbaddress = "192.168.101.131"
 dbport = "3306"
 schema = "trinistocksdb"

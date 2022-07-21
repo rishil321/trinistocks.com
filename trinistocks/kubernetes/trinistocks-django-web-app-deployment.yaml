@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml
+    kompose.version: 1.26.1 (a9d05d509)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: trinistocks-django-web-deployment
+  name: trinistocks-django-web-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: trinistocks-django-web-deployment
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert -f .\docker-compose.yml
+        kompose.version: 1.26.1 (a9d05d509)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: trinistocks-django-web-deployment
+    spec:
+      containers:
+        - args:
+            - sh
+            - -c
+            - |-
+              python /trinistocks/manage.py collectstatic --noinput &&
+                      python /trinistocks/manage.py migrate &&
+                     gunicorn --workers=2 --threads=4 --worker-class=gthread trinistocks.wsgi:application -t 300 --bind 0.0.0.0:8000
+          env:
+            - name: DJANGO_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: DJANGO_DB_HOST
+                  name: trinistocks--env
+            - name: DJANGO_DB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: DJANGO_DB_PASSWORD
+                  name: trinistocks--env
+            - name: DJANGO_DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: DJANGO_DB_USER
+                  name: trinistocks--env
+            - name: testvariable1
+              valueFrom:
+                configMapKeyRef:
+                  key: testvariable1
+                  name: trinistocks--env
+            - name: testvariable2
+              valueFrom:
+                configMapKeyRef:
+                  key: testvariable2
+                  name: trinistocks--env
+            - name: testvariable3
+              valueFrom:
+                configMapKeyRef:
+                  key: testvariable3
+                  name: trinistocks--env
+            - name: testvariable4
+              valueFrom:
+                configMapKeyRef:
+                  key: testvariable4
+                  name: trinistocks--env
+          image: rishi321/trinistocks_django_web_app:1.0.0
+          name: trinistocks-django-web-app
+          ports:
+            - containerPort: 8000
+          resources: {}
+          volumeMounts:
+            - mountPath: /trinistocks/logs
+              name: trinistocks-log-files
+      restartPolicy: Always
+      volumes:
+        - name: trinistocks-log-files
+          persistentVolumeClaim:
+            claimName: trinistocks-log-files
+status: {}

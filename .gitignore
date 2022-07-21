@@ -145,5 +145,5 @@ scripts/configs/*
 # the fundamental reports
 trinistocks/scripts/stocks/updatedb/financial_reports/*
 
-# the settings file
-*settings.py
+# the .env files
+*.env
