@@ -28,7 +28,7 @@ spec:
         - args:
             - sh
             - -c
-            - bash /trinistocks/scripts/copy_environmental_variables.sh && cron && tail -f /var/log/cron.log
+            - bash /trinistocks/scripts/copy_environmental_variables.sh && cron && service postfix start && tail -f /var/log/cron.log
           env:
             - name: DJANGO_DB_HOST
               valueFrom:
@@ -45,31 +45,12 @@ spec:
                 configMapKeyRef:
                   key: DJANGO_DB_USER
                   name: trinistocks--env
-            - name: testvariable1
-              valueFrom:
-                configMapKeyRef:
-                  key: testvariable1
-                  name: trinistocks--env
-            - name: testvariable2
-              valueFrom:
-                configMapKeyRef:
-                  key: testvariable2
-                  name: trinistocks--env
-            - name: testvariable3
-              valueFrom:
-                configMapKeyRef:
-                  key: testvariable3
-                  name: trinistocks--env
-            - name: testvariable4
-              valueFrom:
-                configMapKeyRef:
-                  key: testvariable4
-                  name: trinistocks--env
-          image: trinistocks-background-scripts
+          image: rishi321/trinistocks_background_scripts:latest
+          imagePullPolicy: Always
           name: trinistocks-background-scripts
           ports:
             - containerPort: 8001
-          resources: {}
+          resources: { }
           volumeMounts:
             - mountPath: /trinistocks/logs
               name: trinistocks-log-files
@@ -78,4 +59,4 @@ spec:
         - name: trinistocks-log-files
           persistentVolumeClaim:
             claimName: trinistocks-log-files
-status: {}
+status: { }

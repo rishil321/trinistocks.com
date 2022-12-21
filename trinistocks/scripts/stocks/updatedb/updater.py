@@ -6,6 +6,7 @@ Description of this module/script goes here
 :returns: Whatever your script returns when called
 :raises Exception if any issues are encountered
 """
+
 # region IMPORTS
 #
 # Put all your imports here, one per line.
@@ -15,6 +16,7 @@ import sys
 import logging
 import os
 from logging.config import dictConfig
+from typing import List
 
 import pandas as pd
 import numpy as np
@@ -327,33 +329,34 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
     daily_stock_summary_table_name = "daily_stock_summary"
     historical_dividend_info_table_name = "historical_dividend_info"
     historical_dividend_yield_table_name = "historical_dividend_yield"
+    summarized_dividend_yield_table_name: str = "summarized_dividend_yield"
     with DatabaseConnect() as db_connect:
         logger.info("Now calculating dividend yields.")
         # first get the dividends per share
-        dividends_df = pd.io.sql.read_sql(
+        dividends_df: pd.DataFrame = pd.io.sql.read_sql(
             f"SELECT symbol,record_date,dividend_amount FROM {historical_dividend_info_table_name};",
             db_connect.dbengine,
         )
         # get the latest date from the daily stock table
-        latest_stock_date = pd.io.sql.read_sql(
+        latest_stock_date: str = pd.io.sql.read_sql(
             f"SELECT date FROM {daily_stock_summary_table_name} WHERE os_bid_vol !=0 ORDER BY date DESC LIMIT 1;",
             db_connect.dbengine,
         )["date"][0].strftime("%Y-%m-%d")
         # then get the share price for each listed stock at this date
-        share_price_df = pd.io.sql.read_sql(
+        share_price_df: pd.DataFrame = pd.io.sql.read_sql(
             f"SELECT {daily_stock_summary_table_name}.symbol,{daily_stock_summary_table_name}.close_price, listed_equities.currency \
                 FROM {daily_stock_summary_table_name}, listed_equities WHERE \
                 {daily_stock_summary_table_name}.symbol = listed_equities.symbol AND {daily_stock_summary_table_name}.date='{latest_stock_date}';",
             db_connect.dbengine,
         )
         # now go through each symbol and calculate the yields
-        groupby_symbol_year = dividends_df.groupby(
+        groupby_symbol_year: pd.DataFrameGroupBy = dividends_df.groupby(
             ["symbol", dividends_df["record_date"].map(lambda x: x.year)]
         )["dividend_amount"]
-        yearly_dividends_df = groupby_symbol_year.sum().reset_index()
+        yearly_dividends_df: pd.DataFrame = groupby_symbol_year.sum().reset_index()
         # add the dividend conversion rates for this df
-        symbols_list = yearly_dividends_df["symbol"].to_list()
-        conversion_rates = []
+        symbols_list: List = yearly_dividends_df["symbol"].to_list()
+        conversion_rates: List = []
         for symbol in symbols_list:
             if symbol in USD_DIVIDEND_SYMBOLS:
                 conversion_rates.append(1 / TTD_USD)
@@ -363,11 +366,11 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
                 conversion_rates.append(1 / TTD_BBD)
             else:
                 conversion_rates.append(1.00)
-        yearly_dividends_df["dividend_conversion_rates"] = pd.Series(
+        yearly_dividends_df["dividend_conversion_rates"]: pd.Series = pd.Series(
             conversion_rates, index=yearly_dividends_df.index
         )
         # calculate a conversion rate for the stock price
-        share_price_df["share_price_conversion_rates"] = share_price_df.apply(
+        share_price_df["share_price_conversion_rates"]: pd.Series = share_price_df.apply(
             lambda x: 1 / TTD_USD
             if x.currency == "USD"
             else (
@@ -382,7 +385,7 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
             share_price_df, yearly_dividends_df, how="inner", on="symbol"
         )
         # now calculate the dividend yields
-        yearly_dividends_df["dividend_yield"] = (
+        yearly_dividends_df["dividend_yield"]: pd.Series = (
                 100
                 * (
                         yearly_dividends_df["dividend_amount"]
@@ -409,6 +412,8 @@ def update_dividend_yields(TTD_JMD, TTD_USD, TTD_BBD):
         yearly_dividends_df["date"] = yearly_dividends_df["date"].apply(
             lambda x: f"{x}-12-31"
         )
+        # now calculate the dividend yields for the summarized table
+
         # now write the data to the db
         logger.info("Now writing dividend yield data to database.")
         execute_completed_successfully = False
@@ -461,9 +466,9 @@ def update_portfolio_summary_book_costs():
             # first get the total shares bought
             total_shares_bought_df = (
                 transactions_df[transactions_df.bought_or_sold == "Bought"]
-                    .groupby(["user_id", "symbol"])
-                    .sum()
-                    .reset_index()
+                .groupby(["user_id", "symbol"])
+                .sum()
+                .reset_index()
             )
             # total_shares_bought_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_bought_df.rename(
@@ -474,9 +479,9 @@ def update_portfolio_summary_book_costs():
             # then get the total shares sold
             total_shares_sold_df = (
                 transactions_df[transactions_df.bought_or_sold == "Sold"]
-                    .groupby(["user_id", "symbol"])
-                    .sum()
-                    .reset_index()
+                .groupby(["user_id", "symbol"])
+                .sum()
+                .reset_index()
             )
             # total_shares_sold_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_sold_df.rename(
@@ -580,9 +585,9 @@ def update_simulator_portfolio_summary_book_costs():
             # first get the total shares bought
             total_shares_bought_df = (
                 transactions_df[transactions_df.bought_or_sold == "Buy"]
-                    .groupby(["simulator_player_id", "symbol"])
-                    .sum()
-                    .reset_index()
+                .groupby(["simulator_player_id", "symbol"])
+                .sum()
+                .reset_index()
             )
             total_shares_bought_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_bought_df.rename(
@@ -591,9 +596,9 @@ def update_simulator_portfolio_summary_book_costs():
             # then get the total shares sold
             total_shares_sold_df = (
                 transactions_df[transactions_df.bought_or_sold == "Sell"]
-                    .groupby(["simulator_player_id", "symbol"])
-                    .sum()
-                    .reset_index()
+                .groupby(["simulator_player_id", "symbol"])
+                .sum()
+                .reset_index()
             )
             total_shares_sold_df.drop(["share_price"], axis=1, inplace=True)
             total_shares_sold_df.rename(
@@ -1139,8 +1144,8 @@ def update_simulator_portfolio_sectors_values():
         # now group the df by user
         portfolio_summary_df = (
             portfolio_summary_df.groupby(["simulator_player_id", "sector"])
-                .sum()
-                .reset_index()
+            .sum()
+            .reset_index()
         )
         # create a new df with the columns that we need
         portfolio_sector_df = portfolio_summary_df[

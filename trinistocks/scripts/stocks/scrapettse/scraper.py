@@ -13,6 +13,8 @@
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
 import concurrent.futures
+from typing import List
+
 from ..crosslisted_symbols import USD_STOCK_SYMBOLS
 from ...database_ops import DatabaseConnect
 from ... import custom_logging
@@ -44,6 +46,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Imports from the local filesystem
 from .. import logging_configs
+
 dictConfig(logging_configs.LOGGING_CONFIG)
 logger = logging.getLogger()
 # endregion IMPORTS
@@ -126,9 +129,9 @@ def scrape_listed_equity_data():
                 per_stock_page_soup = BeautifulSoup(equity_page.text, "lxml")
                 equity_data["security_name"] = (
                     per_stock_page_soup.find(text="Security:")
-                        .find_parent("h2")
-                        .find_next("h2")
-                        .text.title()
+                    .find_parent("h2")
+                    .find_next("h2")
+                    .text.title()
                 )
                 # apply some custom formatting to our names
                 if equity_data["security_name"] == "Agostini S Limited":
@@ -162,9 +165,9 @@ def scrape_listed_equity_data():
                     equity_data["security_name"] = "Trinidad And Tobago NGL Limited"
                 equity_sector = (
                     per_stock_page_soup.find(text="Sector:")
-                        .find_parent("h2")
-                        .find_next("h2")
-                        .text.title()
+                    .find_parent("h2")
+                    .find_next("h2")
+                    .text.title()
                 )
                 if equity_sector != "Status:":
                     equity_data["sector"] = equity_sector
@@ -174,21 +177,21 @@ def scrape_listed_equity_data():
                     equity_data["sector"] = "Manufacturing II"
                 equity_data["status"] = (
                     per_stock_page_soup.find(text="Status:")
-                        .find_parent("h2")
-                        .find_next("h2")
-                        .text.title()
+                    .find_parent("h2")
+                    .find_next("h2")
+                    .text.title()
                 )
                 equity_data["financial_year_end"] = (
                     per_stock_page_soup.find(text="Financial Year End:")
-                        .find_parent("h2")
-                        .find_next("h2")
-                        .text
+                    .find_parent("h2")
+                    .find_next("h2")
+                    .text
                 )
                 website_url = (
                     per_stock_page_soup.find(text="Website:")
-                        .find_parent("h2")
-                        .find_next("h2")
-                        .text
+                    .find_parent("h2")
+                    .find_next("h2")
+                    .text
                 )
                 if website_url != "Issuers":
                     equity_data["website_url"] = website_url
@@ -1190,6 +1193,14 @@ def update_daily_trades():
                 logger.debug("Successfully loaded webpage.")
             # parse the text if we were able to load the marquee data
             page_soup = BeautifulSoup(http_get_req.text, "lxml")
+            # find the elementor-text-editor blocks on the page, which can help us figure out if the market is open
+            elementor_text_editor_blocks: List[BeautifulSoup] = page_soup.findAll(
+                class_="elementor-text-editor elementor-clearfix")
+            now_datetime: datetime = datetime.strptime(elementor_text_editor_blocks[1].text.strip(),
+                                                       '%d %b %Y %H:%M %p')
+            market_status:str = elementor_text_editor_blocks[0].text.strip().lower()
+            if not market_status == 'open':
+                raise RuntimeError("Market is not open right now.")
             marquee = page_soup.find("marquee", id=["tickerTape"])
             if not marquee:
                 logger.warning(f"Could not find marquee on today's page.")
@@ -1237,8 +1248,8 @@ def update_daily_trades():
                                     stock_data["change_dollars"] = float(
                                         (
                                             symbol_data_chunks[7]
-                                                .replace("(", "")
-                                                .replace(")", "")
+                                            .replace("(", "")
+                                            .replace(")", "")
                                         )
                                     )
                                     stock_data["was_traded_today"] = 1
@@ -1409,8 +1420,8 @@ def update_technical_analysis_data():
                 # now calculate the beta
                 stock_change_df["beta"] = (
                                               stock_change_df["change_percent"]
-                                                  .rolling(window=365)
-                                                  .cov(other=market_change_df["change_percent"])
+                                              .rolling(window=365)
+                                              .cov(other=market_change_df["change_percent"])
                                           ) / market_change_df["change_percent"].rolling(window=365).var()
                 # store the beta
                 stock_technical_data["beta"] = stock_change_df["beta"].iloc[-1]
@@ -1578,8 +1589,8 @@ def parse_news_data_per_stock(symbols_to_fetch_for, start_date, end_date):
                                 if len(possible_title.string.strip().split("–")) == 2:
                                     title = (
                                         possible_title.string.strip()
-                                            .split("–")[1]
-                                            .strip()
+                                        .split("–")[1]
+                                        .strip()
                                     )
                                 else:
                                     title = possible_title.string.strip()
@@ -1652,7 +1663,7 @@ def scrape_newsroom_data(start_date, end_date):
         # set up a variable to store all data to be written to the db table
         all_news_data = []
         # set up some threads to speed up the process
-        num_threads = 5
+        num_threads = 2
         # split the complete list of symbols into sublists for the threads
         per_thread_symbols = [
             all_listed_symbols[i::num_threads] for i in range(num_threads)

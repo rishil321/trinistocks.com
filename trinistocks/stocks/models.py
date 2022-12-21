@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.urls import reverse
 from .templatetags import stocks_template_tags
@@ -12,6 +14,7 @@ from pygments.styles import get_all_styles
 LEXERS = [item for item in get_all_lexers() if item[1]]
 LANGUAGE_CHOICES = sorted([(item[1][0], item[0]) for item in LEXERS])
 STYLE_CHOICES = sorted([(item, item) for item in get_all_styles()])
+
 
 # Model classes
 
@@ -55,7 +58,6 @@ class ListedEquitiesPerSector(models.Model):
 
 
 class DailyStockSummary(models.Model):
-
     daily_share_id = models.AutoField(primary_key=True)
     symbol = models.ForeignKey(ListedEquities, models.CASCADE, db_column="symbol")
     date = models.DateField()
@@ -169,6 +171,17 @@ class HistoricalDividendYield(models.Model):
         unique_together = (("date", "symbol"),)
 
 
+class SummarizedDividendYield(models.Model):
+    symbol: ListedEquities = models.OneToOneField(ListedEquities, models.RESTRICT)
+    ttm_yield: Decimal = models.DecimalField(max_digits=20, decimal_places=5, verbose_name="TTM Yield %")
+    three_year_yield: Decimal = models.DecimalField(max_digits=20, decimal_places=5, verbose_name="TTM Yield %")
+    five_year_yield: Decimal = models.DecimalField(max_digits=20, decimal_places=5, verbose_name="TTM Yield %")
+    ten_year_yield: Decimal = models.DecimalField(max_digits=20, decimal_places=5, verbose_name="TTM Yield %")
+
+    class Meta:
+        managed = True
+
+
 class HistoricalIndicesInfo(models.Model):
     summary_id = models.AutoField(primary_key=True)
     date = models.DateField(verbose_name="Date Recorded", unique=True)
@@ -255,7 +268,6 @@ class TechnicalAnalysisSummary(models.Model):
 
 
 class FundamentalAnalysisSummary(models.Model):
-
     id = models.AutoField(primary_key=True)
     symbol = models.ForeignKey(
         ListedEquities,
@@ -330,7 +342,6 @@ class FundamentalAnalysisSummary(models.Model):
 
 
 class PortfolioTransactions(models.Model):
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, default=1)
     symbol = models.ForeignKey(ListedEquities, models.CASCADE, db_column="symbol")
     date = models.DateField(verbose_name="Date")
@@ -345,7 +356,6 @@ class PortfolioTransactions(models.Model):
 
 
 class PortfolioSummary(models.Model):
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, default=1)
     symbol = models.ForeignKey(ListedEquities, models.CASCADE, db_column="symbol")
     shares_remaining = models.IntegerField()
@@ -365,7 +375,6 @@ class PortfolioSummary(models.Model):
 
 
 class PortfolioSectors(models.Model):
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
     sector = models.CharField(max_length=100)
     book_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True)
@@ -485,7 +494,6 @@ class SimulatorPortfolios(models.Model):
 
 
 class SimulatorPortfolioSectors(models.Model):
-
     simulator_player_id = models.ForeignKey(
         SimulatorPlayers,
         models.CASCADE,
@@ -505,6 +513,7 @@ class SimulatorPortfolioSectors(models.Model):
 
 class User(AbstractUser):
     pass
+
     # add additional fields in here
 
     def __str__(self):

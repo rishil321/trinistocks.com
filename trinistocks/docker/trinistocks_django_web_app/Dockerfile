@@ -1,5 +1,6 @@
 # Pull base image from dockerhub
 FROM python:3.10
+ENV TZ="America/Port_of_Spain"
 # create the directory to store our project files
 RUN mkdir /trinistocks
 # Set the working directory inside the container

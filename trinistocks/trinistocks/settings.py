@@ -60,7 +60,7 @@ INSTALLED_APPS = [
 ]
 
 SITE_ID = 1
-
+DEFAULT_AUTO_FIELD: str = 'django.db.models.fields.BigAutoField'
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -129,7 +129,7 @@ DATABASES = {
         "PASSWORD": os.environ.get(
             "DJANGO_DB_PASSWORD", "djangopassword"),
         "HOST": os.environ.get(
-            "DJANGO_DB_HOST", "localhost"),
+            "DJANGO_DB_HOST", "192.168.101.131"),
         "PORT": "3306",
     }
 }
@@ -172,11 +172,11 @@ STATIC_ROOT = "/trinistocks/static"
 
 LOGGING = {
     "version": 1,
-    "disable_existing_loggers": False,
+    "disable_existing_loggers": True,
     "formatters": {
         "django.server": {
             "()": "django.utils.log.ServerFormatter",
-            "format": "[{asctime}]:{levelname}:{pathname}({funcName}): {message}",
+            "format": "[{asctime}]:{name}:{levelname}:({module}:{funcName}:{lineno}): {message}",
             "style": "{",
         }
     },
@@ -194,6 +194,14 @@ LOGGING = {
             "formatter": "django.server",
             "class": "logging.handlers.RotatingFileHandler",
             "filename": os.path.join(BASE_DIR, "logs", "django_debug.log"),
+            "maxBytes": 1024 * 1024 * 15,  # 15MB
+            "backupCount": 10,
+        },
+        "background_tasks": {
+            "level": "DEBUG",
+            "formatter": "django.server",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "background_tasks.log"),
             "maxBytes": 1024 * 1024 * 15,  # 15MB
             "backupCount": 10,
         },
@@ -218,6 +226,11 @@ LOGGING = {
     "loggers": {
         "root": {
             "handlers": ["file", "console", "mail_admins"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "background_tasks": {
+            "handlers": ["background_tasks", "console"],
             "level": "DEBUG",
             "propagate": True,
         },

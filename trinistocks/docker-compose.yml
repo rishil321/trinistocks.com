@@ -8,6 +8,7 @@ services:
     restart: always
     volumes:
       - trinistocks_log_files:/trinistocks/logs
+    image: rishi321/trinistocks_background_scripts:1.0.0
     build:
       context: .
       dockerfile: ./docker/trinistocks_background_scripts/Dockerfile
@@ -22,7 +23,7 @@ services:
     restart: always
     volumes:
       - trinistocks_log_files:/trinistocks/logs
-    image: rishi321/trinistocks_django_web_app:1.0.0
+    image: rishi321/trinistocks_django_web_app:latest
     build:
       context: .
       dockerfile: ./docker/trinistocks_django_web_app/Dockerfile
