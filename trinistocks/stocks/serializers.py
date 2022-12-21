@@ -12,6 +12,7 @@ from .models import (
     FundamentalAnalysisSummary,
     HistoricalDividendInfo,
     HistoricalDividendYield,
+    SummarizedDividendYield,
     HistoricalIndicesInfo,
     PortfolioSummary,
     PortfolioSectors,
@@ -152,6 +153,16 @@ class DividendYieldSerializer(serializers.ModelSerializer):
             "dividend_yield",
         )
 
+class SummarizedDividendYieldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SummarizedDividendYield
+        fields = (
+            "symbol",
+            "ttm_yield",
+            "three_year_yield",
+            "five_year_yield",
+            "ten_year_yield",
+        )
 
 class MarketIndicesSerializer(serializers.ModelSerializer):
     class Meta:

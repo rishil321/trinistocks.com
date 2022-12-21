@@ -32,7 +32,6 @@ from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 
-
 # Imports from local machine
 from . import serializers
 from . import models, filters
@@ -47,6 +46,7 @@ from scripts.stocks.updatedb import updater
 ALERTMESSAGE = "Sorry! An error was encountered while processing your request."
 # Set up logging
 LOGGER = logging.getLogger("root")
+
 
 # Class definitions
 
@@ -943,7 +943,7 @@ class MarketIndexHistoryView(ExportMixin, tables2.views.SingleTableMixin, Filter
         return context
 
     def set_graph_dataset(
-        self,
+            self,
     ):
         self.graph_dataset = [
             float(obj[self.index_parameter]) for obj in self.historical_records.values()
@@ -1167,7 +1167,7 @@ class OSTradesHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVie
         return context
 
     def set_graph_dataset(
-        self,
+            self,
     ):
         self.graph_dataset = [
             obj[self.os_parameter] for obj in self.historical_records.values()
@@ -1960,6 +1960,22 @@ class DividendYieldsApiView(generics.ListCreateAPIView):
         return queryset
 
 
+class SummarizedDividendYieldsApiView(generics.ListCreateAPIView):
+    serializer_class = serializers.SummarizedDividendYieldSerializer
+    # require a token to access the api
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        """
+        Return only the objects for the last trading day
+        """
+        queryset = models.SummarizedDividendYield.objects.all()
+        filter_symbol = self.request.query_params.get("symbol")
+        if filter_symbol:
+            queryset = queryset.filter(symbol=filter_symbol)
+        return queryset
+
+
 class MarketIndicesApiView(generics.ListCreateAPIView):
     serializer_class = serializers.MarketIndicesSerializer
     # require a token to access the api
@@ -2059,7 +2075,7 @@ class PortfolioTransactionPutApiView(generics.UpdateAPIView):
                 else:
                     # if they have shares in the company, ensure that they have enough
                     if shares_remaining.shares_remaining < int(
-                        self.request.POST["num_shares"]
+                            self.request.POST["num_shares"]
                     ):
                         raise RuntimeError(
                             "You are selling more shares than you have left."
@@ -2265,9 +2281,9 @@ class SimulatorGamesApiView(generics.ListCreateAPIView):
             LOGGER.error("Problem with Simulator Games POST request", exc_info=exc)
             return Response(
                 data="Problem with Simulator Games POST request"
-                + type(exc).__name__
-                + ": "
-                + str(exc),
+                     + type(exc).__name__
+                     + ": "
+                     + str(exc),
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -2404,7 +2420,7 @@ class SimulatorTransactionsApiView(generics.UpdateAPIView):
                 else:
                     # if they have shares in the company, ensure that they have enough
                     if shares_remaining.shares_remaining < int(
-                        self.request.POST["num_shares"]
+                            self.request.POST["num_shares"]
                     ):
                         raise RuntimeError(
                             "You are selling more shares than you have left."
@@ -2447,9 +2463,9 @@ class SimulatorTransactionsApiView(generics.UpdateAPIView):
             )
             return Response(
                 data="Failed to add transaction. "
-                + type(exc).__name__
-                + ": "
-                + str(exc),
+                     + type(exc).__name__
+                     + ": "
+                     + str(exc),
                 status=status.HTTP_400_BAD_REQUEST,
             )
         else:
