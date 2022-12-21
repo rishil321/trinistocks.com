@@ -25,8 +25,11 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-DEBUG = True
+debug_mode: str = os.environ.get('DEBUG_MODE', "True")
+if debug_mode == "False":
+    DEBUG = False
+else:
+    DEBUG = True
 
 ALLOWED_HOSTS = [
     "206.217.136.243",
