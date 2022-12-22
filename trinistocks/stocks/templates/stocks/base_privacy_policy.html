@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+    {% block description %}"Trinistocks Privacy Policy"
+    {% endblock description %}
+    {% block title %}trinistocks | Private Policy
+    {% endblock title %}
+
+    {% block mainblock %}
+    <div class="box">
+        <h2>Privacy Policy</h2>
+    </div>
+    <div class="box">
+        <p>I have purposely kept this application simple. We do not share any data about you with anyone.
+            The only data that we store are the minimum required for authentication purposes (ie. email address, username and password)
+            and this is clearly displayed when you sign up for your account. The account creation is completely optional, and is only required if you
+            want to store personalized stock information on this site.
+        </p>
+    </div>
+    {% endblock mainblock %}
+
+    {% block chartjs %}
+    {% endblock chartjs %}
+    <!-- END MAIN -->
+    
+    <!--Javascript-->
+    {% block activepagetoggle %}
+    $("#aboutlink").toggleClass("has-background-red");
+    {% endblock %}

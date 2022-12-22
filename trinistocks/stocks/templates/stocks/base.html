@@ -7,13 +7,18 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-R9J2M1E2WG"></script>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-R9J2M1E2WG');
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
+        gtag('js', new Date());
+        gtag('config', 'G-R9J2M1E2WG');
     </script>
     <!--Google Adsense-->
-    <script data-ad-client="ca-pub-6367544544740471" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script data-ad-client="ca-pub-6367544544740471" async
+            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
     <!--Metadata-->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,14 +33,14 @@
     <!-- Twitter Summary card images must be at least 120x120px -->
     <meta name="twitter:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE">
     <!-- Open Graph data -->
-    <meta property="og:title" content="trinistocks" />
-    <meta property="og:type" content="graph" />
-    <meta property="og:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE" />
-    <meta property="og:description" content="Tabular/graphical data about T&T's stock exchange." />
-    <meta property="og:site_name" content="trinistocks.com" />
+    <meta property="og:title" content="trinistocks"/>
+    <meta property="og:type" content="graph"/>
+    <meta property="og:image" content="https://drive.google.com/open?id=1lgFtaKmY5n3DF3YoiF3Ye9bafxHhfSDE"/>
+    <meta property="og:description" content="Tabular/graphical data about T&T's stock exchange."/>
+    <meta property="og:site_name" content="trinistocks.com"/>
     <!--End Metadata-->
     <title>{% block title %}{% endblock title %}</title>
-    <link rel="shortcut icon" href="{%  static 'stocks/favicon.ico' %}">
+    <link rel="shortcut icon" href="{% static 'stocks/favicon.ico' %}">
     <!--Font Awesome 4 icons-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <!--Font Awesome 5 Icons-->
@@ -44,43 +49,44 @@
     <link rel="stylesheet" href="{% static 'stocks/bulma.css' %}">
     <link rel="stylesheet" href="{% static 'stocks/styles.css' %}">
     <!--Extra header scripts-->
-    {% block headerscripts%}
-    {% endblock headerscripts%}
+    {% block headerscripts %}
+    {% endblock headerscripts %}
     <!--Error Messages -->
     {% if errors %}
-    <script type="text/javascript">
+        <script type="text/javascript">
             alert('{{ errors }}');
             window.stop();
-    </script>
+        </script>
     {% endif %}
 </head>
 <body>
-    {% block navbartop %}
+{% block navbartop %}
     <!-- Navbar -->
     <nav style="" class="navbar is-black" role="navigation" aria-label="main navigation" id="navbartop">
         <div class="navbar-brand">
-            <img class="navbaricon" src="{%  static 'stocks/trinistocks_horizontal_transparent.png' %}">
+            <img class="navbaricon" src="{% static 'stocks/trinistocks_horizontal_transparent.png' %}">
             <a class="navbar-item tooltip homebutton" id="homelink" href="{% url "stocks:homepage" %}">
-            <span class="tooltiptext bottom">Home</span>
-            <i class="fas fa-1x fa-home"></i></a>
-            {%if request.user.is_authenticated %}
+                <span class="tooltiptext bottom">Home</span>
+                <i class="fas fa-1x fa-home"></i></a>
+            {% if request.user.is_authenticated %}
                 <a id="userprofilebutton" class="navbar-item tooltip" href='{% url "stocks:userprofile" %}'>
-                    <span class="tooltiptext bottom">Logged in as {{request.user}}</span>
+                    <span class="tooltiptext bottom">Logged in as {{ request.user }}</span>
                     <i class="fas fa-1x fa-user-check"></i>
                 </a>
             {% else %}
                 <a id="loginbutton" class="navbar-item tooltip" href='{% url "stocks:login" %}'>
-                <span class="tooltiptext bottom">Not logged in.</span>
-                <i class="fas fa-1x fa-user-times"></i>
+                    <span class="tooltiptext bottom">Not logged in.</span>
+                    <i class="fas fa-1x fa-user-times"></i>
                 </a>
             {% endif %}
             <a class="navbar-item tooltip lastbutton" id="optionsbutton">
-            <span id="optionstooltip" class="tooltiptext bottom">Options</span>
-            <i class="fas fa-1x fa-filter"></i></a>
-            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="left_sidebar" id="navbar_burger">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
+                <span id="optionstooltip" class="tooltiptext bottom">Options</span>
+                <i class="fas fa-1x fa-filter"></i></a>
+            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false"
+               data-target="left_sidebar" id="navbar_burger">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
         </div>
         <div class="navbar-menu" id="navbar_menu">
             <div class="navbar-start">
@@ -88,98 +94,111 @@
                     <a class="navbar-link has-text-weight-bold" id="summarizeddropdown">Summarized</a>
                     <div class="navbar-dropdown has-background-black">
                         {% get_latest_date_dailytradingsummary as latest_date %}
-                        <a class="navbar-item" id="dailytradingsummarylink" href="{% url "stocks:dailytradingsummary" %}">Daily Trades</a>
-                        <a class="navbar-item" id="listedstockslink" href="{% url "stocks:listedstocks" %}">Listed Stocks</a>
-                        <a class="navbar-item" id="technicalanalysislink" href="{% url "stocks:technicalanalysis" %}">Technical Analysis</a>
-                        <a class="navbar-item" id="fundamentalanalysislink" href="{% url "stocks:fundamentalanalysis" %}"+"?sort=-sector">Fundamental Analysis</a>
+                        <a class="navbar-item" id="dailytradingsummarylink"
+                           href="{% url "stocks:dailytradingsummary" %}">Daily Trades</a>
+                        <a class="navbar-item" id="listedstockslink" href="{% url "stocks:listedstocks" %}">Listed
+                            Stocks</a>
+                        <a class="navbar-item" id="technicalanalysislink" href="{% url "stocks:technicalanalysis" %}">Technical
+                            Analysis</a>
+                        <a class="navbar-item" id="fundamentalanalysislink"
+                           href="{% url "stocks:fundamentalanalysis" %}" +"?sort=-sector">Fundamental Analysis</a>
                     </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable">
                     <a class="navbar-link has-text-weight-bold" id="historicaldropdown">Historical</a>
                     <div class="navbar-dropdown has-background-black">
-                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock Prices</a>
-                        <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}'>Dividends Paid</a>
-                        <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}'>Market Indexes</a>
-                        <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}'>Outstanding Trades</a>
-                        <a class="navbar-item" id="fundamentalhistorylink" href='{% url "stocks:fundamentalhistory" %}'>Fundamental Indicators</a>
-                        <a class="navbar-item" id="stocknewshistorylink" href='{% url "stocks:stocknewshistory" %}?sort=-date'>Stock News</a>
+                        <a class="navbar-item" id="stockhistorylink" href='{% url "stocks:stockhistory" %}'>Stock
+                            Prices</a>
+                        <a class="navbar-item" id="dividendhistorylink" href='{% url "stocks:dividendhistory" %}'>Dividends
+                            Paid</a>
+                        <a class="navbar-item" id="markethistorylink" href='{% url "stocks:marketindexhistory" %}'>Market
+                            Indexes</a>
+                        <a class="navbar-item" id="outstandingtradeslink" href='{% url "stocks:ostradeshistory" %}'>Outstanding
+                            Trades</a>
+                        <a class="navbar-item" id="fundamentalhistorylink" href='{% url "stocks:fundamentalhistory" %}'>Fundamental
+                            Indicators</a>
+                        <a class="navbar-item" id="stocknewshistorylink"
+                           href='{% url "stocks:stocknewshistory" %}?sort=-date'>Stock News</a>
                     </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable">
                     <a class="navbar-link has-text-weight-bold" id="portfoliodropdown">Portfolio</a>
                     <div class="navbar-dropdown has-background-black">
-                        <a class="navbar-item" id="portfoliotransactionslink" href='{% url "stocks:portfoliotransactions" %}'>Transactions</a>
+                        <a class="navbar-item" id="portfoliotransactionslink"
+                           href='{% url "stocks:portfoliotransactions" %}'>Transactions</a>
                         <a class="navbar-item" id="portfoliosummarylink" href='{% url "stocks:portfoliosummary" %}'>Summary</a>
                     </div>
                 </div>
                 <a class="navbar-item" id="aboutlink" href='{% url "stocks:about" %}'>About</a>
+                <a class="navbar-item" id="privacypolicylink" href='{% url "stocks:privacypolicy" %}'>Privacy Policy</a>
             </div>
             <div class="navbar-end">
             </div>
         </div>
     </nav>
-    {% endblock %}
-    <br>
-    <form method="get">
+{% endblock %}
+<br>
+<form method="get">
     <nav id="optionspanel" class="panel is-hidden">
         <p class="panel-heading">
             Options
         </p>
-        {% block customizationbar%}
-        {% endblock customizationbar%}
+        {% block customizationbar %}
+        {% endblock customizationbar %}
     </nav>
-    </form>
+</form>
 
-    <!-- Main content-->
+<!-- Main content-->
 
+<div class="vertical-flex-container">
     <div class="vertical-flex-container">
-        <div class="vertical-flex-container">
-            {% block mainblock %}
-            {% endblock mainblock %}
-        </div>
-        <br>
+        {% block mainblock %}
+        {% endblock mainblock %}
     </div>
-    <!-- END MAIN -->
-    
-    <!--Javascript-->
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    {% block chartjs %}
-    {% endblock chartjs %}
-    <!--Base JavaScript for all templated pages-->
-    <script data-ad-client="ca-pub-6367544544740471" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-    <script>
-    $(document).ready(function() {
+    <br>
+</div>
+<!-- END MAIN -->
+
+<!--Javascript-->
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js'></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% block chartjs %}
+{% endblock chartjs %}
+<!--Base JavaScript for all templated pages-->
+<script data-ad-client="ca-pub-6367544544740471" async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+    $(document).ready(function () {
         // Check for click events on the navbar burger icon
-        $(".navbar-burger").click(function() {
+        $(".navbar-burger").click(function () {
             // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
             $(".navbar-burger").toggleClass("is-active");
             $(".navbar-menu").toggleClass("is-active");
         });
         //trigger the red background for the config button
-        $("#optionsbutton").click(function() {
+        $("#optionsbutton").click(function () {
             $("#optionspanel").toggleClass("is-hidden");
             $("#optionsbutton").toggleClass("has-background-red");
         });
         //display the guilt trip paragraph if adblock is enabled
-        $(function(){
-            setTimeout(function(){
+        $(function () {
+            setTimeout(function () {
                 if ($('.epn-placement').height() == 0) {
                     $("#adlessdiv").toggleClass("is-invisible");
                     $("#adlessdiv").height('14rem');
                 }
-            },10000);
+            }, 10000);
         });
         //trigger the red background for the active page
         {% block activepagetoggle %}
         {% endblock %}
     });
-    </script>
-    <!--Extra Javascript for certain pages only-->
-    {% block morejs%}
+</script>
+<!--Extra Javascript for certain pages only-->
+{% block morejs %}
     <script>
     </script>
-    {% endblock morejs%}
+{% endblock morejs %}
 </body>
 </html>

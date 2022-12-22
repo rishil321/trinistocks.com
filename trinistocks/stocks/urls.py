@@ -55,6 +55,7 @@ urlpatterns = [
                       name="stocknewshistory",
                   ),
                   path("about", views.AboutPageView.as_view(), name="about"),
+                  path("privacypolicy", views.PrivacyPolicyPageView.as_view(), name="privacypolicy"),
                   path("login", views.LoginPageView.as_view(), name="login"),
                   path("logout", views.LogoutPageView.as_view(), name="logout"),
                   path("register", views.RegisterPageView.as_view(), name="register"),

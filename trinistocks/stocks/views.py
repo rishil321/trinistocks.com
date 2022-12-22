@@ -1412,10 +1412,18 @@ class StockNewsHistoryView(ExportMixin, tables2.views.SingleTableMixin, FilterVi
 
 class AboutPageView(TemplateView):
     """
-    Set up the data for the technical analysis summary page
+    Show the about page template
     """
 
     template_name = "stocks/base_about.html"
+
+
+class PrivacyPolicyPageView(TemplateView):
+    """
+    Show the privacy policy template
+    """
+
+    template_name = "stocks/base_privacy_policy.html"
 
 
 class LoginPageView(FormView):
