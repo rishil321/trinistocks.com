@@ -1,5 +1,5 @@
 # trinistocks.com
-A collection of Django/Python apps for displaying stats related to T&amp;T
+A Django/Python app for displaying stock exchange stats related to T&amp;T
 
 ## Requirements
 
