@@ -32,7 +32,7 @@ else:
     DEBUG = True
 
 ALLOWED_HOSTS = [
-    "206.217.136.243",
+    "37.221.93.165",
     "127.0.0.1",
     "localhost",
     "trinistocks.com",
