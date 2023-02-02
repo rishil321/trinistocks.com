@@ -10,7 +10,7 @@ services:
       - trinistocks_log_files:/trinistocks/logs
     image: rishi321/trinistocks_background_scripts:latest
     build:
-      context: .
+      context: ./
       dockerfile: ./docker/trinistocks_background_scripts/Dockerfile
     command: >
       sh -c "bash /trinistocks/scripts/copy_environmental_variables.sh && cron && service postfix start && tail -f /var/log/cron.log"
@@ -25,7 +25,7 @@ services:
       - trinistocks_log_files:/trinistocks/logs
     image: rishi321/trinistocks_django_web_app:latest
     build:
-      context: .
+      context: ./
       dockerfile: ./docker/trinistocks_django_web_app/Dockerfile
     command: >
       sh -c "python /trinistocks/manage.py collectstatic --noinput &&

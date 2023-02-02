@@ -9,7 +9,7 @@ RUN apt update
 # install some package dependencies that we need
 RUN DEBIAN_FRONTEND=noninteractive apt install cron unixodbc-dev dos2unix unixodbc postfix libsasl2-modules rsyslog --yes
 # copy the postfix config files
-COPY ../../postfix/ /etc/postfix/
+COPY ../../postfix /etc/postfix/
 # copy the rsyslog config files
 COPY ../../rsyslog.conf /etc/
 # Copy finsys_cron_jobs file to the cron.d directory
