@@ -11,7 +11,7 @@ RUN apt install unixodbc-dev unixodbc  --yes
 # now set up poetry for python package management
 RUN pip install 'poetry==1.1.13'
 # Copy the pipfile and .lock so that we can install our required python packages
-COPY ../../pyproject.toml poetry.lock /trinistocks/
+COPY pyproject.toml poetry.lock /trinistocks/
 # set up the python packages using poetry
 RUN poetry config virtualenvs.create false \
   && poetry install $(test "$ENVIRON" == production && echo "--no-dev") --no-interaction --no-ansi
