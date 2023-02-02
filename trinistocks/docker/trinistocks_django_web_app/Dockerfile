@@ -16,4 +16,4 @@ COPY pyproject.toml poetry.lock /trinistocks/
 RUN poetry config virtualenvs.create false \
   && poetry install $(test "$ENVIRON" == production && echo "--no-dev") --no-interaction --no-ansi
 # Copy project files into container
-COPY ../../.. /trinistocks/
+COPY . /trinistocks/
