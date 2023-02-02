@@ -8,7 +8,7 @@ services:
     restart: always
     volumes:
       - trinistocks_log_files:/trinistocks/logs
-    image: rishi321/trinistocks_background_scripts:1.0.0
+    image: rishi321/trinistocks_background_scripts:latest
     build:
       context: .
       dockerfile: ./docker/trinistocks_background_scripts/Dockerfile
