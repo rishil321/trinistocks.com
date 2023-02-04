@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 
-"""This Python script is used to store credentials that we want to .gitignore"""
-dbusername = "remote_script"
-dbpassword = "scriptsecretpassword"
-dbaddress = "192.168.101.131"
+dbusername = os.getenv("DJANGO_DB_USER")
+dbpassword = os.getenv("DJANGO_DB_PASSWORD")
+dbaddress = os.getenv("DJANGO_DB_HOST")
 dbport = "3306"
 schema = "trinistocksdb"

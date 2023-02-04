@@ -147,3 +147,6 @@ trinistocks/scripts/stocks/updatedb/financial_reports/*
 
 # the .env files
 *.env
+
+#nginx and certbot files
+trinistocks/certbot/conf/*
