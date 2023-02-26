@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: rishiltrinistockscom 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rishiltrinistockscom
+  template:
+    metadata:
+      labels:
+        app: rishiltrinistockscom 
+    spec:
+      containers:
+        - name: rishiltrinistockscom 
+          image: latchmepersadregistry.azurecr.io/rishiltrinistockscom
+          ports:
+          - containerPort: 80
