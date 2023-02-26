@@ -29,6 +29,7 @@ stages:
   - job: Build
     displayName: Build
     pool:
+      name: local
       vmImage: $(vmImageName)
     steps:
     - task: Docker@2
@@ -52,6 +53,7 @@ stages:
   - deployment: Deploy
     displayName: Deploy
     pool:
+      name: local
       vmImage: $(vmImageName)
     environment: 'rishil321trinistockscom-1469.default'
     strategy:
