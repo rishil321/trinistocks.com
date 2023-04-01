@@ -20,15 +20,21 @@ import re
 
 # Imports from the cheese factory
 from logging.config import dictConfig
+from typing_extensions import Self
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+from dotenv import load_dotenv
 from pid import PidFile
 import tempfile
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from sqlalchemy import create_engine, Table, select, MetaData, text, and_
 from sqlalchemy.dialects.mysql import insert
 import sqlalchemy.exc
 import requests
+from requests_html import HTMLSession, HTMLResponse
 import glob
 from pathlib import Path
 from datetime import datetime
@@ -37,6 +43,7 @@ from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
 # Imports from the local filesystem
+load_dotenv()
 from ...database_ops import DatabaseConnect
 from .. import logging_configs
 
@@ -59,26 +66,31 @@ QUARTERLY_STATEMENTS_START_DATETIME = datetime.strptime(
 ANNUAL_STATEMENTS_START_DATE_STRING = "2020-01-01"
 TOMORROW_DATE = datetime.strftime(datetime.now() + relativedelta(days=1), "%Y-%m-%d")
 LOGGERNAME = "fetch_financial_reports.py"
+LOGGER = logging.getLogger(LOGGERNAME)
 OUTSTANDINGREPORTEMAIL = "latchmepersad@gmail.com"
 HTTP_GET_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
 }
 
 
 # Put your global variables here.
 
 # Put your class definitions here. These should use the CapWords convention.
+class FetchFinancialReports:
+    def __init__(self: Self):
+        self.driver = webdriver.Chrome(executable_path="/usr/bin/chromedriver", options=set_chrome_options())
 
-# Put your function definitions here. These should be lowercase, separated by underscores.
+    def __del__(self):
+        self.driver.close()
 
 
+# Put your function definitions here. These should be lowercase, separated by underscores
 def fetch_annual_reports():
     """Fetch the audited annual reports of each symbol from
     https://www.stockex.co.tt/news/xxxxxxx
     """
     # for some reason, ttse is using symbol ids instead of actual symbols here,
     # so we need to set up a list of these ids
-    logger = logging.getLogger(LOGGERNAME)
     listed_symbol_data = []
     with DatabaseConnect() as db_obj:
         listed_equities_table = Table(
@@ -99,34 +111,29 @@ def fetch_annual_reports():
             symbol_data["symbol"]
         )
         if reports_dir.exists() and reports_dir.is_dir():
-            logger.debug(
+            LOGGER.debug(
                 f"Directory for {symbol_data['symbol']}'s annual reports found at {reports_dir}"
             )
         else:
-            logger.debug(
+            LOGGER.debug(
                 f"Directory for {symbol_data['symbol']}'s annual reports not found at {reports_dir}. Trying to create."
             )
             reports_dir.mkdir()
             if not reports_dir.exists():
                 raise RuntimeError(f"Could not create directory at {reports_dir}")
         # now load the page with the reports
-        logger.info(
+        LOGGER.info(
             f"Now trying to fetch annual reports for {symbol_data['symbol']} in PID {os.getpid()}"
         )
         annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
-        logger.debug(f"Navigating to {annual_reports_url}")
-        annual_reports_page = requests.get(
-            annual_reports_url,
-            timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-            headers=HTTP_GET_HEADERS,
-        )
-        if annual_reports_page.status_code != 200:
-            raise requests.exceptions.HTTPError(
-                "Could not load URL. " + annual_reports_url
-            )
-        logger.debug("Successfully loaded webpage.")
+        LOGGER.debug(f"Navigating to {annual_reports_url}")
+        driver = webdriver.Chrome(executable_path="/usr/bin/chromedriver", options=set_chrome_options())
+        driver.get(annual_reports_url)
+        html = driver.page_source
+        LOGGER.debug("Successfully loaded webpage.")
+        driver.close()
         # and search the page for the links to all annual reports
-        annual_reports_page_soup = BeautifulSoup(annual_reports_page.text, "lxml")
+        annual_reports_page_soup: BeautifulSoup = BeautifulSoup(html, "lxml")
         news_div = annual_reports_page_soup.find(id="news")
         report_page_links = []
         for link in news_div.find_all("a", href=True):
@@ -144,7 +151,7 @@ def fetch_annual_reports():
                     raise requests.exceptions.HTTPError(
                         "Could not load URL. " + annual_reports_url
                     )
-                logger.debug("Successfully loaded webpage.")
+                LOGGER.debug("Successfully loaded webpage.")
                 # and search the page for the link to the actual pdf report
                 report_soup = BeautifulSoup(report_page.text, "lxml")
                 a_links = report_soup.find_all("a")
@@ -178,7 +185,7 @@ def fetch_annual_reports():
                     {"pdf_link": pdf_link, "release_date": pdf_release_date}
                 )
             except (requests.exceptions.HTTPError, RuntimeError) as exc:
-                logger.warning(
+                LOGGER.warning(
                     f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
                     exc_info=exc,
                 )
@@ -189,7 +196,7 @@ def fetch_annual_reports():
             # check if file was already downloaded
             full_local_path = reports_dir.joinpath(local_filename)
             if full_local_path.is_file():
-                logger.debug(
+                LOGGER.debug(
                     f"PDF file {local_filename} was already downloaded. Skipping."
                 )
             else:
@@ -199,17 +206,35 @@ def fetch_annual_reports():
                     pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
                 )
                 # save contents of response (pdf report) to the local file
-                logger.debug(f"Now downloading file {local_filename}. Please wait.")
-                with open(full_local_path, "wb") as local_pdf_file:
+                LOGGER.debug(f"Now downloading file {local_filename}. Please wait.")
+                with open(full_local_path, "wb", encoding="utf-8") as local_pdf_file:
                     for chunk in http_response_obj.iter_content(chunk_size=1024):
                         # save chunks of pdf to local file
                         if chunk:
                             local_pdf_file.write(chunk)
-                logger.debug("Finished download file.")
-        logger.info(
+                LOGGER.debug("Finished download file.")
+        LOGGER.info(
             f"Finished downloading all annual reports for {symbol_data['symbol']} in PID {os.getpid()}"
         )
     return 0
+
+
+def set_chrome_options() -> Options:
+    """Sets chrome options for Selenium.
+
+    Chrome options for headless browser is enabled.
+
+    """
+    option = Options()
+    option.add_argument("--disable-gpu")
+    option.add_argument("--disable-extensions")
+    option.add_argument("--disable-infobars")
+    option.add_argument('--disable-blink-features=AutomationControlled')  ## to avoid getting detected
+    option.add_argument("--disable-notifications")
+    option.add_argument('--headless')
+    option.add_argument('--no-sandbox')
+    option.add_argument('--disable-dev-shm-usage')
+    return option
 
 
 def fetch_audited_statements():

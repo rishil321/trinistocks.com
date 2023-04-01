@@ -5,13 +5,13 @@ LOGGING_CONFIG = {
     'loggers': {
         '': {  # root logger
             'level': 'NOTSET',
-            'handlers': ['debug_rotating_file_handler', 'debug_console_handler', 'info_rotating_file_handler',
+            'handlers': ['debug_rotating_file_handler', 'console_handler', 'info_rotating_file_handler',
                          'error_file_handler',
                          'critical_mail_handler'],
         },
     },
     'handlers': {
-        'debug_console_handler': {
+        'console_handler': {
             'level': 'DEBUG',
             'formatter': 'info',
             'class': 'logging.StreamHandler',

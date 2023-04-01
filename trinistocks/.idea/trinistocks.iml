@@ -14,7 +14,7 @@
   </component>
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Remote Python 3.10.9 Docker Compose (trinistocks_django_web_app)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Remote Python 3.10.10 Docker Compose (trinistocks_background_scripts)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

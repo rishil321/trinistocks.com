@@ -3,7 +3,7 @@ version: '3.8'
 services:
   trinistocks_background_scripts:
     env_file:
-      - ./trinistocks/.env
+      - .env
     container_name: trinistocks_background_scripts
     restart: always
     volumes:
@@ -16,7 +16,7 @@ services:
       sh -c "bash /trinistocks/scripts/copy_environmental_variables.sh && cron && service postfix start && tail -f /var/log/cron.log"
   trinistocks_django_web_app:
     env_file:
-      - ./trinistocks/.env
+      - .env
     container_name: trinistocks_django_web_app
     restart: always
     volumes:
