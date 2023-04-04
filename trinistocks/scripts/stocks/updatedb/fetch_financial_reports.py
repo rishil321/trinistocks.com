@@ -31,7 +31,7 @@ from dotenv import load_dotenv
 from pid.decorator import pidfile
 from sqlalchemy import Table, select, MetaData
 
-from trinistocks.scripts.stocks.scraping_engine import ScrapingEngine
+from scripts.stocks.scraping_engine import ScrapingEngine
 
 # Imports from the local filesystem
 load_dotenv()
