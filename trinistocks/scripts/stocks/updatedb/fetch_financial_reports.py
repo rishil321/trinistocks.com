@@ -519,17 +519,9 @@ class FinancialReportsScraper:
             reports_dir: Path = current_dir.joinpath(REPORTS_DIRECTORY).joinpath(
                 symbol_data["symbol"]
             )
-            if reports_dir.exists() and reports_dir.is_dir():
-                LOGGER.debug(
-                    f"Directory for {symbol_data['symbol']}'s annual reports found at {reports_dir}"
-                )
-            else:
-                LOGGER.debug(
-                    f"Directory for {symbol_data['symbol']}'s annual reports not found at {reports_dir}. Trying to create."
-                )
-                reports_dir.mkdir()
-                if not reports_dir.exists():
-                    raise RuntimeError(f"Could not create directory at {reports_dir}")
+            reports_dir.mkdir(exist_ok=True, parents=True)
+            if not reports_dir.exists():
+                raise RuntimeError(f"Could not create directory at {reports_dir}")
             report_directories_for_all_symbols[symbol_data["symbol"]] = reports_dir
         return report_directories_for_all_symbols
 
