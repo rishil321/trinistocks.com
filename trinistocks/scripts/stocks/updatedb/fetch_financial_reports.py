@@ -519,7 +519,7 @@ class FinancialReportsScraper:
             reports_dir: Path = current_dir.joinpath(REPORTS_DIRECTORY).joinpath(
                 symbol_data["symbol"]
             )
-            reports_dir.mkdir(exist_ok=True)
+            reports_dir.mkdir(exist_ok=True, parents=True)
             if not reports_dir.exists():
                 raise RuntimeError(f"Could not create directory at {reports_dir}")
             report_directories_for_all_symbols[symbol_data["symbol"]] = reports_dir
