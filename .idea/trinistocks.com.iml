@@ -13,7 +13,7 @@
     </facet>
   </component>
   <component name="NewModuleRootManager">
-    <content url="file://$MODULE_DIR$" />
+    <content url="file://$MODULE_DIR$/trinistocks" />
     <orderEntry type="jdk" jdkName="Remote Python 3.10.10 Docker Compose (trinistocks_background_scripts)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
@@ -23,10 +23,5 @@
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Jinja2" />
-    <option name="TEMPLATE_FOLDERS">
-      <list>
-        <option value="$MODULE_DIR$/trinistocks.com/trinistocks/stocks/templates" />
-      </list>
-    </option>
   </component>
 </module>
