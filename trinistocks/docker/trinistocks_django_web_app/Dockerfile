@@ -9,7 +9,7 @@ RUN apt update
 # install some package dependencies that we need
 RUN apt install unixodbc-dev unixodbc  --yes
 # now set up poetry for python package management
-RUN pip install 'poetry==1.1.13'
+RUN pip install poetry
 # Copy the pipfile and .lock so that we can install our required python packages
 COPY pyproject.toml poetry.lock /trinistocks/
 # set up the python packages using poetry

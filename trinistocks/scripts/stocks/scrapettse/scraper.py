@@ -1198,7 +1198,7 @@ def update_daily_trades():
                 class_="elementor-text-editor elementor-clearfix")
             now_datetime: datetime = datetime.strptime(elementor_text_editor_blocks[1].text.strip(),
                                                        '%d %b %Y %H:%M %p')
-            market_status:str = elementor_text_editor_blocks[0].text.strip().lower()
+            market_status: str = elementor_text_editor_blocks[0].text.strip().lower()
             if not market_status == 'open':
                 raise RuntimeError("Market is not open right now.")
             marquee = page_soup.find("marquee", id=["tickerTape"])
@@ -1725,21 +1725,8 @@ def scrape_newsroom_data(start_date, end_date):
 def main(args):
     """The main steps in coordinating the scraping"""
     try:
-        # # Set up logging for this module
-        # q_listener, q, logger = custom_logging.setup_logging(
-        #     logdirparent=str(os.path.dirname(os.path.realpath(__file__))),
-        #     loggername=LOGGERNAME,
-        #     stdoutlogginglevel=logging.DEBUG,
-        #     smtploggingenabled=True,
-        #     smtplogginglevel=logging.ERROR,
-        #     smtpmailhost="localhost",
-        #     smtpfromaddr="server1@trinistats.com",
-        #     smtptoaddr=["latchmepersad@gmail.com"],
-        #     smtpsubj="Automated report from Python script: "
-        #              + os.path.basename(__file__),
-        # )
         # Set up a pidfile to ensure that only one instance of this script runs at a time
-        with PidFile(piddir=tempfile.gettempdir()):
+        with PidFile('scraper_pid'):
             # run all functions within a multiprocessing pool
             with multiprocessing.Pool(os.cpu_count()) as multipool:
                 logger.debug("Now starting TTSE scraper.")
@@ -1863,7 +1850,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c",
         "--catchup",
-        help="If we missed any data, run this to scrape missed days",
+        help="If we missed any data, run this to scrape missed days (up to 1 month ago)",
         action="store_true",
     )
     args = parser.parse_args()
