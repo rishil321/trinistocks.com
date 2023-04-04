@@ -8,39 +8,30 @@ Description of this module/script goes here
 :raises Exception if any issues are encountered
 """
 
+import argparse
 # Put all your imports here, one per line.
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
-import sys
 import logging
-import os
 import multiprocessing
-import argparse
-import re
-
+import os
+from datetime import datetime
+from email.mime.text import MIMEText
 # Imports from the cheese factory
 from logging.config import dictConfig
+from pathlib import Path
+from subprocess import Popen, PIPE
+from typing import List
 from typing_extensions import Self
 
-from bs4 import BeautifulSoup
-from bs4.element import Tag
-from dotenv import load_dotenv
-from pid import PidFile
-import tempfile
-
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from sqlalchemy import create_engine, Table, select, MetaData, text, and_
-from sqlalchemy.dialects.mysql import insert
-import sqlalchemy.exc
 import requests
-from requests_html import HTMLSession, HTMLResponse
-import glob
-from pathlib import Path
-from datetime import datetime
+from bs4 import BeautifulSoup
 from dateutils import relativedelta
-from email.mime.text import MIMEText
-from subprocess import Popen, PIPE
+from dotenv import load_dotenv
+from pid.decorator import pidfile
+from sqlalchemy import Table, select, MetaData
+
+from trinistocks.scripts.stocks.scraping_engine import ScrapingEngine
 
 # Imports from the local filesystem
 load_dotenv()
@@ -76,71 +67,394 @@ HTTP_GET_HEADERS = {
 # Put your global variables here.
 
 # Put your class definitions here. These should use the CapWords convention.
-class FetchFinancialReports:
-    def __init__(self: Self):
-        self.driver = webdriver.Chrome(executable_path="/usr/bin/chromedriver", options=set_chrome_options())
+class FinancialReportsScraper:
+    def __init__(self):
+        self.listed_symbol_data = fetch_listed_equities_data_from_db()
+        self.symbol_report_directories = self.build_report_directories_for_each_symbol()
 
     def __del__(self):
-        self.driver.close()
+        pass
 
+    def alert_me_new_quarterly_statements(self: Self):
+        """
+        Send an email to latchmepersad@gmail.com if any new annual/audited/querterly reports are detected
+        """
+        with DatabaseConnect() as db_connect:
+            scraping_engine: ScrapingEngine = ScrapingEngine()
+            all_new_quarterly_statements = set()
+            for symbol_data in self.listed_symbol_data:
+                logger.info(
+                    f"Now checking outstanding quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}"
+                )
+                quarterly_statements_page_soup = self._scrape_quarterly_news_data_for_symbol(scraping_engine,
+                                                                                             symbol_data)
+                report_page_links = self._build_links_to_reports_for_quarterly_statements(
+                    quarterly_statements_page_soup)
+                pdf_reports = self._build_direct_links_to_pdfs_for_quarterly_statements(report_page_links,
+                                                                                        scraping_engine)
+                # now create the names for all available reports
+                symbol_available_quarterly_statements = self._build_list_of_all_available_quarterly_statements(
+                    pdf_reports, symbol_data)
+                # now get the names of all processed reports
+                symbol_processed_quarterly_statements = self._build_list_of_all_quarterly_statements_already_processed(
+                    db_connect, symbol_data)
+                # now compare both sets and see if any new reports were found
+                self._calculate_new_available_reports(all_new_quarterly_statements,
+                                                      symbol_available_quarterly_statements,
+                                                      symbol_processed_quarterly_statements)
+                logger.info(
+                    f"Finished checking outstanding quarterly reports for {symbol_data['symbol']} in PID {os.getpid()}"
+                )
+            # endregion
+            return all_new_quarterly_statements
 
-# Put your function definitions here. These should be lowercase, separated by underscores
-def fetch_annual_reports():
-    """Fetch the audited annual reports of each symbol from
-    https://www.stockex.co.tt/news/xxxxxxx
-    """
-    # for some reason, ttse is using symbol ids instead of actual symbols here,
-    # so we need to set up a list of these ids
-    listed_symbol_data = []
-    with DatabaseConnect() as db_obj:
-        listed_equities_table = Table(
-            "listed_equities", MetaData(), autoload=True, autoload_with=db_obj.dbengine
+    def _build_list_of_all_quarterly_statements_already_processed(self, db_connect, symbol_data):
+        raw_quarterly_reports_table = Table(
+            "raw_quarterly_data",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connect.dbengine,
         )
         selectstmt = select(
-            [listed_equities_table.c.symbol, listed_equities_table.c.symbol_id]
-        )
-        result = db_obj.dbcon.execute(selectstmt)
-        for row in result:
-            if row[0] not in IGNORE_SYMBOLS:
-                listed_symbol_data.append({"symbol": row[0], "symbol_id": row[1]})
-    # now go through the list of symbol ids and fetch the required reports for each
-    for symbol_data in listed_symbol_data:
-        # ensure the required directories are created
-        current_dir = Path(os.path.realpath(__file__)).parent
-        reports_dir = current_dir.joinpath(REPORTS_DIRECTORY).joinpath(
-            symbol_data["symbol"]
-        )
-        if reports_dir.exists() and reports_dir.is_dir():
-            LOGGER.debug(
-                f"Directory for {symbol_data['symbol']}'s annual reports found at {reports_dir}"
-            )
-        else:
-            LOGGER.debug(
-                f"Directory for {symbol_data['symbol']}'s annual reports not found at {reports_dir}. Trying to create."
-            )
-            reports_dir.mkdir()
-            if not reports_dir.exists():
-                raise RuntimeError(f"Could not create directory at {reports_dir}")
-        # now load the page with the reports
-        LOGGER.info(
-            f"Now trying to fetch annual reports for {symbol_data['symbol']} in PID {os.getpid()}"
-        )
-        annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
-        LOGGER.debug(f"Navigating to {annual_reports_url}")
-        driver = webdriver.Chrome(executable_path="/usr/bin/chromedriver", options=set_chrome_options())
-        driver.get(annual_reports_url)
-        html = driver.page_source
-        LOGGER.debug("Successfully loaded webpage.")
-        driver.close()
+            [raw_quarterly_reports_table.c.reports_and_statements_referenced]
+        ).where(raw_quarterly_reports_table.c.symbol == symbol_data["symbol"])
+        results = db_connect.dbcon.execute(selectstmt)
+        symbol_processed_quarterly_statements = set()
+        for result in results:
+            if result[0]:
+                symbol_processed_quarterly_statements.add(result[0])
+        return symbol_processed_quarterly_statements
+
+    def _build_list_of_all_available_quarterly_statements(self, pdf_reports, symbol_data):
+        symbol_available_quarterly_statements = set()
+        for pdf in pdf_reports:
+            local_filename = f"{symbol_data['symbol']}_quarterly_statement_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
+            symbol_available_quarterly_statements.add(local_filename)
+        return symbol_available_quarterly_statements
+
+    def _build_links_to_reports_for_quarterly_statements(self, quarterly_statements_page_soup):
+        news_div = quarterly_statements_page_soup.find(id="news")
+        report_page_links = []
+        for link in news_div.find_all("a", href=True):
+            if link.attrs["href"] and (
+                    "unaudited" in link.attrs["href"].lower()
+                    or "financial" in link.attrs["href"].lower()
+            ):
+                report_page_links.append(link.attrs["href"])
+        return report_page_links
+
+    def _scrape_quarterly_news_data_for_symbol(self, scraping_engine, symbol_data):
+        quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}"
+        quarterly_statements_page = scraping_engine.get_url_and_return_html(url=quarterly_statements_url)
         # and search the page for the links to all annual reports
-        annual_reports_page_soup: BeautifulSoup = BeautifulSoup(html, "lxml")
+        quarterly_statements_page_soup = BeautifulSoup(
+            quarterly_statements_page, "lxml"
+        )
+        return quarterly_statements_page_soup
+
+    def alert_me_new_audited_statements(self: Self):
+        """
+        Send an email to latchmepersad@gmail.com if any new annual/audited/querterly reports are detected
+        """
+        with DatabaseConnect() as db_connect:
+            scraping_engine: ScrapingEngine = ScrapingEngine()
+            all_new_audited_statements = set()
+            for symbol_data in self.listed_symbol_data:
+                annual_statements_page_soup = self._scrape_audited_statement_news_data(scraping_engine, symbol_data)
+                report_page_links = self._get_news_links_from_audited_statements_news_div(annual_statements_page_soup)
+                pdf_reports = self._get_direct_pdf_links_for_audited_statements(report_page_links, scraping_engine)
+                # now create the names for all available reports
+                symbol_available_audited_statements = self._create_list_of_available_audited_statements(pdf_reports,
+                                                                                                        symbol_data)
+                symbol_processed_audited_statements = self._create_list_of_processed_audited_statements(db_connect,
+                                                                                                        symbol_data)
+                # now compare both sets and see if any new reports were found
+                self._calculate_new_available_reports(all_new_audited_statements, symbol_available_audited_statements,
+                                                      symbol_processed_audited_statements)
+                logger.info(
+                    f"Finished checking outstanding audited statements for {symbol_data['symbol']} in PID {os.getpid()}"
+                )
+            return all_new_audited_statements
+
+    def _calculate_new_available_reports(self, all_new_available_reports: set, symbol_available_reports: set,
+                                         symbol_processed_reports: set):
+        for available_report in symbol_available_reports:
+            available_report_processed_already = False
+            for processed_report in symbol_processed_reports:
+                if available_report in processed_report:
+                    available_report_processed_already = True
+            if not available_report_processed_already:
+                all_new_available_reports.add(available_report)
+
+    def _create_list_of_processed_audited_statements(self, db_connect, symbol_data):
+        raw_annual_reports_table = Table(
+            "raw_annual_data",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connect.dbengine,
+        )
+        # now get the names of all processed reports
+        selectstmt = select(
+            [raw_annual_reports_table.c.reports_and_statements_referenced]
+        ).where(raw_annual_reports_table.c.symbol == symbol_data["symbol"])
+        results = db_connect.dbcon.execute(selectstmt)
+        symbol_processed_audited_statements = set()
+        for result in results:
+            if result[0]:
+                symbol_processed_audited_statements.add(result[0])
+        return symbol_processed_audited_statements
+
+    def _create_list_of_available_audited_statements(self, pdf_reports, symbol_data):
+        symbol_available_audited_statements = set()
+        for pdf in pdf_reports:
+            local_filename = f"{symbol_data['symbol']}_audited_statement_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
+            symbol_available_audited_statements.add(local_filename)
+        return symbol_available_audited_statements
+
+    def _get_direct_pdf_links_for_audited_statements(self, report_page_links, scraping_engine):
+        pdf_reports = []
+        for link in report_page_links:
+            try:
+                report_page = scraping_engine.get_url_and_return_html(url=link)
+                # and search the page for the link to the actual pdf report
+                report_soup = BeautifulSoup(report_page, "lxml")
+                a_links = report_soup.find_all("a")
+                pdf_link = None
+                for a_link in a_links:
+                    if not pdf_link and "click here to download" in a_link.text:
+                        if a_link.attrs["href"]:
+                            pdf_link = a_link.attrs["href"].replace(" ", "")
+                if not pdf_link:
+                    raise RuntimeError(
+                        f"Could not find a link for the pdf in {link}"
+                    )
+                # and get the release date for this report
+                pdf_release_date = None
+                h2_texts = report_soup.find_all(
+                    "h2",
+                    {"class": "elementor-heading-title elementor-size-default"},
+                )
+                for text in h2_texts:
+                    try:
+                        # check if any of the texts can be parsed to a dates
+                        if not pdf_release_date:
+                            pdf_release_date = datetime.strptime(
+                                text.contents[0], "%d/%m/%Y"
+                            )
+                    except (ValueError, TypeError):
+                        pass
+                if not pdf_release_date:
+                    raise RuntimeError(
+                        f"Could not find a release date for this report: {link}"
+                    )
+                # now append our data
+                pdf_reports.append(
+                    {"pdf_link": pdf_link, "release_date": pdf_release_date}
+                )
+            except (requests.exceptions.HTTPError, RuntimeError) as exc:
+                logger.warning(
+                    f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
+                    exc_info=exc,
+                )
+        return pdf_reports
+
+    def _get_news_links_from_audited_statements_news_div(self, annual_statements_page_soup):
+        news_div = annual_statements_page_soup.find(id="news")
+        report_page_links = []
+        for link in news_div.find_all("a", href=True):
+            if link.attrs["href"] and "audited" in link.attrs["href"].lower():
+                report_page_links.append(link.attrs["href"])
+        return report_page_links
+
+    def _scrape_audited_statement_news_data(self, scraping_engine, symbol_data):
+        logger.info(
+            f"Now trying to fetch annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}"
+        )
+        annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}"
+        annual_statements_page = scraping_engine.get_url_and_return_html(url=annual_statements_url)
+        # and search the page for the links to all annual reports
+        annual_statements_page_soup = BeautifulSoup(
+            annual_statements_page, "lxml"
+        )
+        return annual_statements_page_soup
+
+    def alert_me_new_annual_reports(self: Self):
+        """
+        Send an email to latchmepersad@gmail.com if any new annual reports are detected
+        """
+        all_new_annual_reports = set()
+        with DatabaseConnect() as db_connect:
+            # go to the url for each symbol that we have listed, and check which new annual reports are available
+            scraping_engine: ScrapingEngine = ScrapingEngine()
+            for symbol_data in self.listed_symbol_data:
+                annual_reports_page_soup = self._scrape_annual_reports_page_and_return_soup(
+                    scraping_engine, symbol_data)
+                report_page_links = self._build_links_to_annual_reports_from_news_page(annual_reports_page_soup)
+                # now navigate to each link and get the actual links of the pdf files
+                pdf_reports = self._create_list_of_direct_links_to_annual_reports(report_page_links, scraping_engine)
+                # now create the names for all available reports
+                symbol_available_annual_reports = self._create_list_of_all_available_annual_reports(pdf_reports,
+                                                                                                    symbol_data)
+                # now get the names of all processed reports
+                symbol_processed_annual_reports = self._create_list_of_all_processed_annual_reports(db_connect,
+                                                                                                    symbol_data)
+                # now compare both sets and see if any new reports were found
+                self._check_for_new_available_annual_reports(all_new_annual_reports, symbol_available_annual_reports,
+                                                             symbol_data, symbol_processed_annual_reports)
+            return all_new_annual_reports
+
+    def _check_for_new_available_annual_reports(self, all_new_annual_reports, symbol_available_annual_reports,
+                                                symbol_data, symbol_processed_annual_reports):
+        logger.debug(
+            "Now comparing downloaded and processed reports for all symbols."
+        )
+        self._calculate_new_available_reports(all_new_annual_reports, symbol_available_annual_reports,
+                                              symbol_processed_annual_reports)
+        logger.info(
+            f"Finished checks for {symbol_data['symbol']} in PID {os.getpid()}"
+        )
+
+    def _create_list_of_all_processed_annual_reports(self, db_connect, symbol_data):
+        symbol_processed_annual_reports = set()
+        raw_annual_reports_table = Table(
+            "raw_annual_data",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connect.dbengine,
+        )
+        selectstmt = select(
+            [raw_annual_reports_table.c.reports_and_statements_referenced]
+        ).where(raw_annual_reports_table.c.symbol == symbol_data["symbol"])
+        results = db_connect.dbcon.execute(selectstmt)
+        for result in results:
+            if result[0]:
+                symbol_processed_annual_reports.add(result[0])
+        return symbol_processed_annual_reports
+
+    def _create_list_of_all_available_annual_reports(self, pdf_reports, symbol_data):
+        symbol_available_annual_reports = set()
+        for pdf in pdf_reports:
+            local_filename = f"{symbol_data['symbol']}_annual_report_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
+            symbol_available_annual_reports.add(local_filename)
+        return symbol_available_annual_reports
+
+    def _create_list_of_direct_links_to_annual_reports(self, report_page_links, scraping_engine):
+        pdf_reports = []
+        for link in report_page_links:
+            try:
+                report_page = scraping_engine.get_url_and_return_html(url=link)
+                # and search the page for the link to the actual pdf report
+                report_soup = BeautifulSoup(report_page, "lxml")
+                a_links = report_soup.find_all("a")
+                pdf_link = None
+                for a_link in a_links:
+                    if not pdf_link and "click here to download" in a_link.text:
+                        if a_link.attrs["href"]:
+                            pdf_link = a_link.attrs["href"].replace(" ", "")
+                if not pdf_link:
+                    raise RuntimeError(
+                        f"Could not find a link for the pdf in {link}"
+                    )
+                # and get the release date for this report
+                pdf_release_date = None
+                h2_texts = report_soup.find_all(
+                    "h2",
+                    {"class": "elementor-heading-title elementor-size-default"},
+                )
+                for text in h2_texts:
+                    try:
+                        # check if any of the texts can be parsed to a dates
+                        if not pdf_release_date:
+                            pdf_release_date = datetime.strptime(
+                                text.contents[0], "%d/%m/%Y"
+                            )
+                    except (ValueError, TypeError):
+                        pass
+                if not pdf_release_date:
+                    raise RuntimeError(
+                        f"Could not find a release date for this report: {link}"
+                    )
+                # now append our data
+                pdf_reports.append(
+                    {"pdf_link": pdf_link, "release_date": pdf_release_date}
+                )
+            except (requests.exceptions.HTTPError, RuntimeError) as exc:
+                logger.warning(
+                    f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
+                    exc_info=exc,
+                )
+        return pdf_reports
+
+    def _build_links_to_annual_reports_from_news_page(self, annual_reports_page_soup):
         news_div = annual_reports_page_soup.find(id="news")
         report_page_links = []
         for link in news_div.find_all("a", href=True):
             if link.attrs["href"] and "annual-report" in link.attrs["href"].lower():
                 report_page_links.append(link.attrs["href"])
-        # now navigate to each link
-        # and get the actual links of the pdf files
+        return report_page_links
+
+    def _scrape_annual_reports_page_and_return_soup(self, scraping_engine, symbol_data) -> BeautifulSoup:
+        annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}"
+        logger.info(
+            f"Now checking latest available annual reports for {symbol_data['symbol']} in PID {os.getpid()}"
+        )
+        annual_reports_page = scraping_engine.get_url_and_return_html(url=annual_reports_url)
+        # and search the page for the links to all annual reports
+        annual_reports_page_soup = BeautifulSoup(annual_reports_page, "lxml")
+        return annual_reports_page_soup
+
+    def fetch_annual_reports(self: Self) -> int:
+        """Fetch the audited annual reports of each symbol from
+        https://www.stockex.co.tt/news/xxxxxxx
+        """
+        scraping_engine: ScrapingEngine = ScrapingEngine()
+        # now go through the list of symbol ids and fetch the required reports for each
+        for symbol_data in self.listed_symbol_data:
+            # now load the page with the reports
+            LOGGER.info(
+                f"Now trying to fetch annual reports for {symbol_data['symbol']} in PID {os.getpid()}"
+            )
+            annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
+            html: str = scraping_engine.get_url_and_return_html(url=annual_reports_url)
+            # and search the page for the links to all annual reports
+            report_page_links = self.build_list_of_annual_report_news_links_for_symbol(html)
+            # now navigate to each link
+            # and get the actual links of the pdf files
+            all_pdf_reports_for_symbol = self.build_list_of_direct_pdf_news_report_for_each_symbol(report_page_links)
+            # now actually download the pdf files
+            self.download_all_pdf_annual_reports_for_symbol(all_pdf_reports_for_symbol, symbol_data)
+            LOGGER.info(
+                f"Finished downloading all annual reports for {symbol_data['symbol']} in PID {os.getpid()}"
+            )
+        return 0
+
+    def download_all_pdf_annual_reports_for_symbol(self, all_pdf_reports_for_symbol, symbol_data):
+        for pdf in all_pdf_reports_for_symbol:
+            # create the name to use for this downloaded file
+            local_filename = f"{symbol_data['symbol']}_annual_report_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
+            # check if file was already downloaded
+            symbol_report_directory: Path = self.symbol_report_directories[symbol_data['symbol']]
+            full_local_path = symbol_report_directory.joinpath(local_filename)
+            if full_local_path.is_file():
+                LOGGER.debug(
+                    f"PDF file {local_filename} was already downloaded. Skipping."
+                )
+            else:
+                # else download this new pdf report
+                # get the http response
+                http_response_obj = requests.get(
+                    pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
+                )
+                # save contents of response (pdf report) to the local file
+                LOGGER.debug(f"Now downloading file {local_filename}. Please wait.")
+                with open(full_local_path, "wb", encoding="utf-8") as local_pdf_file:
+                    for chunk in http_response_obj.iter_content(chunk_size=1024):
+                        # save chunks of pdf to local file
+                        if chunk:
+                            local_pdf_file.write(chunk)
+                LOGGER.debug("Finished download file.")
+
+    def build_list_of_direct_pdf_news_report_for_each_symbol(self, report_page_links):
         pdf_reports = []
         for link in report_page_links:
             try:
@@ -149,7 +463,7 @@ def fetch_annual_reports():
                 )
                 if report_page.status_code != 200:
                     raise requests.exceptions.HTTPError(
-                        "Could not load URL. " + annual_reports_url
+                        "Could not load URL. " + link
                     )
                 LOGGER.debug("Successfully loaded webpage.")
                 # and search the page for the link to the actual pdf report
@@ -189,14 +503,96 @@ def fetch_annual_reports():
                     f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
                     exc_info=exc,
                 )
-        # now actually download the pdf files
+        return pdf_reports
+
+    def build_list_of_annual_report_news_links_for_symbol(self, html):
+        page_soup: BeautifulSoup = BeautifulSoup(html, "lxml")
+        report_page_links = self._build_links_to_annual_reports_from_news_page(page_soup)
+        return report_page_links
+
+    def build_report_directories_for_each_symbol(self: Self) -> dict[str, Path]:
+        # ensure the required directories are created for each symbol listed
+        # and return a dictonary of the report directories in the format symbol:report_directory
+        report_directories_for_all_symbols: dict = {}
+        for symbol_data in self.listed_symbol_data:
+            current_dir = Path(os.path.realpath(__file__)).parent
+            reports_dir: Path = current_dir.joinpath(REPORTS_DIRECTORY).joinpath(
+                symbol_data["symbol"]
+            )
+            if reports_dir.exists() and reports_dir.is_dir():
+                LOGGER.debug(
+                    f"Directory for {symbol_data['symbol']}'s annual reports found at {reports_dir}"
+                )
+            else:
+                LOGGER.debug(
+                    f"Directory for {symbol_data['symbol']}'s annual reports not found at {reports_dir}. Trying to create."
+                )
+                reports_dir.mkdir()
+                if not reports_dir.exists():
+                    raise RuntimeError(f"Could not create directory at {reports_dir}")
+            report_directories_for_all_symbols[symbol_data["symbol"]] = reports_dir
+        return report_directories_for_all_symbols
+
+    def fetch_audited_statements(self: Self):
+        """Fetch the audited annual statements of each symbol from
+        https://www.stockex.co.tt/news/xxxxxxx
+        """
+        scraping_engine: ScrapingEngine = ScrapingEngine()
+        # now go through the list of symbol ids and fetch the required reports for each
+        for symbol_data in self.listed_symbol_data:
+            # now load the page with the reports
+            logger.info(
+                f"Now trying to fetch annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}"
+            )
+            annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
+            annual_statements_page: str = scraping_engine.get_url_and_return_html(url=annual_statements_url)
+            # and search the page for the links to all annual reports
+            report_page_links = self.build_list_of_audited_statements_news_pages_for_symbol(annual_statements_page)
+            # now navigate to each link
+            # and get the actual links of the pdf files
+            pdf_reports = self.build_list_of_direct_pdf_reports_for_audited_statements(annual_statements_url,
+                                                                                       report_page_links)
+            self.download_all_pdf_audited_statements_for_symbol(pdf_reports, symbol_data)
+            logger.info(
+                f"Finished downloading all annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}"
+            )
+        return 0
+
+    def fetch_quarterly_statements(self: Self):
+        """Fetch the unaudited quarterly statements of each symbol from
+        https://www.stockex.co.tt/news/xxxxxxx
+        """
+        # now go through the list of symbol ids and fetch the required reports for each
+        scraping_engine: ScrapingEngine = ScrapingEngine()
+        for symbol_data in self.listed_symbol_data:
+            # now load the page with the reports
+            logger.info(
+                f"Now trying to fetch quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}"
+            )
+            quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}&date={QUARTERLY_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
+            quarterly_statements_page: str = scraping_engine.get_url_and_return_html(url=quarterly_statements_url)
+            # and search the page for the links to all annual reports
+            quarterly_statements_page_soup = BeautifulSoup(
+                quarterly_statements_page, "lxml"
+            )
+            report_page_links = self._build_list_of_quarterly_statements_links_from_news_page(
+                quarterly_statements_page_soup)
+            # now navigate to each link
+            # and get the actual links of the pdf files
+            pdf_reports = self._build_direct_links_to_pdfs_for_quarterly_statements(report_page_links, scraping_engine)
+            # now actually download the pdf files
+            self._download_pdf_reports_for_quarterly_statements(pdf_reports, symbol_data)
+        return 0
+
+    def _download_pdf_reports_for_quarterly_statements(self, pdf_reports, symbol_data):
         for pdf in pdf_reports:
             # create the name to use for this downloaded file
-            local_filename = f"{symbol_data['symbol']}_annual_report_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
+            local_filename = f"{symbol_data['symbol']}_quarterly_statement_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
             # check if file was already downloaded
-            full_local_path = reports_dir.joinpath(local_filename)
+            symbol_report_directory: Path = self.symbol_report_directories[symbol_data['symbol']]
+            full_local_path = symbol_report_directory.joinpath(local_filename)
             if full_local_path.is_file():
-                LOGGER.debug(
+                logger.debug(
                     f"PDF file {local_filename} was already downloaded. Skipping."
                 )
             else:
@@ -206,99 +602,99 @@ def fetch_annual_reports():
                     pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
                 )
                 # save contents of response (pdf report) to the local file
-                LOGGER.debug(f"Now downloading file {local_filename}. Please wait.")
-                with open(full_local_path, "wb", encoding="utf-8") as local_pdf_file:
+                logger.debug(f"Now downloading file {local_filename}. Please wait.")
+                with open(full_local_path, "wb") as local_pdf_file:
                     for chunk in http_response_obj.iter_content(chunk_size=1024):
                         # save chunks of pdf to local file
                         if chunk:
                             local_pdf_file.write(chunk)
-                LOGGER.debug("Finished download file.")
-        LOGGER.info(
-            f"Finished downloading all annual reports for {symbol_data['symbol']} in PID {os.getpid()}"
-        )
-    return 0
-
-
-def set_chrome_options() -> Options:
-    """Sets chrome options for Selenium.
-
-    Chrome options for headless browser is enabled.
-
-    """
-    option = Options()
-    option.add_argument("--disable-gpu")
-    option.add_argument("--disable-extensions")
-    option.add_argument("--disable-infobars")
-    option.add_argument('--disable-blink-features=AutomationControlled')  ## to avoid getting detected
-    option.add_argument("--disable-notifications")
-    option.add_argument('--headless')
-    option.add_argument('--no-sandbox')
-    option.add_argument('--disable-dev-shm-usage')
-    return option
-
-
-def fetch_audited_statements():
-    """Fetch the audited annual statements of each symbol from
-    https://www.stockex.co.tt/news/xxxxxxx
-    """
-    # for some reason, ttse is using symbol ids instead of actual symbols here,
-    # so we need to set up a list of these ids
-    logger = logging.getLogger(LOGGERNAME)
-    listed_symbol_data = []
-    with DatabaseConnect() as db_obj:
-        listed_equities_table = Table(
-            "listed_equities", MetaData(), autoload=True, autoload_with=db_obj.dbengine
-        )
-        selectstmt = select(
-            [listed_equities_table.c.symbol, listed_equities_table.c.symbol_id]
-        )
-        result = db_obj.dbcon.execute(selectstmt)
-        for row in result:
-            if row[0] not in IGNORE_SYMBOLS:
-                listed_symbol_data.append({"symbol": row[0], "symbol_id": row[1]})
-    # now go through the list of symbol ids and fetch the required reports for each
-    for symbol_data in listed_symbol_data:
-        # ensure the required directories are created
-        current_dir = Path(os.path.realpath(__file__)).parent
-        reports_dir = current_dir.joinpath(REPORTS_DIRECTORY).joinpath(
-            symbol_data["symbol"]
-        )
-        if reports_dir.exists() and reports_dir.is_dir():
-            logger.debug(
-                f"Directory for {symbol_data['symbol']}'s annual statements found at {reports_dir}"
-            )
-        else:
-            logger.debug(
-                f"Directory for {symbol_data['symbol']}'s annual statements not found at {reports_dir}. Trying to create."
-            )
-            reports_dir.mkdir()
-            if not reports_dir.exists():
-                raise RuntimeError(f"Could not create directory at {reports_dir}")
-        # now load the page with the reports
+                logger.debug("Finished download file.")
         logger.info(
-            f"Now trying to fetch annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}"
+            f"Finished downloading all quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}"
         )
-        annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}&date={ANNUAL_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
-        logger.debug(f"Navigating to {annual_statements_url}")
-        annual_statements_page = requests.get(
-            annual_statements_url,
-            timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-            headers=HTTP_GET_HEADERS,
-        )
-        if annual_statements_page.status_code != 200:
-            raise requests.exceptions.HTTPError(
-                "Could not load URL. " + annual_statements_url
-            )
-        logger.debug("Successfully loaded webpage.")
-        # and search the page for the links to all annual reports
-        annual_statements_page_soup = BeautifulSoup(annual_statements_page.text, "lxml")
-        news_div = annual_statements_page_soup.find(id="news")
-        report_page_links = []
-        for link in news_div.find_all("a", href=True):
-            if link.attrs["href"] and "audited" in link.attrs["href"].lower():
-                report_page_links.append(link.attrs["href"])
-        # now navigate to each link
-        # and get the actual links of the pdf files
+
+    def _build_direct_links_to_pdfs_for_quarterly_statements(self, report_page_links,
+                                                             scraping_engine: ScrapingEngine):
+        pdf_reports = []
+        for link in report_page_links:
+            try:
+                report_page = scraping_engine.get_url_and_return_html(url=link)
+                # and search the page for the link to the actual pdf report
+                report_soup = BeautifulSoup(report_page, "lxml")
+                a_links = report_soup.find_all("a")
+                pdf_link = None
+                for a_link in a_links:
+                    if not pdf_link and "click here to download" in a_link.text:
+                        if a_link.attrs["href"]:
+                            pdf_link = a_link.attrs["href"].replace(" ", "")
+                if not pdf_link:
+                    raise RuntimeError(f"Could not find a link for the pdf in {link}")
+                # and get the release date for this report
+                pdf_release_date = None
+                h2_texts = report_soup.find_all(
+                    "h2", {"class": "elementor-heading-title elementor-size-default"}
+                )
+                for text in h2_texts:
+                    try:
+                        # check if any of the texts can be parsed to a dates
+                        if not pdf_release_date:
+                            pdf_release_date = datetime.strptime(
+                                text.contents[0], "%d/%m/%Y"
+                            )
+                    except (ValueError, TypeError):
+                        pass
+                if not pdf_release_date:
+                    raise RuntimeError(
+                        f"Could not find a release date for this report: {link}"
+                    )
+                # now append our data
+                if pdf_release_date > QUARTERLY_STATEMENTS_START_DATETIME:
+                    logger.debug("Report is new enough. Adding to download list.")
+                    pdf_reports.append(
+                        {"pdf_link": pdf_link, "release_date": pdf_release_date}
+                    )
+                else:
+                    logger.debug("Report is too old. Discarding.")
+            except (requests.exceptions.HTTPError, RuntimeError) as exc:
+                logger.warning(
+                    f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
+                    exc_info=exc,
+                )
+        return pdf_reports
+
+    def _build_list_of_quarterly_statements_links_from_news_page(self, quarterly_statements_page_soup):
+        report_page_links = self._build_links_to_reports_for_quarterly_statements(
+            quarterly_statements_page_soup)
+        return report_page_links
+
+    def download_all_pdf_audited_statements_for_symbol(self, pdf_reports, symbol_data):
+        # now actually download the pdf files
+        for pdf in pdf_reports:
+            # create the name to use for this downloaded file
+            local_filename = f"{symbol_data['symbol']}_audited_statement_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
+            symbol_report_directory: Path = self.symbol_report_directories[symbol_data['symbol']]
+            # check if file was already downloaded
+            full_local_path = symbol_report_directory.joinpath(local_filename)
+            if full_local_path.is_file():
+                logger.debug(
+                    f"PDF file {local_filename} was already downloaded. Skipping."
+                )
+            else:
+                # else download this new pdf report
+                # get the http response
+                http_response_obj = requests.get(
+                    pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
+                )
+                # save contents of response (pdf report) to the local file
+                logger.debug(f"Now downloading file {local_filename}. Please wait.")
+                with open(full_local_path, "wb") as local_pdf_file:
+                    for chunk in http_response_obj.iter_content(chunk_size=1024):
+                        # save chunks of pdf to local file
+                        if chunk:
+                            local_pdf_file.write(chunk)
+                logger.debug("Finished download file.")
+
+    def build_list_of_direct_pdf_reports_for_audited_statements(self, annual_statements_url, report_page_links):
         pdf_reports = []
         for link in report_page_links:
             try:
@@ -347,43 +743,18 @@ def fetch_audited_statements():
                     f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
                     exc_info=exc,
                 )
-        # now actually download the pdf files
-        for pdf in pdf_reports:
-            # create the name to use for this downloaded file
-            local_filename = f"{symbol_data['symbol']}_audited_statement_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
-            # check if file was already downloaded
-            full_local_path = reports_dir.joinpath(local_filename)
-            if full_local_path.is_file():
-                logger.debug(
-                    f"PDF file {local_filename} was already downloaded. Skipping."
-                )
-            else:
-                # else download this new pdf report
-                # get the http response
-                http_response_obj = requests.get(
-                    pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
-                )
-                # save contents of response (pdf report) to the local file
-                logger.debug(f"Now downloading file {local_filename}. Please wait.")
-                with open(full_local_path, "wb") as local_pdf_file:
-                    for chunk in http_response_obj.iter_content(chunk_size=1024):
-                        # save chunks of pdf to local file
-                        if chunk:
-                            local_pdf_file.write(chunk)
-                logger.debug("Finished download file.")
-        logger.info(
-            f"Finished downloading all annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}"
-        )
-    return 0
+        return pdf_reports
+
+    def build_list_of_audited_statements_news_pages_for_symbol(self, annual_statements_page):
+        annual_statements_page_soup = BeautifulSoup(annual_statements_page, "lxml")
+        report_page_links = self._get_news_links_from_audited_statements_news_div(annual_statements_page_soup)
+        return report_page_links
 
 
-def fetch_quarterly_statements():
-    """Fetch the unaudited quarterly statements of each symbol from
-    https://www.stockex.co.tt/news/xxxxxxx
-    """
+# Put your function definitions here. These should be lowercase, separated by underscores
+def fetch_listed_equities_data_from_db() -> List:
     # for some reason, ttse is using symbol ids instead of actual symbols here,
     # so we need to set up a list of these ids
-    logger = logging.getLogger(LOGGERNAME)
     listed_symbol_data = []
     with DatabaseConnect() as db_obj:
         listed_equities_table = Table(
@@ -396,624 +767,66 @@ def fetch_quarterly_statements():
         for row in result:
             if row[0] not in IGNORE_SYMBOLS:
                 listed_symbol_data.append({"symbol": row[0], "symbol_id": row[1]})
-    # now go through the list of symbol ids and fetch the required reports for each
-    for symbol_data in listed_symbol_data:
-        # ensure the required directories are created
-        current_dir = Path(os.path.realpath(__file__)).parent
-        reports_dir = current_dir.joinpath(REPORTS_DIRECTORY).joinpath(
-            symbol_data["symbol"]
-        )
-        if reports_dir.exists() and reports_dir.is_dir():
-            logger.debug(
-                f"Directory for {symbol_data['symbol']}'s quarterly statements found at {reports_dir}"
-            )
-        else:
-            logger.debug(
-                f"Directory for {symbol_data['symbol']}'s quarterly statements not found at {reports_dir}. Trying to create."
-            )
-            reports_dir.mkdir()
-            if not reports_dir.exists():
-                raise RuntimeError(f"Could not create directory at {reports_dir}")
-        # now load the page with the reports
-        logger.info(
-            f"Now trying to fetch quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}"
-        )
-        quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}&date={QUARTERLY_STATEMENTS_START_DATE_STRING}&date_to={TOMORROW_DATE}"
-        logger.debug(f"Navigating to {quarterly_statements_url}")
-        quarterly_statements_page = requests.get(
-            quarterly_statements_url,
-            timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-            headers=HTTP_GET_HEADERS,
-        )
-        if quarterly_statements_page.status_code != 200:
-            raise requests.exceptions.HTTPError(
-                "Could not load URL. " + quarterly_statements_url
-            )
-        logger.debug("Successfully loaded webpage.")
-        # and search the page for the links to all annual reports
-        quarterly_statements_page_soup = BeautifulSoup(
-            quarterly_statements_page.text, "lxml"
-        )
-        news_div = quarterly_statements_page_soup.find(id="news")
-        report_page_links = []
-        for link in news_div.find_all("a", href=True):
-            if link.attrs["href"] and (
-                    "unaudited" in link.attrs["href"].lower()
-                    or "financial" in link.attrs["href"].lower()
-            ):
-                report_page_links.append(link.attrs["href"])
-        # now navigate to each link
-        # and get the actual links of the pdf files
-        pdf_reports = []
-        for link in report_page_links:
-            try:
-                report_page = requests.get(
-                    link, timeout=WEBPAGE_LOAD_TIMEOUT_SECS, headers=HTTP_GET_HEADERS
-                )
-                if report_page.status_code != 200:
-                    raise requests.exceptions.HTTPError(
-                        "Could not load URL. " + quarterly_statements_url
-                    )
-                logger.debug("Successfully loaded webpage.")
-                # and search the page for the link to the actual pdf report
-                report_soup = BeautifulSoup(report_page.text, "lxml")
-                a_links = report_soup.find_all("a")
-                pdf_link = None
-                for a_link in a_links:
-                    if not pdf_link and "click here to download" in a_link.text:
-                        if a_link.attrs["href"]:
-                            pdf_link = a_link.attrs["href"].replace(" ", "")
-                if not pdf_link:
-                    raise RuntimeError(f"Could not find a link for the pdf in {link}")
-                # and get the release date for this report
-                pdf_release_date = None
-                h2_texts = report_soup.find_all(
-                    "h2", {"class": "elementor-heading-title elementor-size-default"}
-                )
-                for text in h2_texts:
-                    try:
-                        # check if any of the texts can be parsed to a dates
-                        if not pdf_release_date:
-                            pdf_release_date = datetime.strptime(
-                                text.contents[0], "%d/%m/%Y"
-                            )
-                    except (ValueError, TypeError):
-                        pass
-                if not pdf_release_date:
-                    raise RuntimeError(
-                        f"Could not find a release date for this report: {link}"
-                    )
-                # now append our data
-                if pdf_release_date > QUARTERLY_STATEMENTS_START_DATETIME:
-                    logger.debug("Report is new enough. Adding to download list.")
-                    pdf_reports.append(
-                        {"pdf_link": pdf_link, "release_date": pdf_release_date}
-                    )
-                else:
-                    logger.debug("Report is too old. Discarding.")
-            except (requests.exceptions.HTTPError, RuntimeError) as exc:
-                logger.warning(
-                    f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
-                    exc_info=exc,
-                )
-        # now actually download the pdf files
-        for pdf in pdf_reports:
-            # create the name to use for this downloaded file
-            local_filename = f"{symbol_data['symbol']}_quarterly_statement_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
-            # check if file was already downloaded
-            full_local_path = reports_dir.joinpath(local_filename)
-            if full_local_path.is_file():
-                logger.debug(
-                    f"PDF file {local_filename} was already downloaded. Skipping."
-                )
-            else:
-                # else download this new pdf report
-                # get the http response
-                http_response_obj = requests.get(
-                    pdf["pdf_link"], stream=True, headers=HTTP_GET_HEADERS
-                )
-                # save contents of response (pdf report) to the local file
-                logger.debug(f"Now downloading file {local_filename}. Please wait.")
-                with open(full_local_path, "wb") as local_pdf_file:
-                    for chunk in http_response_obj.iter_content(chunk_size=1024):
-                        # save chunks of pdf to local file
-                        if chunk:
-                            local_pdf_file.write(chunk)
-                logger.debug("Finished download file.")
-        logger.info(
-            f"Finished downloading all quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}"
-        )
-    return 0
+    return listed_symbol_data
 
 
-def alert_me_new_annual_reports():
-    """
-    Send an email to latchmepersad@gmail.com if any new annual/audited/querterly reports are detected
-    """
-    logger = logging.getLogger(LOGGERNAME)
-    with DatabaseConnect() as db_connect:
-        # first get a list of all symbols currently stored
-        listed_equities_table = Table(
-            "listed_equities",
-            MetaData(),
-            autoload=True,
-            autoload_with=db_connect.dbengine,
-        )
-        raw_annual_reports_table = Table(
-            "raw_annual_data",
-            MetaData(),
-            autoload=True,
-            autoload_with=db_connect.dbengine,
-        )
-        # get a list of stored symbols
-        selectstmt = select(
-            [listed_equities_table.c.symbol, listed_equities_table.c.symbol_id]
-        )
-        results = db_connect.dbcon.execute(selectstmt)
-        all_symbols = []
-        for result in results:
-            if result[0] not in IGNORE_SYMBOLS:
-                all_symbols.append({"symbol": result[0], "symbol_id": result[1]})
-        # now go to the url for each symbol that we have listed, and collect the data we need
-        # region ANNUAL REPORTS
-        # create some sets to hold our unique report names
-        all_new_annual_reports = set()
-        for symbol_data in all_symbols:
-            symbol_available_annual_reports = set()
-            symbol_processed_annual_reports = set()
-            annual_reports_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_reports']}"
-            logger.info(
-                f"Now checking latest available annual reports for {symbol_data['symbol']} in PID {os.getpid()}"
-            )
-            logger.debug(f"Navigating to {annual_reports_url}")
-            annual_reports_page = requests.get(
-                annual_reports_url,
-                timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-                headers=HTTP_GET_HEADERS,
-            )
-            if annual_reports_page.status_code != 200:
-                raise requests.exceptions.HTTPError(
-                    "Could not load URL. " + annual_reports_url
-                )
-            logger.debug("Successfully loaded webpage.")
-            # and search the page for the links to all annual reports
-            annual_reports_page_soup = BeautifulSoup(annual_reports_page.text, "lxml")
-            news_div = annual_reports_page_soup.find(id="news")
-            report_page_links = []
-            for link in news_div.find_all("a", href=True):
-                if link.attrs["href"] and "annual-report" in link.attrs["href"].lower():
-                    report_page_links.append(link.attrs["href"])
-            # now navigate to each link
-            # and get the actual links of the pdf files
-            pdf_reports = []
-            for link in report_page_links:
-                try:
-                    report_page = requests.get(
-                        link,
-                        timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-                        headers=HTTP_GET_HEADERS,
-                    )
-                    if report_page.status_code != 200:
-                        raise requests.exceptions.HTTPError(
-                            "Could not load URL. " + annual_reports_url
-                        )
-                    logger.debug("Successfully loaded webpage.")
-                    # and search the page for the link to the actual pdf report
-                    report_soup = BeautifulSoup(report_page.text, "lxml")
-                    a_links = report_soup.find_all("a")
-                    pdf_link = None
-                    for a_link in a_links:
-                        if not pdf_link and "click here to download" in a_link.text:
-                            if a_link.attrs["href"]:
-                                pdf_link = a_link.attrs["href"].replace(" ", "")
-                    if not pdf_link:
-                        raise RuntimeError(
-                            f"Could not find a link for the pdf in {link}"
-                        )
-                    # and get the release date for this report
-                    pdf_release_date = None
-                    h2_texts = report_soup.find_all(
-                        "h2",
-                        {"class": "elementor-heading-title elementor-size-default"},
-                    )
-                    for text in h2_texts:
-                        try:
-                            # check if any of the texts can be parsed to a dates
-                            if not pdf_release_date:
-                                pdf_release_date = datetime.strptime(
-                                    text.contents[0], "%d/%m/%Y"
-                                )
-                        except (ValueError, TypeError):
-                            pass
-                    if not pdf_release_date:
-                        raise RuntimeError(
-                            f"Could not find a release date for this report: {link}"
-                        )
-                    # now append our data
-                    pdf_reports.append(
-                        {"pdf_link": pdf_link, "release_date": pdf_release_date}
-                    )
-                except (requests.exceptions.HTTPError, RuntimeError) as exc:
-                    logger.warning(
-                        f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
-                        exc_info=exc,
-                    )
-            # now create the names for all available reports
-            for pdf in pdf_reports:
-                local_filename = f"{symbol_data['symbol']}_annual_report_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
-                symbol_available_annual_reports.add(local_filename)
-            # now get the names of all processed reports
-            selectstmt = select(
-                [raw_annual_reports_table.c.reports_and_statements_referenced]
-            ).where(raw_annual_reports_table.c.symbol == symbol_data["symbol"])
-            results = db_connect.dbcon.execute(selectstmt)
-            for result in results:
-                if result[0]:
-                    symbol_processed_annual_reports.add(result[0])
-            # now compare both sets and see if any new reports were found
-            logger.debug(
-                "Now comparing downloaded and processed reports for all symbols."
-            )
-            for available_report in symbol_available_annual_reports:
-                available_report_processed_already = False
-                for processed_report in symbol_processed_annual_reports:
-                    if available_report in processed_report:
-                        available_report_processed_already = True
-                if not available_report_processed_already:
-                    all_new_annual_reports.add(available_report)
-            logger.info(
-                f"Finished checks for {symbol_data['symbol']} in PID {os.getpid()}"
-            )
-        # endregion
-        return all_new_annual_reports
-
-
-def alert_me_new_audited_statements():
-    """
-    Send an email to latchmepersad@gmail.com if any new annual/audited/querterly reports are detected
-    """
-    logger = logging.getLogger(LOGGERNAME)
-    with DatabaseConnect() as db_connect:
-        # first get a list of all symbols currently stored
-        listed_equities_table = Table(
-            "listed_equities",
-            MetaData(),
-            autoload=True,
-            autoload_with=db_connect.dbengine,
-        )
-        raw_annual_reports_table = Table(
-            "raw_annual_data",
-            MetaData(),
-            autoload=True,
-            autoload_with=db_connect.dbengine,
-        )
-        # get a list of stored symbols
-        selectstmt = select(
-            [listed_equities_table.c.symbol, listed_equities_table.c.symbol_id]
-        )
-        results = db_connect.dbcon.execute(selectstmt)
-        all_symbols = []
-        for result in results:
-            if result[0] not in IGNORE_SYMBOLS:
-                all_symbols.append({"symbol": result[0], "symbol_id": result[1]})
-        # now go to the url for each symbol that we have listed, and collect the data we need
-        # region AUDITED STATEMENTS
-        # now repeat the process for the audited statements
-        all_new_audited_statements = set()
-        for symbol_data in all_symbols:
-            symbol_available_audited_statements = set()
-            symbol_processed_audited_statements = set()
-            logger.info(
-                f"Now trying to fetch annual audited statements for {symbol_data['symbol']} in PID {os.getpid()}"
-            )
-            annual_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['annual_statements']}"
-            logger.debug(f"Navigating to {annual_statements_url}")
-            annual_statements_page = requests.get(
-                annual_statements_url,
-                timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-                headers=HTTP_GET_HEADERS,
-            )
-            if annual_statements_page.status_code != 200:
-                raise requests.exceptions.HTTPError(
-                    "Could not load URL. " + annual_statements_url
-                )
-            logger.debug("Successfully loaded webpage.")
-            # and search the page for the links to all annual reports
-            annual_statements_page_soup = BeautifulSoup(
-                annual_statements_page.text, "lxml"
-            )
-            news_div = annual_statements_page_soup.find(id="news")
-            report_page_links = []
-            for link in news_div.find_all("a", href=True):
-                if link.attrs["href"] and "audited" in link.attrs["href"].lower():
-                    report_page_links.append(link.attrs["href"])
-            # now navigate to each link
-            # and get the actual links of the pdf files
-            pdf_reports = []
-            for link in report_page_links:
-                try:
-                    report_page = requests.get(
-                        link,
-                        timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-                        headers=HTTP_GET_HEADERS,
-                    )
-                    if report_page.status_code != 200:
-                        raise requests.exceptions.HTTPError(
-                            "Could not load URL. " + annual_statements_url
-                        )
-                    logger.debug("Successfully loaded webpage.")
-                    # and search the page for the link to the actual pdf report
-                    report_soup = BeautifulSoup(report_page.text, "lxml")
-                    a_links = report_soup.find_all("a")
-                    pdf_link = None
-                    for a_link in a_links:
-                        if not pdf_link and "click here to download" in a_link.text:
-                            if a_link.attrs["href"]:
-                                pdf_link = a_link.attrs["href"].replace(" ", "")
-                    if not pdf_link:
-                        raise RuntimeError(
-                            f"Could not find a link for the pdf in {link}"
-                        )
-                    # and get the release date for this report
-                    pdf_release_date = None
-                    h2_texts = report_soup.find_all(
-                        "h2",
-                        {"class": "elementor-heading-title elementor-size-default"},
-                    )
-                    for text in h2_texts:
-                        try:
-                            # check if any of the texts can be parsed to a dates
-                            if not pdf_release_date:
-                                pdf_release_date = datetime.strptime(
-                                    text.contents[0], "%d/%m/%Y"
-                                )
-                        except (ValueError, TypeError):
-                            pass
-                    if not pdf_release_date:
-                        raise RuntimeError(
-                            f"Could not find a release date for this report: {link}"
-                        )
-                    # now append our data
-                    pdf_reports.append(
-                        {"pdf_link": pdf_link, "release_date": pdf_release_date}
-                    )
-                except (requests.exceptions.HTTPError, RuntimeError) as exc:
-                    logger.warning(
-                        f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
-                        exc_info=exc,
-                    )
-            # now create the names for all available reports
-            for pdf in pdf_reports:
-                local_filename = f"{symbol_data['symbol']}_audited_statement_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
-                symbol_available_audited_statements.add(local_filename)
-            # now get the names of all processed reports
-            selectstmt = select(
-                [raw_annual_reports_table.c.reports_and_statements_referenced]
-            ).where(raw_annual_reports_table.c.symbol == symbol_data["symbol"])
-            results = db_connect.dbcon.execute(selectstmt)
-            for result in results:
-                if result[0]:
-                    symbol_processed_audited_statements.add(result[0])
-            # now compare both sets and see if any new reports were found
-            for available_report in symbol_available_audited_statements:
-                available_report_processed_already = False
-                for processed_report in symbol_processed_audited_statements:
-                    if available_report in processed_report:
-                        available_report_processed_already = True
-                if not available_report_processed_already:
-                    all_new_audited_statements.add(available_report)
-            # endregion
-            logger.info(
-                f"Finished checking outstanding audited statements for {symbol_data['symbol']} in PID {os.getpid()}"
-            )
-        return all_new_audited_statements
-
-
-def alert_me_new_quarterly_statements():
-    """
-    Send an email to latchmepersad@gmail.com if any new annual/audited/querterly reports are detected
-    """
-    logger = logging.getLogger(LOGGERNAME)
-    with DatabaseConnect() as db_connect:
-        # first get a list of all symbols currently stored
-        listed_equities_table = Table(
-            "listed_equities",
-            MetaData(),
-            autoload=True,
-            autoload_with=db_connect.dbengine,
-        )
-        raw_quarterly_reports_table = Table(
-            "raw_quarterly_data",
-            MetaData(),
-            autoload=True,
-            autoload_with=db_connect.dbengine,
-        )
-        # get a list of stored symbols
-        selectstmt = select(
-            [listed_equities_table.c.symbol, listed_equities_table.c.symbol_id]
-        )
-        results = db_connect.dbcon.execute(selectstmt)
-        all_symbols = []
-        for result in results:
-            if result[0] not in IGNORE_SYMBOLS:
-                all_symbols.append({"symbol": result[0], "symbol_id": result[1]})
-        # now go to the url for each symbol that we have listed, and collect the data we need
-        # region QUARTERLY STATEMENTS
-        # now repeat the process for the quarterly statements
-        all_new_quarterly_statements = set()
-        for symbol_data in all_symbols:
-            symbol_available_quarterly_statements = set()
-            symbol_processed_quarterly_statements = set()
-            logger.info(
-                f"Now checking outstanding quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}"
-            )
-            quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}"
-            logger.debug(f"Navigating to {quarterly_statements_url}")
-            quarterly_statements_page = requests.get(
-                quarterly_statements_url,
-                timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-                headers=HTTP_GET_HEADERS,
-            )
-            if quarterly_statements_page.status_code != 200:
-                raise requests.exceptions.HTTPError(
-                    "Could not load URL. " + quarterly_statements_url
-                )
-            logger.debug("Successfully loaded webpage.")
-            # and search the page for the links to all annual reports
-            quarterly_statements_page_soup = BeautifulSoup(
-                quarterly_statements_page.text, "lxml"
-            )
-            news_div = quarterly_statements_page_soup.find(id="news")
-            report_page_links = []
-            for link in news_div.find_all("a", href=True):
-                if link.attrs["href"] and (
-                        "unaudited" in link.attrs["href"].lower()
-                        or "financial" in link.attrs["href"].lower()
-                ):
-                    report_page_links.append(link.attrs["href"])
-            # now navigate to each link
-            # and get the actual links of the pdf files
-            pdf_reports = []
-            for link in report_page_links:
-                try:
-                    report_page = requests.get(
-                        link,
-                        timeout=WEBPAGE_LOAD_TIMEOUT_SECS,
-                        headers=HTTP_GET_HEADERS,
-                    )
-                    if report_page.status_code != 200:
-                        raise requests.exceptions.HTTPError(
-                            "Could not load URL. " + quarterly_statements_url
-                        )
-                    logger.debug("Successfully loaded webpage.")
-                    # and search the page for the link to the actual pdf report
-                    report_soup = BeautifulSoup(report_page.text, "lxml")
-                    a_links = report_soup.find_all("a")
-                    pdf_link = None
-                    for a_link in a_links:
-                        if not pdf_link and "click here to download" in a_link.text:
-                            if a_link.attrs["href"]:
-                                pdf_link = a_link.attrs["href"].replace(" ", "")
-                    if not pdf_link:
-                        raise RuntimeError(
-                            f"Could not find a link for the pdf in {link}"
-                        )
-                    # and get the release date for this report
-                    pdf_release_date = None
-                    h2_texts = report_soup.find_all(
-                        "h2",
-                        {"class": "elementor-heading-title elementor-size-default"},
-                    )
-                    for text in h2_texts:
-                        try:
-                            # check if any of the texts can be parsed to a dates
-                            if not pdf_release_date:
-                                pdf_release_date = datetime.strptime(
-                                    text.contents[0], "%d/%m/%Y"
-                                )
-                        except (ValueError, TypeError):
-                            pass
-                    if not pdf_release_date:
-                        raise RuntimeError(
-                            f"Could not find a release date for this report: {link}"
-                        )
-                    # now append our data
-                    if pdf_release_date > QUARTERLY_STATEMENTS_START_DATETIME:
-                        logger.debug("Report is new enough. Adding to download list.")
-                        pdf_reports.append(
-                            {"pdf_link": pdf_link, "release_date": pdf_release_date}
-                        )
-                    else:
-                        logger.debug("Report is too old. Discarding.")
-                except (requests.exceptions.HTTPError, RuntimeError) as exc:
-                    logger.warning(
-                        f"Ran into an error while trying to get the download link for {link}. Skipping statement.",
-                        exc_info=exc,
-                    )
-            # now create the names for all available reports
-            for pdf in pdf_reports:
-                local_filename = f"{symbol_data['symbol']}_quarterly_statement_{pdf['release_date'].strftime('%Y-%m-%d')}.pdf"
-                symbol_available_quarterly_statements.add(local_filename)
-            # now get the names of all processed reports
-            selectstmt = select(
-                [raw_quarterly_reports_table.c.reports_and_statements_referenced]
-            ).where(raw_quarterly_reports_table.c.symbol == symbol_data["symbol"])
-            results = db_connect.dbcon.execute(selectstmt)
-            for result in results:
-                if result[0]:
-                    symbol_processed_quarterly_statements.add(result[0])
-            # now compare both sets and see if any new reports were found
-            for available_report in symbol_available_quarterly_statements:
-                available_report_processed_already = False
-                for processed_report in symbol_processed_quarterly_statements:
-                    if available_report in processed_report:
-                        available_report_processed_already = True
-                if not available_report_processed_already:
-                    all_new_quarterly_statements.add(available_report)
-            logger.info(
-                f"Finished checking outstanding quarterly reports for {symbol_data['symbol']} in PID {os.getpid()}"
-            )
-        # endregion
-        return all_new_quarterly_statements
-
-
+@pidfile()
 def main(args):
     """The main function to coordinate the functions defined above"""
     try:
-        logger = logging.getLogger(LOGGERNAME)
-        # Set up a pidfile to ensure that only one instance of this script runs at a time
-        with PidFile(piddir=tempfile.gettempdir()):
-            # run all functions within a multiprocessing pool
-            with multiprocessing.Pool(
-                    os.cpu_count()
-            ) as multipool:
-                logger.debug(
-                    "Downloading latest fundamental reports from the TTSE site."
-                )
-                annual_reports_code = multipool.apply_async(fetch_annual_reports, ())
-                audited_statements_code = multipool.apply_async(
-                    fetch_audited_statements, ()
-                )
-                quarterly_statements_code = multipool.apply_async(
-                    fetch_quarterly_statements, ()
-                )
-                # now wait and ensure that all reports are downloaded
-                logger.debug(
-                    f"Annual reports downloading function exited with code: {annual_reports_code.get()}"
-                )
-                logger.debug(
-                    f"Annual audited statements downloading function exited with code: {audited_statements_code.get()}"
-                )
-                logger.debug(
-                    f"Quarterly statements downloading function exited with code: {quarterly_statements_code.get()}"
-                )
-                logging.debug(
-                    "Downloads complete. Now checking if any reports have not been processed."
-                )
-                # now check if any reports are outstanding
-                res_new_annual_reports = multipool.apply_async(
-                    alert_me_new_annual_reports, ()
-                )
-                res_new_audited_statements = multipool.apply_async(
-                    alert_me_new_audited_statements, ()
-                )
-                res_new_quarterly_statements = multipool.apply_async(
-                    alert_me_new_quarterly_statements, ()
-                )
-                # # wait until the new report list is ready
-                new_annual_reports = res_new_annual_reports.get()
-                logger.debug(f"Annual reports processing check function complete.")
-                new_audited_statements = res_new_audited_statements.get()
-                logger.debug(f"Audited statements processing check function complete.")
-                new_quarterly_statements = res_new_quarterly_statements.get()
-                logger.debug(
-                    f"Quarterly statements processing check function complete."
-                )
-                multipool.close()
-                multipool.join()
-                # now send the email of outstanding reports
-                msg = MIMEText(
-                    f"""
+        with multiprocessing.Pool(
+                os.cpu_count()
+        ) as multipool:
+            # now check if any reports are outstanding
+            res_new_annual_reports = multipool.apply_async(
+                alert_me_new_annual_reports, ()
+            )
+            res_new_audited_statements = multipool.apply_async(
+                alert_me_new_audited_statements, ()
+            )
+            res_new_quarterly_statements = multipool.apply_async(
+                alert_me_new_quarterly_statements, ()
+            )
+            # wait until the new report list is ready
+            new_annual_reports = res_new_annual_reports.get()
+            logger.debug(f"Annual reports processing check function complete.")
+            new_audited_statements = res_new_audited_statements.get()
+            logger.debug(f"Audited statements processing check function complete.")
+            new_quarterly_statements = res_new_quarterly_statements.get()
+            logger.debug(
+                f"Quarterly statements processing check function complete."
+            )
+            multipool.close()
+            multipool.join()
+            # now send the email of outstanding reports
+            _email_new_reports_to_me(logger, new_annual_reports, new_audited_statements, new_quarterly_statements)
+        logger.info(os.path.basename(__file__) + " executed successfully.")
+        return 0
+    except Exception as exc:
+        logger.exception("Error in script " + os.path.basename(__file__), exc_info=exc)
+
+
+def alert_me_new_annual_reports() -> set:
+    financial_reports_scraper: FinancialReportsScraper = FinancialReportsScraper()
+    new_annual_reports: set = financial_reports_scraper.alert_me_new_annual_reports()
+    return new_annual_reports
+
+
+def alert_me_new_audited_statements() -> set:
+    financial_reports_scraper: FinancialReportsScraper = FinancialReportsScraper()
+    new_audited_statements: set = financial_reports_scraper.alert_me_new_audited_statements()
+    return new_audited_statements
+
+
+def alert_me_new_quarterly_statements() -> set:
+    financial_reports_scraper: FinancialReportsScraper = FinancialReportsScraper()
+    new_quarterly_statements: set = financial_reports_scraper.alert_me_new_quarterly_statements()
+    return new_quarterly_statements
+
+
+def _email_new_reports_to_me(logger, new_annual_reports, new_audited_statements, new_quarterly_statements):
+    msg = MIMEText(
+        f"""
 Hello,
 
 These are the outstanding fundamental reports that we found on the TTSE.
@@ -1029,27 +842,23 @@ Please add the data for these reports into the raw_quarterly_data and raw_annual
 Sincerely,
 trinistocks.com
                 """
-                )
-                msg["From"] = "admin@trinistocks.com"
-                msg["To"] = OUTSTANDINGREPORTEMAIL
-                msg["Subject"] = "trinistocks: Outstanding Fundamental Reports"
-                p = Popen(
-                    ["/usr/sbin/sendmail", "-t", "-oi"],
-                    stdin=PIPE,
-                    universal_newlines=True,
-                )
-                p.communicate(msg.as_string())
-                return_code = p.returncode
-                if return_code == 0:
-                    logger.debug(
-                        f"Sent report to {OUTSTANDINGREPORTEMAIL} successfully."
-                    )
-                else:
-                    logger.error("Could not send report to {OUTSTANDINGREPORTEMAIL}")
-            logger.info(os.path.basename(__file__) + " executed successfully.")
-        return 0
-    except Exception as exc:
-        logger.exception("Error in script " + os.path.basename(__file__), exc_info=exc)
+    )
+    msg["From"] = "admin@trinistocks.com"
+    msg["To"] = OUTSTANDINGREPORTEMAIL
+    msg["Subject"] = "trinistocks: Outstanding Fundamental Reports"
+    p = Popen(
+        ["/usr/sbin/sendmail", "-t", "-oi"],
+        stdin=PIPE,
+        universal_newlines=True,
+    )
+    p.communicate(msg.as_string())
+    return_code = p.returncode
+    if return_code == 0:
+        logger.debug(
+            f"Sent report to {OUTSTANDINGREPORTEMAIL} successfully."
+        )
+    else:
+        logger.error("Could not send report to {OUTSTANDINGREPORTEMAIL}")
 
 
 # If this script is being run from the command-line, then run the main() function
