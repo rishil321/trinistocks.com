@@ -9,15 +9,20 @@
 """
 
 import logging
-from . import configs
-from sqlalchemy import create_engine, Table, MetaData
+
 import pymysql
+from sqlalchemy import create_engine, Table, MetaData, select
+from typing_extensions import Self
+
+from . import configs
+
 pymysql.install_as_MySQLdb()
 
-class DatabaseConnect:
 
-    def __init__(self,dbuser=configs.dbusername,dbpass=configs.dbpassword,
-        dbaddress=configs.dbaddress,dbschema=configs.schema):
+class DatabaseConnect:
+    def __init__(
+        self, dbuser=configs.dbusername, dbpass=configs.dbpassword, dbaddress=configs.dbaddress, dbschema=configs.schema
+    ):
         """Set up the database connection object with some default parameters
 
         :param dbuser: [description], defaults to configs.dbusername
@@ -34,29 +39,31 @@ class DatabaseConnect:
         """
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Creating a new DatabaseConnect object.")
-        self.dbengine = create_engine("mysql://"+dbuser+":"+dbpass+"@"+dbaddress+"/" +
-                                      dbschema, echo=False)
-        self.dbcon = self.dbengine.connect()
-        if self.dbcon:
+        self._dbengine = create_engine(
+            "mysql://" + dbuser + ":" + dbpass + "@" + dbaddress + "/" + dbschema, echo=False
+        )
+        self._dbcon = self._dbengine.connect()
+        if self._dbcon:
             self.logger.info("Connected to database successfully")
         else:
-            raise ConnectionError(
-                "Could not connect to database at "+dbaddress)
+            raise ConnectionError("Could not connect to database at " + dbaddress)
 
     @property
-    def get_dbengine(self):
+    def get_dbengine(self: Self):
         return self._dbengine
 
     @property
-    def get_dbcon(self):
+    def get_dbcon(self: Self):
         return self._dbcon
 
-    def close(self,):
+    def close(
+        self,
+    ):
         """
         Close the database connection
         """
-        if self.dbengine:
-            self.dbengine.dispose()
+        if self._dbengine:
+            self._dbengine.dispose()
             self.logger.debug("Database connection closed successfully.")
             return 0
         else:
@@ -70,6 +77,40 @@ class DatabaseConnect:
         :rtype: [type]
         """
         return self
-  
-    def __exit__(self,exc_type, exc_value, exc_traceback):
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self.close()
+
+
+# function definitions
+def _read_listed_symbols_from_db():
+    # First read all symbols from the listed_equities table
+    all_listed_symbols = []
+    with DatabaseConnect() as db_connection:
+        listed_equities_table = Table(
+            "listed_equities",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connection.dbengine,
+        )
+        selectstmt = select([listed_equities_table.c.symbol])
+        result = db_connection.dbcon.execute(selectstmt)
+        for row in result:
+            all_listed_symbols.append(row[0])
+    return all_listed_symbols, result
+
+
+def _read_symbols_and_ids_from_db():
+    all_listed_symbols = []
+    with DatabaseConnect() as db_connection:
+        listed_equities_table = Table(
+            "listed_equities",
+            MetaData(),
+            autoload=True,
+            autoload_with=db_connection.dbengine,
+        )
+        selectstmt = select([listed_equities_table.c.symbol, listed_equities_table.c.symbol_id])
+        result = db_connection.dbcon.execute(selectstmt)
+        for row in result:
+            all_listed_symbols.append({"symbol": row[0], "symbol_id": row[1]})
+    return all_listed_symbols

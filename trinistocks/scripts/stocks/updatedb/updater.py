@@ -7,42 +7,38 @@ Description of this module/script goes here
 :raises Exception if any issues are encountered
 """
 
+import argparse
+import json
+import logging
+import multiprocessing
+import os
 # region IMPORTS
 #
 # Put all your imports here, one per line.
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
 import sys
-import logging
-import os
+import tempfile
+import time
+from datetime import date
 from logging.config import dictConfig
 from typing import List
 
-import pandas as pd
 import numpy as np
-import tempfile
-import multiprocessing
-import json
-import time
-import argparse
-from datetime import date
-
+import pandas as pd
+import requests
+import sqlalchemy.exc
 # Imports from the cheese factory
 from pid import PidFile
-import requests
-from sqlalchemy import create_engine, Table, select, MetaData, text, and_, update
+from sqlalchemy import (MetaData, Table, and_, create_engine, select, text,
+                        update)
 from sqlalchemy.dialects.mysql import insert
-import sqlalchemy.exc
 
 # Imports from the local filesystem
 from ...database_ops import DatabaseConnect
-from ..crosslisted_symbols import (
-    USD_DIVIDEND_SYMBOLS,
-    JMD_DIVIDEND_SYMBOLS,
-    BBD_DIVIDEND_SYMBOLS,
-    USD_STOCK_SYMBOLS,
-)
 from .. import logging_configs
+from ..crosslisted_symbols import (BBD_DIVIDEND_SYMBOLS, JMD_DIVIDEND_SYMBOLS,
+                                   USD_DIVIDEND_SYMBOLS, USD_STOCK_SYMBOLS)
 
 dictConfig(logging_configs.LOGGING_CONFIG)
 logger = logging.getLogger()

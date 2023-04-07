@@ -8,18 +8,19 @@ The testing module for the scraper.py file
 :raises Exception if any issues are encountered
 """
 
+import argparse
+import logging
+import os
 # Put all your imports here, one per line.
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
 import sys
-import logging
-import os
-import argparse
+
+# Imports from the local filesystem
+from scripts.stocks.scrapettse import fundamental_data_parser
 
 # Imports from the cheese factory
 
-# Imports from the local filesystem
-from . import fundamental_data_parser
 
 # Put your constants here. These should be named in CAPS.
 

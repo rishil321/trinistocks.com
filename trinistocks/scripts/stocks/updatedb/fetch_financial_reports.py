@@ -20,16 +20,16 @@ from email.mime.text import MIMEText
 # Imports from the cheese factory
 from logging.config import dictConfig
 from pathlib import Path
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 from typing import List
-from typing_extensions import Self
 
 import requests
 from bs4 import BeautifulSoup
 from dateutils import relativedelta
 from dotenv import load_dotenv
 from pid.decorator import pidfile
-from sqlalchemy import Table, select, MetaData
+from sqlalchemy import MetaData, Table, select
+from typing_extensions import Self
 
 from scripts.stocks.scraping_engine import ScrapingEngine
 

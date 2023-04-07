@@ -1,14 +1,16 @@
 """
 Custom template tags for the trinistats stocks app
 """
-from .. import models
-from django import template
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from django.contrib.sessions.backends.db import SessionStore
-from django.conf import settings
-from importlib import import_module
 import logging
+from datetime import datetime
+from importlib import import_module
+
+from dateutil.relativedelta import relativedelta
+from django import template
+from django.conf import settings
+from django.contrib.sessions.backends.db import SessionStore
+
+from .. import models
 
 register = template.Library()
 logger = logging.getLogger('root')

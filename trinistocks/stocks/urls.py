@@ -1,10 +1,10 @@
 # Imports from standard libraries (
-from django.urls import path, include, reverse_lazy
-from django.contrib.auth import views as auth_views
-from django.contrib.staticfiles.storage import staticfiles_storage
-from django.views.generic.base import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
+from django.contrib.staticfiles.storage import staticfiles_storage
+from django.urls import include, path, reverse_lazy
+from django.views.generic.base import RedirectView
 from rest_framework.urlpatterns import format_suffix_patterns
 
 # Imports from local machine

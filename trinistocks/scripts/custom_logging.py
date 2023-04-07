@@ -7,15 +7,15 @@ This module sets up logging using a /logs directory and tees the log output
 to the stdout stream and a filestream. The log files are then named <standard name><current datetime>.log
 and are placed in the /logs directory. The logs directory is created in the working directory of the script that calls it.
 """
+import logging
+import logging.handlers
 # Put all your imports here, one per line. However multiple imports from the same lib are allowed on a line.
 import multiprocessing
-import logging
 import os
-from pathlib import Path
-from datetime import datetime
-import logging.handlers
 import smtplib
 import sys
+from datetime import datetime
+from pathlib import Path
 
 # CONSTANTS. These should be all in upper case
 LOGGERNAME = None

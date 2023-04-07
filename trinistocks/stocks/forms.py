@@ -1,9 +1,9 @@
 # imports from standard libs
-from django import forms
-from django.core.exceptions import ValidationError
-import django.core.validators as validators
 import django.contrib.auth.password_validation as password_validators
+import django.core.validators as validators
+from django import forms
 from django.contrib.auth import authenticate, get_user_model
+from django.core.exceptions import ValidationError
 
 # imports from local machine
 from stocks import models

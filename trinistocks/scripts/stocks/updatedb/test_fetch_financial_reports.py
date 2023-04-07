@@ -19,7 +19,6 @@ import sys
 # Imports from the local filesystem
 from . import fetch_financial_reports
 
-
 # Imports from the cheese factory
 # Put your constants here. These should be named in CAPS.
 

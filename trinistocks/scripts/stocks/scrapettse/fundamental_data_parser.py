@@ -8,35 +8,35 @@ Description of this module/script goes here
 :raises Exception if any issues are encountered
 """
  
+import glob
+import logging
+import os
+import re
+import shutil
+import sys
+import tempfile
+import time
+from datetime import datetime, timedelta
 # Put all your imports here, one per line. 
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
 from multiprocessing import Value
-import sys
-import logging
-import os
-from datetime import datetime, timedelta
-import time
-import numpy
+from pathlib import Path
 
+import camelot
+import numpy
 # Imports from the cheese factory
 import ocrmypdf
-import glob
-from pathlib import Path
-import camelot
-from pid import PidFile
-import tempfile
 import pandas as pd
-import re
-from sqlalchemy import create_engine, Table, select, MetaData, text, and_
-from sqlalchemy.dialects.mysql import insert
 import sqlalchemy.exc
-import shutil
+from pid import PidFile
+from sqlalchemy import MetaData, Table, and_, create_engine, select, text
+from sqlalchemy.dialects.mysql import insert
 
 # Imports from the local filesystem
 from ... import custom_logging
 from ...database_ops import DatabaseConnect
- 
+
 # Put your constants here. These should be named in CAPS.
 
 # Put your global variables here. 

@@ -9,27 +9,26 @@ into the TTSE database
 :raises Exception if any issues are encountered
 """
  
+import json
+import logging
+import os
+import pathlib
 # Put all your imports here, one per line. 
 # However multiple imports from the same lib are allowed on a line.
 # Imports from Python standard libraries
 import sys
-import logging
-import os
-import pathlib
-import json
-from datetime import datetime
 import time
+from datetime import datetime
 
-# Imports from the cheese factory
-from sqlalchemy import create_engine, Table, select, MetaData, text, and_
-import pandas as pd
 import numpy as np
-
+import pandas as pd
+import sqlalchemy.exc
 # Imports from the local filesystem
 from scrape_ttse.databaseconnect import DatabaseConnect
+# Imports from the cheese factory
+from sqlalchemy import MetaData, Table, and_, create_engine, select, text
 from sqlalchemy.dialects.mysql import insert
-import sqlalchemy.exc
- 
+
 # Put your constants here. These should be named in CAPS.
 
 # Put your global variables here. 

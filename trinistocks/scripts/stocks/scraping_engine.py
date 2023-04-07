@@ -1,8 +1,8 @@
 import logging
-from typing_extensions import Self
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from typing_extensions import Self
 
 LOGGER = logging.getLogger(__name__)
 
