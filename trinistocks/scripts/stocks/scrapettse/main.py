@@ -110,7 +110,7 @@ def main(args):
                     listed_equities_scraper.scrape_listed_equity_data, ()
                 )
                 check_num_equities_in_sector_result = multipool.apply_async(
-                    listed_equities_scraper.check_num_equities_in_sector, ()
+                    listed_equities_scraper.update_num_equities_in_sectors, ()
                 )
                 dividend_scraper = DividendScraper()
                 scrape_dividend_data_result = multipool.apply_async(dividend_scraper.scrape_dividend_data, ())

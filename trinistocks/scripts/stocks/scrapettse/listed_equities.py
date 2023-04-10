@@ -25,7 +25,7 @@ class ListedEquitiesScraper:
     def __del__(self: Self):
         pass
 
-    def scrape_listed_equity_data(self: Self):
+    def scrape_listed_equity_data(self: Self) -> int:
         """Use the requests and pandas libs to fetch the current listed equities at
         https://www.stockex.co.tt/listed-securities/?IdInstrumentType=1&IdSegment=&IdSector=
         and scrape the useful output into a list of dictionaries to write to the db
@@ -42,7 +42,7 @@ class ListedEquitiesScraper:
             # set up a dataframe with all our data
             all_listed_equity_data_df = pd.DataFrame(all_listed_equity_data)
             # now find the symbol ids? used for the news page for each symbol
-            symbol_ids, symbols = self._get_symbol_ids()
+            symbol_ids, symbols = self._scrape_symbol_ids()
             # now set up a dataframe
             symbol_id_df = pd.DataFrame(list(zip(symbols, symbol_ids)), columns=["symbol", "symbol_id"])
             # merge the two dataframes
@@ -52,6 +52,7 @@ class ListedEquitiesScraper:
             return 0
         except Exception as exc:
             logger.exception(f"Problem encountered while updating listed equities. Here's what we know: {str(exc)}")
+            return -1
         finally:
             custom_logging.flush_smtp_logger()
 
@@ -73,7 +74,7 @@ class ListedEquitiesScraper:
             result = db_obj.dbcon.execute(listed_equities_upsert_stmt)
             logger.debug("Database update successful. Number of rows affected was " + str(result.rowcount))
 
-    def _get_symbol_ids(self):
+    def _scrape_symbol_ids(self):
         logger.debug("Now trying to fetch symbol ids for news")
         news_url = "https://www.stockex.co.tt/news/"
         logger.debug(f"Navigating to {news_url}")
@@ -188,7 +189,7 @@ class ListedEquitiesScraper:
                             listed_stock_symbols.append(symbol)
         return listed_stock_symbols
 
-    def check_num_equities_in_sector(self: Self):
+    def update_num_equities_in_sectors(self: Self)->int:
         try:
             logger.debug("Now computing number of equities in each sector.")
             with DatabaseConnect() as db_connection:
