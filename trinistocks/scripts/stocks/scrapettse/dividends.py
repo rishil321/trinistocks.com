@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 import sqlalchemy
 from bs4 import BeautifulSoup, Tag
-from sqlalchemy import MetaData, Table, insert
+from sqlalchemy import MetaData, Table,select
+from sqlalchemy.dialects.mysql import insert
 from typing_extensions import Self
 
 from scripts.stocks.scraping_engine import ScrapingEngine

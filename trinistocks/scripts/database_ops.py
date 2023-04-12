@@ -39,22 +39,22 @@ class DatabaseConnect:
         """
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Creating a new DatabaseConnect object.")
-        self._dbengine = create_engine(
+        self.dbengine = create_engine(
             "mysql://" + dbuser + ":" + dbpass + "@" + dbaddress + "/" + dbschema, echo=False
         )
-        self._dbcon = self._dbengine.connect()
-        if self._dbcon:
+        self.dbcon = self.dbengine.connect()
+        if self.dbcon:
             self.logger.info("Connected to database successfully")
         else:
             raise ConnectionError("Could not connect to database at " + dbaddress)
 
     @property
     def get_dbengine(self: Self):
-        return self._dbengine
+        return self.dbengine
 
     @property
     def get_dbcon(self: Self):
-        return self._dbcon
+        return self.dbcon
 
     def close(
         self,
@@ -62,8 +62,8 @@ class DatabaseConnect:
         """
         Close the database connection
         """
-        if self._dbengine:
-            self._dbengine.dispose()
+        if self.dbengine:
+            self.dbengine.dispose()
             self.logger.debug("Database connection closed successfully.")
             return 0
         else:

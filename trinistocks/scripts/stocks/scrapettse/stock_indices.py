@@ -4,7 +4,8 @@ from logging.config import dictConfig
 
 import pandas as pd
 from bs4 import BeautifulSoup, Tag
-from sqlalchemy import MetaData, Table, insert
+from sqlalchemy import MetaData, Table
+from sqlalchemy.dialects.mysql import insert
 from typing_extensions import Self
 
 from scripts.stocks.scraping_engine import ScrapingEngine

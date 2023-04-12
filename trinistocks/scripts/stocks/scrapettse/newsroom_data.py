@@ -5,7 +5,8 @@ from logging.config import dictConfig
 from typing import List
 
 from bs4 import BeautifulSoup
-from sqlalchemy import MetaData, Table, insert
+from sqlalchemy import MetaData, Table
+from sqlalchemy.dialects.mysql import insert
 from typing_extensions import Self
 
 from scripts.stocks.scraping_engine import ScrapingEngine

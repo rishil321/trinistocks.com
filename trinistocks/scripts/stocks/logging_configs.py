@@ -5,9 +5,7 @@ LOGGING_CONFIG = {
     'loggers': {
         '': {  # root logger
             'level': 'NOTSET',
-            'handlers': ['debug_rotating_file_handler', 'console_handler', 'info_rotating_file_handler',
-                         'error_file_handler',
-                         'critical_mail_handler'],
+            'handlers': ['rotating_file_handler', 'console_handler', 'critical_mail_handler'],
         },
     },
     'handlers': {
@@ -17,29 +15,11 @@ LOGGING_CONFIG = {
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout',
         },
-        'debug_rotating_file_handler': {
-            'level': 'DEBUG',
-            'formatter': 'error',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.info.log'),
-            'mode': 'a',
-            'maxBytes': 1048576 * 10,
-            'backupCount': 10
-        },
-        'info_rotating_file_handler': {
+        'rotating_file_handler': {
             'level': 'INFO',
             'formatter': 'error',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.info.log'),
-            'mode': 'a',
-            'maxBytes': 1048576 * 10,
-            'backupCount': 10
-        },
-        'error_file_handler': {
-            'level': 'ERROR',
-            'formatter': 'error',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs', 'scripts.stocks.error.log'),
             'mode': 'a',
             'maxBytes': 1048576 * 10,
             'backupCount': 10

@@ -11,7 +11,8 @@ import numpy as np
 import pandas as pd
 import sqlalchemy
 from bs4 import BeautifulSoup, Tag
-from sqlalchemy import MetaData, Table, insert, select
+from sqlalchemy import MetaData, Table, select
+from sqlalchemy.dialects.mysql import insert
 from typing_extensions import Self
 
 from scripts.stocks.scraping_engine import ScrapingEngine
@@ -32,11 +33,9 @@ class DailySummaryDataScraper:
     def __del__(self: Self):
         pass
 
-
-
     def scrape_equity_summary_data_in_subprocess(
-        self,
-        dates_to_fetch,
+            self,
+            dates_to_fetch,
     ):
         """
         In a new process, use the requests, beautifulsoup and pandas libs to scrape data from
@@ -61,7 +60,7 @@ class DailySummaryDataScraper:
                         logger.warning(f"This date is not a valid trading date: {fetch_date} {pid_string}")
                         continue
                     # else
-                    logger.debug("This is a valid trading day.")
+                    logger.info("This is a valid trading day.")
                     # get a date object suitable for the db
                     fetch_date_db: datetime = datetime.strptime(fetch_date, "%Y-%m-%d")
                     (
@@ -89,14 +88,16 @@ class DailySummaryDataScraper:
                     self._write_daily_stock_data_to_db(
                         all_daily_stock_data, fetch_date, market_indices_table, pid_string
                     )
+                    logger.info(f"Successfully parsed and updated stock data for date {fetch_date} {pid_string}")
                 except KeyError as key_error:
                     logger.warning(f"Could not find a required key on date {fetch_date} {pid_string};{key_error}")
                 except IndexError as index_error:
                     logger.warning(f"Could not locate index in a list. {fetch_date} {pid_string};{index_error}")
             return 0
-        except Exception:
+        except Exception as exc:
             logger.exception(
-                f"Could not complete historical_indices_summary and daily_stock_summary update. {pid_string}"
+                f"Could not complete historical_indices_summary and daily_stock_summary update. {pid_string}",
+                exc_info=exc
             )
             custom_logging.flush_smtp_logger()
 
@@ -125,10 +126,10 @@ class DailySummaryDataScraper:
                     upsert_stmt = insert_stmt.on_duplicate_key_update({x.name: x for x in insert_stmt.inserted})
                     result = db_connect.dbcon.execute(upsert_stmt)
                     execute_completed_successfully = True
-                    logger.debug(
+                    logger.info(
                         "Successfully scraped and wrote to db market indices data for " + fetch_date + pid_string
                     )
-                    logger.debug(
+                    logger.info(
                         "Number of rows affected in the historical_indices_summary table was "
                         + str(result.rowcount)
                         + pid_string
@@ -137,10 +138,10 @@ class DailySummaryDataScraper:
                     upsert_stmt = insert_stmt.on_duplicate_key_update({x.name: x for x in insert_stmt.inserted})
                     result = db_connect.dbcon.execute(upsert_stmt)
                     execute_completed_successfully = True
-                    logger.debug(
+                    logger.info(
                         "Successfully scraped and wrote to db daily equity/shares data for " + fetch_date + pid_string
                     )
-                    logger.debug(
+                    logger.info(
                         "Number of rows affected in the daily_stock_summary table was "
                         + str(result.rowcount)
                         + pid_string
@@ -152,16 +153,16 @@ class DailySummaryDataScraper:
         return db_connect
 
     def _parse_all_daily_stock_data(
-        self,
-        daily_stock_data_keys,
-        fetch_date,
-        fetch_date_db,
-        mutual_funds_shares_table,
-        ordinary_shares_table,
-        preference_shares_table,
-        second_tier_shares_table,
-        sme_shares_table,
-        usd_equity_shares_table,
+            self,
+            daily_stock_data_keys,
+            fetch_date,
+            fetch_date_db,
+            mutual_funds_shares_table,
+            ordinary_shares_table,
+            preference_shares_table,
+            second_tier_shares_table,
+            sme_shares_table,
+            usd_equity_shares_table,
     ):
         # now lets try to wrangle the daily data for stocks
         all_daily_stock_data = []
@@ -238,7 +239,7 @@ class DailySummaryDataScraper:
         return all_daily_stock_data
 
     def _parse_data_from_equity_summary_tables(
-        self: Self, dataframe_list: List[pd.DataFrame], market_summary_data_keys: List[str], fetch_date_db: datetime
+            self: Self, dataframe_list: List[pd.DataFrame], market_summary_data_keys: List[str], fetch_date_db: datetime
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame,]:
         # get the tables holding useful data
         market_indices_table = dataframe_list[0]
@@ -278,10 +279,10 @@ class DailySummaryDataScraper:
         )
 
     def _scrape_equity_summary_data_for_date(self, dates_to_fetch, fetch_date, index, pid_string):
-        logger.debug(f"Now loading page {str(index)} of {str(len(dates_to_fetch))} {pid_string}")
+        logger.info(f"Now loading page {str(index)} of {str(len(dates_to_fetch))} {pid_string}")
         # for each date, we need to navigate to this summary page for that day
         url_summary_page = f"https://www.stockex.co.tt/market-quote/?TradeDate={fetch_date}"
-        logger.debug(f"Navigating to {url_summary_page} {pid_string}")
+        logger.info(f"Navigating to {url_summary_page} {pid_string}")
         equity_summary_page = self.scraping_engine.get_url_and_return_html(url=url_summary_page)
         return equity_summary_page
 
@@ -337,7 +338,7 @@ class DailySummaryDataScraper:
         # of all dates that we need to gather still
         dates_to_fetch = []
         fetch_date = datetime.strptime(start_date, "%Y-%m-%d")
-        logger.debug("Getting all dates that are not already fetched and are not weekends.")
+        logger.info("Getting all dates that are not already fetched and are not weekends.")
         # TODO: Extend holidays library for Trinidad and Tobago
         # Get all dates until yesterday
         while fetch_date < datetime.now():
@@ -348,14 +349,14 @@ class DailySummaryDataScraper:
             # increment the date by one day
             fetch_date += timedelta(days=1)
         # now split our dates_to_fetch list into sublists to multithread
-        logger.debug("List of dates to fetch built. Now splitting list by core.")
+        logger.info("List of dates to fetch built. Now splitting list by core.")
         num_cores = multiprocessing.cpu_count()
-        logger.debug("This machine has " + str(num_cores) + " logical CPU cores.")
+        logger.info("This machine has " + str(num_cores) + " logical CPU cores.")
         list_length = len(dates_to_fetch)
         dates_to_fetch_sublists = [
-            dates_to_fetch[i * list_length // num_cores : (i + 1) * list_length // num_cores] for i in range(num_cores)
+            dates_to_fetch[i * list_length // num_cores: (i + 1) * list_length // num_cores] for i in range(num_cores)
         ]
-        logger.debug("Lists split successfully.")
+        logger.info("Lists split successfully.")
         return dates_to_fetch_sublists
 
     def _read_dates_already_recorded_from_db(self):
@@ -369,7 +370,7 @@ class DailySummaryDataScraper:
                 autoload_with=db_connect.dbengine,
             )
             # Now get the dates that we already have recorded (from the historical indices table)
-            logger.debug("Creating list of dates to fetch.")
+            logger.info("Creating list of dates to fetch.")
             dates_already_recorded = []
             select_stmt = select([historical_indices_info_table.c.date])
             result = db_connect.dbcon.execute(select_stmt)
@@ -388,7 +389,7 @@ class DailySummaryDataScraper:
         """
         try:
             today_date = datetime.now().strftime("%Y-%m-%d")
-            logger.debug(f"Now using pandas to fetch daily shares data for today ({today_date})")
+            logger.info(f"Now using pandas to fetch daily shares data for today ({today_date})")
             daily_stock_data_keys, market_summary_data_keys = self._setup_field_names_for_daily_summary_data_tables()
             daily_trade_data_for_today = self._scrape_daily_trade_data_for_today(today_date)
             # set up a list to store the data to be written to db
@@ -403,12 +404,12 @@ class DailySummaryDataScraper:
                 )
             else:
                 # if no summary data has been published yet for today, try to use the marquee on the main page to source data
-                logger.debug("No summary data found for today (yet?). Trying to get marquee data from main page.")
+                logger.info("No summary data found for today (yet?). Trying to get marquee data from main page.")
                 listed_symbols = _read_listed_symbols_from_db()
                 main_page = self._scrape_data_from_main_page()
                 all_daily_stock_data = self._parse_stock_data_from_main_page(listed_symbols, main_page)
             if not all_daily_stock_data:
-                logger.debug("No data found for today. Nothing to write in db.")
+                logger.info("No data found for today. Nothing to write in db.")
                 return 0
             # else if we have any data to insert, then push the data into the db
             self._write_daily_stock_data_for_today_to_db(all_daily_stock_data)
@@ -512,7 +513,7 @@ class DailySummaryDataScraper:
         return main_page
 
     def _parse_daily_trading_data_for_today(
-        self, all_daily_stock_data, daily_stock_data_keys, dataframe_list, today_date
+            self, all_daily_stock_data, daily_stock_data_keys, dataframe_list, today_date
     ):
         # get the tables holding useful data
         market_indices_table = dataframe_list[0]

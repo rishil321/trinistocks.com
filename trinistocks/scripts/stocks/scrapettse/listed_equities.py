@@ -4,7 +4,8 @@ from logging.config import dictConfig
 
 import pandas as pd
 from bs4 import BeautifulSoup, Tag
-from sqlalchemy import MetaData, Table, insert
+from sqlalchemy import MetaData, Table
+from sqlalchemy.dialects.mysql import insert
 from typing_extensions import Self
 
 from scripts.stocks.scraping_engine import ScrapingEngine
@@ -14,7 +15,7 @@ from ... import custom_logging
 from ...database_ops import DatabaseConnect
 
 dictConfig(logging_configs.LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class ListedEquitiesScraper:
@@ -75,9 +76,9 @@ class ListedEquitiesScraper:
             logger.debug("Database update successful. Number of rows affected was " + str(result.rowcount))
 
     def _scrape_symbol_ids(self):
-        logger.debug("Now trying to fetch symbol ids for news")
+        logger.info("Now trying to fetch symbol ids for news")
         news_url = "https://www.stockex.co.tt/news/"
-        logger.debug(f"Navigating to {news_url}")
+        logger.info(f"Navigating to {news_url}")
         equity_page = self.scraping_engine.get_url_and_return_html(url=news_url)
         # get all the options for the dropdown select, since these contain the ids
         news_page_soup = BeautifulSoup(equity_page, "lxml")
@@ -173,7 +174,7 @@ class ListedEquitiesScraper:
                 if not symbol_already_added:
                     all_listed_equity_data.append(equity_data)
                 # else don't add a duplicate equity
-                logger.debug("Successfully added basic listing data for: " + equity_data["security_name"])
+                logger.info("Successfully added basic listing data for: " + equity_data["security_name"])
             except Exception as exc:
                 logger.warning(f"Could not load page for equity:{symbol}. Here's what we know: {str(exc)}")
         return all_listed_equity_data
@@ -189,13 +190,14 @@ class ListedEquitiesScraper:
                             listed_stock_symbols.append(symbol)
         return listed_stock_symbols
 
-    def update_num_equities_in_sectors(self: Self)->int:
+    def update_num_equities_in_sectors(self: Self) -> int:
         try:
-            logger.debug("Now computing number of equities in each sector.")
+            logger.info("Now computing number of equities in each sector.")
             with DatabaseConnect() as db_connection:
                 unique_listed_equities_df = self._calculate_num_equities_per_sector(db_connection)
                 # update the table in the db
                 self._write_num_listed_equities_per_sector_to_db(db_connection, unique_listed_equities_df)
+            logger.info(f"Successfully updated equity data in db.")
             return 0
         except Exception as exc:
             logger.exception("Problem encountered while calculating number of equities in each sector." + str(exc))
@@ -232,4 +234,4 @@ class ListedEquitiesScraper:
             {x.name: x for x in listed_equities_per_sector_insert_stmt.inserted}
         )
         result = db_connection.dbcon.execute(listed_equities_per_sector_upsert_stmt)
-        logger.debug("Database update successful. Number of rows affected was " + str(result.rowcount))
+        logger.info("Database update successful. Number of rows affected was " + str(result.rowcount))
