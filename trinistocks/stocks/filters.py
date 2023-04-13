@@ -1,4 +1,5 @@
 import django_filters
+
 from stocks import models
 
 

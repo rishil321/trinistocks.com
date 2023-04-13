@@ -8,6 +8,7 @@ services:
     restart: always
     volumes:
       - trinistocks_log_files:/trinistocks/logs
+      - dev_shm:/dev/shm
     image: rishi321/trinistocks_background_scripts:latest
     build:
       context: ./
@@ -53,3 +54,4 @@ services:
       - ./certbot/conf/:/etc/letsencrypt
 volumes:
   trinistocks_log_files:
+  dev_shm:

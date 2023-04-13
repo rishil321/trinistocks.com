@@ -1,31 +1,17 @@
-from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
-from .models import (
-    LANGUAGE_CHOICES,
-    STYLE_CHOICES,
-    DailyStockSummary,
-    StockNewsData,
-    ListedEquities,
-    TechnicalAnalysisSummary,
-    FundamentalAnalysisSummary,
-    HistoricalDividendInfo,
-    HistoricalDividendYield,
-    SummarizedDividendYield,
-    HistoricalIndicesInfo,
-    PortfolioSummary,
-    PortfolioSectors,
-    PortfolioTransactions,
-    User,
-    SimulatorGames,
-    SimulatorPlayers,
-    SimulatorTransactions,
-    SimulatorPortfolios,
-    SimulatorPortfolioSectors,
-    MonitoredStocks,
-)
-from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from .models import (LANGUAGE_CHOICES, STYLE_CHOICES, DailyStockSummary,
+                     FundamentalAnalysisSummary, HistoricalDividendInfo,
+                     HistoricalDividendYield, HistoricalIndicesInfo,
+                     ListedEquities, MonitoredStocks, PortfolioSectors,
+                     PortfolioSummary, PortfolioTransactions, SimulatorGames,
+                     SimulatorPlayers, SimulatorPortfolios,
+                     SimulatorPortfolioSectors, SimulatorTransactions,
+                     StockNewsData, SummarizedDividendYield,
+                     TechnicalAnalysisSummary, User)
 
 
 class DailyStockSummarySerializer(serializers.ModelSerializer):

@@ -1,0 +1,16 @@
+# version of docker compose to use
+version: '3.9'
+services:
+  scheduled_scripts:
+    env_file:
+      - ../.env
+    container_name: scheduled_scripts
+    volumes:
+      - dev_shm:/dev/shm
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    command: poetry run python -m scheduled_scripts.scrapettse.main
+volumes:
+  trinistocks_log_files:
+  dev_shm:

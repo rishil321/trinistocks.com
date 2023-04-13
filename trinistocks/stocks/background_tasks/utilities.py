@@ -21,6 +21,14 @@ import django
 
 django.setup()
 
+import json
+# Imports
+import logging
+from decimal import Decimal
+from typing import Optional
+
+import requests
+
 # Import your models for use in your script
 from stocks import models
 
@@ -28,12 +36,6 @@ from stocks import models
 # MODULE/APP START
 ####################################
 
-# Imports
-import logging
-import requests
-import json
-from decimal import Decimal
-from typing import Optional
 
 # Constants
 logger: logging.Logger = logging.getLogger('background_tasks')

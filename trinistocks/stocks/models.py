@@ -1,14 +1,15 @@
 from decimal import Decimal
-
-from django.db import models
-from django.urls import reverse
-from .templatetags import stocks_template_tags
 from urllib.parse import urlencode
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.urls import reverse
 from pygments.lexers import get_all_lexers
 from pygments.styles import get_all_styles
+
+from .templatetags import stocks_template_tags
 
 # CONSTANTS
 LEXERS = [item for item in get_all_lexers() if item[1]]
