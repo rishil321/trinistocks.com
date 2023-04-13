@@ -8,8 +8,8 @@ services:
     volumes:
       - dev_shm:/dev/shm
     build:
-      context: ../
-      dockerfile: ./docker/Dockerfile
+      context: ../../
+      dockerfile: ./scheduled_scripts/docker/Dockerfile
     command: poetry run python -m scheduled_scripts.scrapettse.main
 volumes:
   trinistocks_log_files:
