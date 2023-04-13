@@ -2,43 +2,41 @@
 # Imports from standard Python lib
 import logging
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
+import django_tables2 as tables2
+import pandas as pd
+from django import forms
+from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.tokens import default_token_generator
 # Imports from cheese factory
 from django.core.exceptions import ValidationError
-import django_tables2 as tables2
-from django_tables2.export.views import ExportMixin
-from django_filters.views import FilterView
-from django.views.generic import TemplateView
-from django import forms
-from django.db.models import F
-from django.utils.datastructures import MultiValueDictKeyError
-from urllib.parse import urlencode
-from django.shortcuts import redirect
-from django.urls import reverse
-from django.urls import reverse_lazy
-from django.views.generic.edit import FormView
-from django.contrib.auth import login, logout, get_user_model, authenticate
-from django.db.utils import IntegrityError
-import pandas as pd
 from django.core.mail import send_mail
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import F
+from django.db.utils import IntegrityError
+from django.shortcuts import redirect
 from django.template.loader import render_to_string
-from django.utils.http import urlsafe_base64_encode
-from django.contrib.auth.tokens import default_token_generator
+from django.urls import reverse, reverse_lazy
+from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.encoding import force_bytes
-from rest_framework import generics, permissions, views, response, status
+from django.utils.http import urlsafe_base64_encode
+from django.views.generic import TemplateView
+from django.views.generic.edit import FormView
+from django_filters.views import FilterView
+from django_tables2.export.views import ExportMixin
+from rest_framework import generics, permissions, response, status, views
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authtoken.models import Token
+
+from scheduled_scripts.stocks.updatedb import updater
 
 # Imports from local machine
-from . import serializers
-from . import models, filters
+from . import filters, forms, models, serializers
 from . import tables as stocks_tables
 from .templatetags import stocks_template_tags
-from . import forms
-from scripts.stocks.updatedb import updater
 
 # endregion
 

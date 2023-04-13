@@ -21,24 +21,27 @@ import django
 
 django.setup()
 
+import argparse
+import logging
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import List, Optional
+
+from django.db.models import Avg, QuerySet, Sum
+from django.utils import timezone
+from pid import PidFile
+
 # Import your models for use in your script
 from stocks import models
+# Local imports
+from stocks.background_tasks.utilities import (
+    TTDCurrencyConversionRates, fetch_latest_currency_conversion_rates)
 
 ############################################################################
 # START OF APPLICATION
 ############################################################################
 # Imports
 
-import argparse
-from pid import PidFile
-import logging
-from datetime import datetime, timedelta
-from decimal import Decimal
-from django.db.models import QuerySet, Sum, Avg
-from django.utils import timezone
-from typing import List, Optional
-# Local imports
-from stocks.background_tasks.utilities import TTDCurrencyConversionRates, fetch_latest_currency_conversion_rates
 
 # Constants
 logger: logging.Logger = logging.getLogger('background_tasks')

@@ -1,11 +1,14 @@
-import django_tables2 as tables
-from stocks import models
-from django_tables2.export.views import ExportMixin
-from django.urls import reverse
-from .templatetags import stocks_template_tags
 from urllib.parse import urlencode
-from django.utils.safestring import mark_safe
+
+import django_tables2 as tables
+from django.urls import reverse
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
+from django_tables2.export.views import ExportMixin
+
+from stocks import models
+
+from .templatetags import stocks_template_tags
 
 
 class HistoricalStockInfoTable(tables.Table):
