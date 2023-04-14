@@ -12,6 +12,7 @@ import json
 import logging
 import multiprocessing
 import os
+import sys
 # region IMPORTS
 #
 # Put all your imports here, one per line.
@@ -29,6 +30,7 @@ import requests
 import sqlalchemy.exc
 # Imports from the cheese factory
 from pid import PidFile
+from pid.decorator import pidfile
 from sqlalchemy import (MetaData, Table)
 from sqlalchemy.dialects.mysql import insert
 
@@ -36,7 +38,7 @@ from sqlalchemy.dialects.mysql import insert
 from scheduled_scripts.database_ops import DatabaseConnect
 from scheduled_scripts import logging_configs
 from scheduled_scripts.crosslisted_symbols import (BBD_DIVIDEND_SYMBOLS, JMD_DIVIDEND_SYMBOLS,
-                                         USD_DIVIDEND_SYMBOLS, USD_STOCK_SYMBOLS)
+                                                   USD_DIVIDEND_SYMBOLS, USD_STOCK_SYMBOLS)
 
 dictConfig(logging_configs.LOGGING_CONFIG)
 logger = logging.getLogger()
@@ -482,7 +484,7 @@ def update_portfolio_summary_book_costs():
                 columns={"num_shares": "shares_sold"}, inplace=True
             )
             total_shares_sold_df['total_transaction_cost'] = total_shares_sold_df['share_price'] * \
-                                                             total_shares_sold_df['shares_bought']
+                                                             total_shares_sold_df['shares_sold']
             # first merge both dataframes
             total_bought_sold_df = total_shares_bought_df.merge(
                 total_shares_sold_df, how="outer", on=["user_id", "symbol"]
@@ -491,9 +493,9 @@ def update_portfolio_summary_book_costs():
             total_bought_sold_df["shares_sold"] = total_bought_sold_df[
                 "shares_sold"
             ].replace(np.NaN, 0)
-            total_bought_sold_df["total_transaction_cost"] = total_bought_sold_df[
-                "total_transaction_cost"
-            ].replace(np.NaN, 0)
+            # total_bought_sold_df["total_transaction_cost"] = total_bought_sold_df[
+            #     "total_transaction_cost"
+            # ].replace(np.NaN, 0)
             # then find the difference to get our number of shares remaining for each user
             total_bought_sold_df["shares_remaining"] = (
                     total_bought_sold_df["shares_bought"]
@@ -1193,54 +1195,58 @@ def update_simulator_portfolio_sectors_values():
             logger.info("Successfully closed database connection.")
 
 
-def main(args):
+@pidfile()
+def main(args: list[str]):
     """Main function for updating portfolio data"""
+    cli_arguments: argparse.Namespace = set_up_arguments(args)
     try:
-        with PidFile(piddir=tempfile.gettempdir()):
-            with multiprocessing.Pool(os.cpu_count()) as multipool:
-                logger.info("Now starting stocks updater module.")
-                if args.daily_update:
-                    multipool.apply(update_portfolio_summary_market_values, ())
-                else:
-                    # get the latest conversion rates
-                    TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(
-                        fetch_latest_currency_conversion_rates, ()
-                    )
-                    # update the fundamental analysis stock data
-                    multipool.apply(
-                        calculate_fundamental_analysis_ratios,
-                        (TTD_JMD, TTD_USD, TTD_BBD),
-                    )
-                    multipool.apply(update_dividend_yields, (TTD_JMD, TTD_USD, TTD_BBD))
-                    # update the portfolio data for all users
-                    multipool.apply(update_portfolio_summary_book_costs, ())
-                    multipool.apply(update_portfolio_summary_market_values, ())
-                    multipool.apply(update_portfolio_sectors_values, ())
-                    # update the simulator portfolio data for all simulator players
-                    multipool.apply(update_simulator_portfolio_summary_book_costs, ())
-                    multipool.apply(
-                        update_simulator_portfolio_summary_market_values, ()
-                    )
-                    multipool.apply(update_simulator_portfolio_sectors_values, ())
-                    multipool.apply(update_simulator_games, ())
-                multipool.close()
-                multipool.join()
-                logger.info(os.path.basename(__file__) + " executed successfully.")
+        with multiprocessing.Pool(os.cpu_count()) as multipool:
+            logger.info("Now starting stocks updater module.")
+            if cli_arguments.daily_update:
+                multipool.apply(update_portfolio_summary_market_values, ())
+            else:
+                # get the latest conversion rates
+                TTD_JMD, TTD_USD, TTD_BBD = multipool.apply(
+                    fetch_latest_currency_conversion_rates, ()
+                )
+                # update the fundamental analysis stock data
+                multipool.apply(
+                    calculate_fundamental_analysis_ratios,
+                    (TTD_JMD, TTD_USD, TTD_BBD),
+                )
+                multipool.apply(update_dividend_yields, (TTD_JMD, TTD_USD, TTD_BBD))
+                # update the portfolio data for all users
+                multipool.apply(update_portfolio_summary_book_costs, ())
+                multipool.apply(update_portfolio_summary_market_values, ())
+                multipool.apply(update_portfolio_sectors_values, ())
+                # update the simulator portfolio data for all simulator players
+                multipool.apply(update_simulator_portfolio_summary_book_costs, ())
+                multipool.apply(
+                    update_simulator_portfolio_summary_market_values, ()
+                )
+                multipool.apply(update_simulator_portfolio_sectors_values, ())
+                multipool.apply(update_simulator_games, ())
+            multipool.close()
+            multipool.join()
+            logger.info(os.path.basename(__file__) + " executed successfully.")
         return 0
     except Exception:
         logging.exception("Error in script " + os.path.basename(__file__))
 
 
-# endregion FUNCTION DEFINITIONS
-
-# If this script is being run from the command-line, then run the main() function
-if __name__ == "__main__":
-    # first check the arguements given to this script
+def set_up_arguments(args: list[str]):
+    # first check the arguments given to this script
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--daily_update",
         help="Update the portfolio market data with the latest values",
         action="store_true",
     )
-    args = parser.parse_args()
-    main(args)
+    return parser.parse_args(args)
+
+
+# endregion FUNCTION DEFINITIONS
+
+# If this script is being run from the command-line, then run the main() function
+if __name__ == "__main__":
+    main(sys.argv[1:])

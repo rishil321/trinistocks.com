@@ -19,6 +19,7 @@ import sys
 # Imports from the local filesystem
 from . import updater
 
+
 # Imports from the cheese factory
 
 
@@ -34,8 +35,8 @@ from . import updater
 def test_calculate_fundamental_analysis_ratios():
     assert (
             updater.calculate_fundamental_analysis_ratios(
-            TTD_JMD=21.33, TTD_USD=0.15, TTD_BBD=0.29
-        )
+                TTD_JMD=21.33, TTD_USD=0.15, TTD_BBD=0.29
+            )
             == 0
     )
 
@@ -75,29 +76,4 @@ def test_update_simulator_games():
 
 
 def test_main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--daily_update",
-        help="Update the portfolio market data with the latest values",
-        action="store_true",
-    )
-    args = parser.parse_args([])
-    assert updater.main(args) == 0
-
-
-def main():
-    """Docstring description for each function"""
-    try:
-        # All main code here
-        pass
-    except Exception:
-        logging.exception("Error in script " + os.path.basename(__file__))
-        sys.exit(1)
-    else:
-        logging.info(os.path.basename(__file__) + " executed successfully.")
-        sys.exit(0)
-
-
-# If this script is being run from the command-line, then run the main() function
-if __name__ == "__main__":
-    main()
+    assert updater.main([]) == 0
