@@ -1,4 +1,4 @@
-from scheduled_scripts.scrapettse.technical_analysis_data import TechnicalAnalysisDataScraper
+from scheduled_scripts.scrape_ttse.technical_analysis_data import TechnicalAnalysisDataScraper
 
 
 def test_update_technical_analysis_data():
