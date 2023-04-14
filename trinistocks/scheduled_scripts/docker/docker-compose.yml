@@ -10,7 +10,7 @@ services:
     build:
       context: ../../
       dockerfile: ./scheduled_scripts/docker/Dockerfile
-    command: poetry run python -m scheduled_scripts.scrapettse.main
+    entrypoint: poetry run python -m scheduled_scripts.scrape_ttse.main
 volumes:
   trinistocks_log_files:
   dev_shm:

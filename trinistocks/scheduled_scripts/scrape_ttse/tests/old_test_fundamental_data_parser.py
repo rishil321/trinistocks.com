@@ -17,7 +17,7 @@ import os
 import sys
 
 # Imports from the local filesystem
-from scheduled_scripts.stocks.scrapettse import fundamental_data_parser
+from scheduled_scripts.stocks.scrape_ttse import fundamental_data_parser
 
 # Imports from the cheese factory
 

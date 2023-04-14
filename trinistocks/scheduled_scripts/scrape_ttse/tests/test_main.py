@@ -20,7 +20,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 # Imports from the local filesystem
-from scheduled_scripts.scrapettse import main
+from scheduled_scripts.scrape_ttse import main
 
 # Imports from the cheese factory
 

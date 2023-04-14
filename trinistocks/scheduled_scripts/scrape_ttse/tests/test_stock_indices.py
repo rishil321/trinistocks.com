@@ -1,0 +1,1 @@
+from scheduled_scripts.scrape_ttse.stock_indices import StockIndicesScraper

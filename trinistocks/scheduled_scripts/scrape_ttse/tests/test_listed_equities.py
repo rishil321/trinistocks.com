@@ -1,4 +1,4 @@
-from scheduled_scripts.scrapettse.listed_equities import ListedEquitiesScraper
+from scheduled_scripts.scrape_ttse.listed_equities import ListedEquitiesScraper
 
 
 def test_scrape_listed_equity_data():

@@ -1,1 +1,0 @@
-from scheduled_scripts.scrapettse.stock_indices import StockIndicesScraper
