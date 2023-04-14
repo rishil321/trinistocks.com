@@ -46,7 +46,7 @@ class ScrapingEngine:
         return html
 
     def validate_html_scraped_successfully(self, html, html_scraped_successfully):
-        LOGGER.debug(f"Now validating html {html}")
+        # LOGGER.debug(f"Now validating html {html}")
         partial_html_strings_to_avoid = ('<title>Sucuri WebSite Firewall - Access Denied</title>',)
         complete_html_strings_to_avoid = ('', '<html><head></head><body></body></html>')
         if html not in complete_html_strings_to_avoid and not any(

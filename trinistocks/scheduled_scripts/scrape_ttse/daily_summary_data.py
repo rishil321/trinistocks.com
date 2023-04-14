@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from logging.config import dictConfig
+from multiprocessing.pool import AsyncResult
 from typing import List, Tuple
 
 import numpy as np
@@ -311,7 +312,7 @@ class DailySummaryDataScraper:
         ]
         return daily_stock_data_keys, market_summary_data_keys
 
-    def build_lists_of_missing_dates_for_each_subprocess(self: Self, start_date: str)->list[list[str]]:
+    def build_lists_of_missing_dates_for_each_subprocess(self: Self, start_date: str) -> list[list[str]]:
         """
         Create the list of dates that we need to scrape data from https://www.stockex.co.tt/market-quote/
         for, based on the start_date specified and the dates already in the historical_indices_info table
@@ -598,3 +599,23 @@ class DailySummaryDataScraper:
         logger.debug("Navigating to " + daily_trade_data_today_page)
         daily_trade_data_for_today = self.scraping_engine.get_url_and_return_html(url=daily_trade_data_today_page)
         return daily_trade_data_for_today
+
+
+def scrape_equity_summary_data_in_multiprocess(dates_to_fetch_sublists: list[list[str]]) -> None:
+    with multiprocessing.Pool(os.cpu_count()) as multipool:
+        # now call the individual workers to fetch these dates
+        async_results: list[AsyncResult] = []
+        for core_date_list in dates_to_fetch_sublists:
+            async_results.append(
+                multipool.apply_async(
+                    start_scrape_equity_summary_data_in_subprocess, (core_date_list,)
+                )
+            )
+        # wait until all workers finish fetching data before continuing
+        for async_result in async_results:
+            logger.info(f"One process of scrape_equity_summary_data exited with code {async_result.get()}")
+
+
+def start_scrape_equity_summary_data_in_subprocess(core_date_list: list[str]) -> int:
+    daily_summary_data_scraper: DailySummaryDataScraper = DailySummaryDataScraper()
+    return daily_summary_data_scraper.scrape_equity_summary_data_in_subprocess(core_date_list)
