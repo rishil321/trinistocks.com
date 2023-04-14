@@ -24,10 +24,12 @@ from multiprocessing.pool import AsyncResult
 from typing import Tuple
 
 from dateutil.relativedelta import relativedelta
+from pid import PidFile
 from pid.decorator import pidfile
 from typing_extensions import Self
 
-from scheduled_scripts.scrape_ttse.daily_summary_data import DailySummaryDataScraper
+from scheduled_scripts.scrape_ttse.daily_summary_data import DailySummaryDataScraper, \
+    scrape_equity_summary_data_in_multiprocess
 from scheduled_scripts.scrape_ttse.dividends import DividendScraper
 from scheduled_scripts.scrape_ttse.listed_equities import ListedEquitiesScraper
 from scheduled_scripts.scrape_ttse.newsroom_data import NewsroomDataScraper
@@ -100,22 +102,11 @@ def main(cli_arguments: argparse.Namespace) -> int:
             listed_equities_scraper.update_num_equities_in_sectors()
             return 0
         elif cli_arguments.daily_summary_data:
-            with multiprocessing.Pool(os.cpu_count()) as multipool:
-                daily_summary_data_scraper: DailySummaryDataScraper = DailySummaryDataScraper()
-                dates_to_fetch_sublists: list[
-                    list[str]] = daily_summary_data_scraper.build_lists_of_missing_dates_for_each_subprocess(
-                    start_date)
-                # now call the individual workers to fetch these dates
-                async_results: list[AsyncResult] = []
-                for core_date_list in dates_to_fetch_sublists:
-                    async_results.append(
-                        multipool.apply_async(
-                            daily_summary_data_scraper.scrape_equity_summary_data_in_subprocess, (core_date_list,)
-                        )
-                    )
-                # wait until all workers finish fetching data before continuing
-                for async_result in async_results:
-                    logger.info(f"One process of scrape_equity_summary_data exited with code {async_result.get()}")
+            daily_summary_data_scraper: DailySummaryDataScraper = DailySummaryDataScraper()
+            dates_to_fetch_sublists: list[
+                list[str]] = daily_summary_data_scraper.build_lists_of_missing_dates_for_each_subprocess(
+                start_date)
+            scrape_equity_summary_data_in_multiprocess(dates_to_fetch_sublists)
             return 0
         elif cli_arguments.dividends:
             dividend_scraper: DividendScraper = DividendScraper()
