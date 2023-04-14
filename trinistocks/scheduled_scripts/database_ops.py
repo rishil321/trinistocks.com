@@ -11,14 +11,11 @@
 import logging
 from typing import List
 
-import pymysql
 from sqlalchemy import create_engine, Table, MetaData, select
 from sqlalchemy.engine import CursorResult
 from typing_extensions import Self
 
 from . import configs
-
-pymysql.install_as_MySQLdb()
 
 
 class DatabaseConnect:
