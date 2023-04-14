@@ -1,4 +1,4 @@
-from scheduled_scripts.scrapettse.dividends import DividendScraper
+from scheduled_scripts.scrape_ttse.dividends import DividendScraper
 
 
 def test_scrape_dividend_data():

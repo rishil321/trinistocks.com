@@ -311,7 +311,7 @@ class DailySummaryDataScraper:
         ]
         return daily_stock_data_keys, market_summary_data_keys
 
-    def update_equity_summary_data(self: Self, start_date: str):
+    def build_lists_of_missing_dates_for_each_subprocess(self: Self, start_date: str)->list[list[str]]:
         """
         Create the list of dates that we need to scrape data from https://www.stockex.co.tt/market-quote/
         for, based on the start_date specified and the dates already in the historical_indices_info table

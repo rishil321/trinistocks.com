@@ -8,6 +8,7 @@ from lxml.html import fromstring
 from selenium.webdriver.chrome.options import Options
 from typing_extensions import Self
 from seleniumwire import webdriver
+
 from scheduled_scripts import logging_configs
 
 dictConfig(logging_configs.LOGGING_CONFIG)
@@ -17,6 +18,8 @@ LOGGER = logging.getLogger()
 class ScrapingEngine:
     def __init__(self: Self):
         self.proxies = self._get_proxies()
+        if not self.proxies:
+            raise RuntimeError("Could not find any valid proxies to use.")
         self.driver = webdriver.Chrome(executable_path="/usr/bin/chromedriver", options=self._set_chrome_options())
         # self.driver = webdriver.Chrome(executable_path="C:\Program Files(x86)\Google\Chrome\Application", options=_set_chrome_options())
         # self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
@@ -59,7 +62,7 @@ class ScrapingEngine:
         response = requests.get(url)
         parser = fromstring(response.text)
         proxies = []
-        for i in parser.xpath('//tbody/tr')[:10]:
+        for i in parser.xpath('//tbody/tr')[:300]:
             if i.xpath('.//td[7][contains(text(),"yes")]'):
                 proxy = ":".join([i.xpath('.//td[1]/text()')[0], i.xpath('.//td[2]/text()')[0]])
                 if proxy not in proxies:

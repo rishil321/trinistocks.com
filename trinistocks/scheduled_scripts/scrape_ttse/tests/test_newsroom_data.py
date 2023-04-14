@@ -2,7 +2,7 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from scheduled_scripts.scrapettse.newsroom_data import NewsroomDataScraper
+from scheduled_scripts.scrape_ttse.newsroom_data import NewsroomDataScraper
 
 
 def test_scrape_newsroom_data():

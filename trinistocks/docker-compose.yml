@@ -14,7 +14,7 @@ services:
       context: ./
       dockerfile: ./docker/trinistocks_background_scripts/Dockerfile
     command: >
-      sh -c "bash /trinistocks/scripts/copy_environmental_variables.sh && cron && service postfix start && tail -f /var/log/cron.log"
+      sh -c "bash /trinistocks/scripts/copy_environmental_variables.sh && service postfix start && tail -f /var/log/cron.log"
   trinistocks_django_web_app:
     env_file:
       - .env
