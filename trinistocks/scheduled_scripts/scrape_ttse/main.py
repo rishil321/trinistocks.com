@@ -71,7 +71,7 @@ class Scraper:
 # Put your function definitions here. These should be lowercase, separated by underscores.
 def setup_dates_according_to_cli_arguments(cli_arguments: argparse.Namespace) -> Tuple[str, str]:
     if cli_arguments.days_from:
-        start_date: str = (datetime.now() + relativedelta(days=-cli_arguments.days_from)).strftime("%Y-%m-%d")
+        start_date: str = (datetime.now() - relativedelta(days=cli_arguments.days_from)).strftime("%Y-%m-%d")
     elif cli_arguments.full_history:
         start_date: str = TTSE_RECORDS_START_DATE
     else:
@@ -82,9 +82,10 @@ def setup_dates_according_to_cli_arguments(cli_arguments: argparse.Namespace) ->
 
 
 @pidfile()
-def main(cli_arguments: argparse.Namespace) -> int:
+def main(args) -> int:
     """The main steps in coordinating the scraping"""
     try:
+        cli_arguments: argparse.Namespace = set_up_arguments(args)
         logger.info("Now starting TTSE scraper.")
         if cli_arguments.intradaily_data:
             daily_summary_data_scraper: DailySummaryDataScraper = DailySummaryDataScraper()
@@ -123,7 +124,7 @@ def main(cli_arguments: argparse.Namespace) -> int:
 
 
 # endregion FUNCTION DEFINITIONS
-def set_up_arguments():
+def set_up_arguments(args):
     # first check the arguments given to this script
     parser = argparse.ArgumentParser()
     # check what time we need to parse data from
@@ -176,11 +177,9 @@ def set_up_arguments():
         help="Scrape the data that is used for technical analyses",
         action="store_true",
     )
-    cli_arguments = parser.parse_args()
-    return cli_arguments
+    return parser.parse_args(args)
 
 
 # If this script is being run from the command-line, then run the main() function
 if __name__ == "__main__":
-    args: argparse.Namespace = set_up_arguments()
-    main(args)
+    main(sys.argv[1:])
