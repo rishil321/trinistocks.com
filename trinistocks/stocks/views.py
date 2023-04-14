@@ -31,7 +31,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from scheduled_scripts.stocks.updatedb import updater
+from scheduled_scripts.updatedb import updater
 
 # Imports from local machine
 from . import filters, forms, models, serializers
