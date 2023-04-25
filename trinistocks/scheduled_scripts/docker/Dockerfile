@@ -11,7 +11,7 @@ RUN wget --no-check-certificate -q -O - https://dl-ssl.google.com/linux/linux_si
 RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
 # Updating apt to see and install Google Chrome
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install --allow-unauthenticated -yqq unzip sendmail postfix libsasl2-modules libglib2.0-0 libnss3 libgconf-2-4 libfontconfig1
+RUN DEBIAN_FRONTEND=noninteractive apt-get install --allow-unauthenticated -yqq unzip postfix mailutils libsasl2-modules libglib2.0-0 libnss3 libgconf-2-4 libfontconfig1
 # copy the postfix config files
 COPY /postfix/ /etc/postfix/
 # RUN apt-get install --allow-unauthenticated -y
