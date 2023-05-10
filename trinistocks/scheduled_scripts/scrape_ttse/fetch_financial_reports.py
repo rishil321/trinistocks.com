@@ -80,18 +80,17 @@ class FinancialReportsScraper:
         Send an email to latchmepersad@gmail.com if any new annual/audited/querterly reports are detected
         """
         with DatabaseConnect() as db_connect:
-            scraping_engine: ScrapingEngine = ScrapingEngine()
             all_new_quarterly_statements = set()
             for symbol_data in self.listed_symbol_data:
                 logger.info(
                     f"Now checking outstanding quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}"
                 )
-                quarterly_statements_page_soup = self._scrape_quarterly_news_data_for_symbol(scraping_engine,
-                                                                                             symbol_data)
+                quarterly_statements_page_soup = self._scrape_quarterly_news_data_for_symbol(
+                    symbol_data)
                 report_page_links = self._build_links_to_reports_for_quarterly_statements(
                     quarterly_statements_page_soup)
-                pdf_reports = self._build_direct_links_to_pdfs_for_quarterly_statements(report_page_links,
-                                                                                        scraping_engine)
+                pdf_reports = self._build_direct_links_to_pdfs_for_quarterly_statements(report_page_links
+                                                                                        )
                 # now create the names for all available reports
                 symbol_available_quarterly_statements = self._build_list_of_all_available_quarterly_statements(
                     pdf_reports, symbol_data)
@@ -143,8 +142,9 @@ class FinancialReportsScraper:
                 report_page_links.append(link.attrs["href"])
         return report_page_links
 
-    def _scrape_quarterly_news_data_for_symbol(self, scraping_engine, symbol_data):
+    def _scrape_quarterly_news_data_for_symbol(self, symbol_data):
         quarterly_statements_url = f"https://www.stockex.co.tt/news/?symbol={symbol_data['symbol_id']}&category={TTSE_NEWS_CATEGORIES['quarterly_statements']}"
+        scraping_engine: ScrapingEngine = ScrapingEngine()
         quarterly_statements_page = scraping_engine.get_url_and_return_html(url=quarterly_statements_url)
         # and search the page for the links to all annual reports
         quarterly_statements_page_soup = BeautifulSoup(
@@ -157,9 +157,9 @@ class FinancialReportsScraper:
         Send an email to latchmepersad@gmail.com if any new annual/audited/querterly reports are detected
         """
         with DatabaseConnect() as db_connect:
-            scraping_engine: ScrapingEngine = ScrapingEngine()
             all_new_audited_statements = set()
             for symbol_data in self.listed_symbol_data:
+                scraping_engine: ScrapingEngine = ScrapingEngine()
                 annual_statements_page_soup = self._scrape_audited_statement_news_data(scraping_engine, symbol_data)
                 report_page_links = self._get_news_links_from_audited_statements_news_div(annual_statements_page_soup)
                 pdf_reports = self._get_direct_pdf_links_for_audited_statements(report_page_links, scraping_engine)
@@ -285,8 +285,8 @@ class FinancialReportsScraper:
         all_new_annual_reports = set()
         with DatabaseConnect() as db_connect:
             # go to the url for each symbol that we have listed, and check which new annual reports are available
-            scraping_engine: ScrapingEngine = ScrapingEngine()
             for symbol_data in self.listed_symbol_data:
+                scraping_engine: ScrapingEngine = ScrapingEngine()
                 annual_reports_page_soup = self._scrape_annual_reports_page_and_return_soup(
                     scraping_engine, symbol_data)
                 report_page_links = self._build_links_to_annual_reports_from_news_page(annual_reports_page_soup)
@@ -555,8 +555,8 @@ class FinancialReportsScraper:
         https://www.stockex.co.tt/news/xxxxxxx
         """
         # now go through the list of symbol ids and fetch the required reports for each
-        scraping_engine: ScrapingEngine = ScrapingEngine()
         for symbol_data in self.listed_symbol_data:
+            scraping_engine: ScrapingEngine = ScrapingEngine()
             # now load the page with the reports
             logger.info(
                 f"Now trying to fetch quarterly unaudited statements for {symbol_data['symbol']} in PID {os.getpid()}"
@@ -571,7 +571,7 @@ class FinancialReportsScraper:
                 quarterly_statements_page_soup)
             # now navigate to each link
             # and get the actual links of the pdf files
-            pdf_reports = self._build_direct_links_to_pdfs_for_quarterly_statements(report_page_links, scraping_engine)
+            pdf_reports = self._build_direct_links_to_pdfs_for_quarterly_statements(report_page_links)
             # now actually download the pdf files
             self._download_pdf_reports_for_quarterly_statements(pdf_reports, symbol_data)
         return 0
@@ -606,10 +606,11 @@ class FinancialReportsScraper:
         )
 
     def _build_direct_links_to_pdfs_for_quarterly_statements(self, report_page_links,
-                                                             scraping_engine: ScrapingEngine):
+                                                             ):
         pdf_reports = []
         for link in report_page_links:
             try:
+                scraping_engine: ScrapingEngine = ScrapingEngine()
                 report_page = scraping_engine.get_url_and_return_html(url=link)
                 # and search the page for the link to the actual pdf report
                 report_soup = BeautifulSoup(report_page, "lxml")
