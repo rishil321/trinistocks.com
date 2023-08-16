@@ -18,6 +18,7 @@ LOGGER = logging.getLogger()
 class ScrapingEngine:
     def __init__(self: Self):
         self.proxies = self._get_proxies()
+        self.proxy_pool = cycle(self.proxies)
         if not self.proxies:
             raise RuntimeError("Could not find any valid proxies to use.")
         self.driver = webdriver.Chrome(executable_path="/usr/bin/chromedriver", options=self._set_chrome_options())
@@ -100,8 +101,8 @@ class ScrapingEngine:
         ua = UserAgent()
         user_agent = ua.random
         options.add_argument(f'user-agent={user_agent}')
-        proxy_pool = cycle(self.proxies)
-        proxy = next(proxy_pool)
+        # proxy = next(self.proxy_pool)
+        proxy: str = random.choice(self.proxies)
         self.proxy = proxy
         options.add_argument(f'--proxy-server={proxy}')
         return options
