@@ -21,7 +21,7 @@ ENV DISPLAY=:99
 RUN DEBIAN_FRONTEND=noninteractive apt-get install --allow-unauthenticated -yqq google-chrome-stable
 # Download the Chrome Driver
 # RUN wget --no-check-certificate -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
-RUN wget --no-check-certificate -O /tmp/chromedriver.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/`google-chrome --product-version`/linux64/chromedriver-linux64.zip
+RUN wget --no-check-certificate -O /tmp/chromedriver.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/118.0.5950.0/linux64/chromedriver-linux64.zip
 # Unzip the Chrome Driver into /usr/local/bin directory
 RUN unzip /tmp/chromedriver.zip chromedriver-linux64/chromedriver -d /usr/local/bin/
 # now set up poetry for python package management
