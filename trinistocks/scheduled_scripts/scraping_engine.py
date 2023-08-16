@@ -35,7 +35,7 @@ class ScrapingEngine:
         html: str = ''
         while not html_scraped_successfully:
             try:
-                LOGGER.info(f"Now trying to load webpage: {url}")
+                LOGGER.info(f"Now trying to load webpage: {url} using proxy: {self.proxy}")
                 self.driver.get(url)
                 html: str = self.driver.page_source
                 html_scraped_successfully = self.validate_html_scraped_successfully(html, html_scraped_successfully)
@@ -102,5 +102,6 @@ class ScrapingEngine:
         options.add_argument(f'user-agent={user_agent}')
         proxy_pool = cycle(self.proxies)
         proxy = next(proxy_pool)
+        self.proxy = proxy
         options.add_argument(f'--proxy-server={proxy}')
         return options
