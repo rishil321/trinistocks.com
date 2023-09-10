@@ -15,7 +15,7 @@ services:
     command: >
       sh -c "python /trinistocks/manage.py collectstatic --noinput &&
               python /trinistocks/manage.py migrate &&
-             gunicorn --workers=2 --threads=4 --worker-class=gthread trinistocks.wsgi:application -t 300 --bind 0.0.0.0:8000"
+             gunicorn --workers=13 trinistocks.wsgi:application -t 300 --bind 0.0.0.0:8000"
     ports:
       - "8000:8000"
     expose:
