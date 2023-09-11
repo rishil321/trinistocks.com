@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from urllib.parse import urlencode
 
@@ -40,10 +41,56 @@ class ListedEquities(models.Model):
     currency = models.CharField(max_length=3, blank=False, null=False)
     financial_year_end = models.CharField(max_length=45, blank=True, null=True)
     website_url = models.CharField(max_length=2083, blank=True, null=True)
+    symbol_id:str = models.CharField(max_length=45, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = "listed_equities"
+
+
+class RawAnnualData(models.Model):
+    symbol: str = models.CharField(max_length=20, blank=False, null=False)
+    currency: str = models.CharField(max_length=6, blank=False, null=False)
+    year_end_date: datetime.date = models.DateField(null=False)
+    reports_and_statements_referenced: str = models.CharField(max_length=200, blank=True, null=True)
+    total_assets: int = models.IntegerField(null=True)
+    share_capital: int = models.IntegerField(null=True)
+    total_liabilities: int = models.IntegerField(null=True)
+    net_income: int = models.IntegerField(null=True)
+    operating_profit: int = models.IntegerField(null=True)
+    profit_after_tax: int = models.IntegerField(null=True)
+    basic_earnings_per_share: Decimal = models.DecimalField(null=True, max_digits=7, decimal_places=3)
+    total_shareholders_equity: int = models.IntegerField(null=True)
+    total_dividends_paid: int = models.IntegerField(null=True)
+    cash_cash_equivalents: int = models.IntegerField(null=True)
+    total_shares_outstanding: int = models.IntegerField(null=True)
+    dividends_per_share: Decimal = models.DecimalField(null=True, max_digits=7, decimal_places=3)
+
+    class Meta:
+        managed = False
+        db_table = "raw_annual_data"
+
+class RawQuarterlyData(models.Model):
+    symbol: str = models.CharField(max_length=20, blank=False, null=False)
+    currency: str = models.CharField(max_length=6, blank=False, null=False)
+    quarter_end_date: datetime.date = models.DateField(null=False)
+    reports_and_statements_referenced: str = models.CharField(max_length=200, blank=True, null=True)
+    total_assets: int = models.IntegerField(null=True)
+    share_capital: int = models.IntegerField(null=True)
+    total_liabilities: int = models.IntegerField(null=True)
+    net_income: int = models.IntegerField(null=True)
+    operating_profit: int = models.IntegerField(null=True)
+    profit_after_tax: int = models.IntegerField(null=True)
+    basic_earnings_per_share: Decimal = models.DecimalField(null=True, max_digits=7, decimal_places=3)
+    total_shareholders_equity: int = models.IntegerField(null=True)
+    total_dividends_paid: int = models.IntegerField(null=True)
+    cash_cash_equivalents: int = models.IntegerField(null=True)
+    total_shares_outstanding: int = models.IntegerField(null=True)
+    dividends_per_share: Decimal = models.DecimalField(null=True, max_digits=7, decimal_places=3)
+
+    class Meta:
+        managed = False
+        db_table = "raw_quarterly_data"
 
 
 class ListedEquitiesPerSector(models.Model):

@@ -3,6 +3,7 @@ FROM python:3.10
 ENV TZ="America/Port_of_Spain"
 # create the directory to store our project files
 RUN mkdir /trinistocks
+RUN mkdir /var/log/gunicorn && touch /var/log/gunicorn/error.log && touch /var/log/gunicorn/access.log
 # Set the working directory inside the container
 WORKDIR /trinistocks
 RUN apt update
