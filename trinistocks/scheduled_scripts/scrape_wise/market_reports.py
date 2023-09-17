@@ -1,13 +1,11 @@
-import os
-
 from scheduled_scripts.setup_django_orm import setup_django_orm
 
 setup_django_orm()
 
 from datetime import date, datetime, timedelta
-from stocks.models import DailyStockSummary
+from stocks.models import DailyStockSummary, HistoricalIndicesInfo, ListedEquities
 from typing_extensions import Self
-from typing import List, TypedDict
+from typing import List, TypedDict, Tuple
 import requests
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -16,6 +14,12 @@ from lxml.etree import _Element
 import tempfile
 import logging
 from dateutil.relativedelta import relativedelta
+import camelot
+import os
+from camelot.core import TableList, Table
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
+from pandas import DataFrame, Series
 
 from scheduled_scripts import logging_configs
 from logging.config import dictConfig
@@ -45,13 +49,13 @@ class MarketReportsScraper:
     def __del__(self):
         pass
 
-    def get_date_of_latest_daily_report_in_db(self: Self) -> date:
+    def _get_date_of_latest_daily_report_in_db(self: Self) -> date:
         latest_daily_stock_summary: DailyStockSummary = DailyStockSummary.objects.latest("date")
         return latest_daily_stock_summary.date
 
     def build_list_of_missing_market_reports_month_and_year(self: Self) -> List[MissingMarketReportMonthAndYear]:
         all_missing_market_reports_month_and_year: List[MissingMarketReportMonthAndYear] = []
-        date_of_latest_report_in_db: date = self.get_date_of_latest_daily_report_in_db()
+        date_of_latest_report_in_db: date = self._get_date_of_latest_daily_report_in_db()
         current_date: date = datetime.now().date()
         date_counter: date = date_of_latest_report_in_db
         while date_counter.year <= current_date.year and date_counter.month <= current_date.month:
@@ -80,7 +84,7 @@ class MarketReportsScraper:
 
     def build_list_of_missing_market_reports_full_dates(self: Self) -> List[date]:
         all_missing_market_report_dates: List[date] = []
-        date_of_latest_report_in_db: date = self.get_date_of_latest_daily_report_in_db()
+        date_of_latest_report_in_db: date = self._get_date_of_latest_daily_report_in_db()
         current_date: date = datetime.now().date()
         date_counter: date = date_of_latest_report_in_db + relativedelta(days=1)
         while date_counter <= current_date:
@@ -106,3 +110,143 @@ class MarketReportsScraper:
                 logger.info("Downloaded WISE market report for " + str(market_report_link['date']))
                 all_downloaded_market_reports.append(Path(self.market_reports_directory).joinpath(filename))
         return all_downloaded_market_reports
+
+    def parse_all_missing_market_report_data(self: Self, all_downloaded_market_reports: List[Path]) -> bool:
+        for market_report in all_downloaded_market_reports:
+            logger.info(f"Now parsing data from {market_report.name}")
+            date_str: str = market_report.name.replace("market_report_", "").replace(".pdf", "")
+            report_date: datetime.date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            market_summary_table: DataFrame = \
+                camelot.read_pdf(str(market_report), pages='all', flavor="stream", edge_tol=500,
+                                 table_areas=['0,800,250,700'])[0].df
+            self._parse_data_from_market_summary_table(report_date, market_summary_table)
+            daily_trading_report_table: DataFrame = \
+                camelot.read_pdf(str(market_report), pages='all', flavor="stream", edge_tol=500,
+                                 table_areas=['0,680,600,0'])[0].df
+            self._parse_data_from_daily_trading_report_table(report_date, daily_trading_report_table)
+        return True
+
+    def _parse_data_from_market_summary_table(self: Self, report_date: datetime.date, market_report_table: DataFrame):
+        for index, row in market_report_table.iterrows():
+            row_zero_text: str = row[0].lower()
+            match row_zero_text:
+                case "composite index":
+                    historical_indices_info_queryset = HistoricalIndicesInfo.objects.filter(
+                        date=report_date, index_name="Composite Totals")
+                    if historical_indices_info_queryset.exists():
+                        historical_indices_info = historical_indices_info_queryset.first()
+                    else:
+                        historical_indices_info = HistoricalIndicesInfo(date=report_date, index_name="Composite Totals")
+                    historical_indices_info.index_value = row[1].replace(",", "")
+                    historical_indices_info.save()
+                case "all t&t index":
+                    historical_indices_info_queryset = HistoricalIndicesInfo.objects.filter(
+                        date=report_date, index_name="All T&T Totals")
+                    if historical_indices_info_queryset.exists():
+                        historical_indices_info = historical_indices_info_queryset.first()
+                    else:
+                        historical_indices_info = HistoricalIndicesInfo(date=report_date, index_name="All T&T Totals")
+                    historical_indices_info.index_value = row[1].replace(",", "")
+                    historical_indices_info.save()
+                case "cross listed index":
+                    historical_indices_info_queryset = HistoricalIndicesInfo.objects.filter(
+                        date=report_date, index_name="Cross-Listed Totals")
+                    if historical_indices_info_queryset.exists():
+                        historical_indices_info = historical_indices_info_queryset.first()
+                    else:
+                        historical_indices_info = HistoricalIndicesInfo(date=report_date,
+                                                                        index_name="Cross-Listed Totals")
+                    historical_indices_info.index_value = row[1].replace(",", "")
+                    historical_indices_info.save()
+                case "small & medium enterprise index":
+                    historical_indices_info_queryset = HistoricalIndicesInfo.objects.filter(
+                        date=report_date, index_name="Sme Totals")
+                    if historical_indices_info_queryset.exists():
+                        historical_indices_info = historical_indices_info_queryset.first()
+                    else:
+                        historical_indices_info = HistoricalIndicesInfo(date=report_date, index_name="Sme Totals")
+                    historical_indices_info.index_value = row[1].replace(",", "")
+                    historical_indices_info.save()
+
+    def _parse_data_from_daily_trading_report_table(self: Self, report_date: datetime.date,
+                                                    daily_trading_report_table: DataFrame):
+        for index, row in daily_trading_report_table.iterrows():
+            security_name: str = row[0]
+            if not security_name or security_name in ['Security', 'Banking', 'Conglomerates', 'Energy', 'Manufacturing',
+                                                      'Non-Banking Finance', 'Property', 'Trading', 'Preference',
+                                                      'Second Tier Market', 'Mutual Fund Market',
+                                                      'Small & Medium Enterprise Market', 'USD Equity Market',
+                                                      'Corporate Bond Market']:
+                continue
+            try:
+                listed_equity: ListedEquities = ListedEquities.objects.get(wise_equity_name=security_name)
+            except ObjectDoesNotExist:
+                logger.debug(f"No equity found with name {security_name} in listed equity table. Skipping")
+                continue
+            # check if we already have daily summary data for this date and equity
+            daily_stock_summary_queryset: QuerySet[DailyStockSummary] = DailyStockSummary.objects.filter(
+                date=report_date, symbol=listed_equity)
+            if daily_stock_summary_queryset.exists():
+                daily_stock_summary: DailyStockSummary = daily_stock_summary_queryset.first()
+            else:
+                daily_stock_summary: DailyStockSummary = DailyStockSummary(date=report_date, symbol=listed_equity)
+            open_quote, close_quote, high, low, volume_traded, value_traded, os_bid, os_bid_volume, os_offer, os_offer_volume, was_traded_today = self._parse_prices_for_symbol(
+                row)
+            daily_stock_summary.open_price = open_quote
+            daily_stock_summary.close_price = close_quote
+            daily_stock_summary.high = high
+            daily_stock_summary.low = low
+            daily_stock_summary.volume_traded = volume_traded
+            daily_stock_summary.value_traded = value_traded
+            daily_stock_summary.os_bid = os_bid
+            daily_stock_summary.os_bid_vol = os_bid_volume
+            daily_stock_summary.os_offer = os_offer
+            daily_stock_summary.os_offer_vol = os_offer_volume
+            daily_stock_summary.was_traded_today = was_traded_today
+            daily_stock_summary.last_sale_price = close_quote
+            daily_stock_summary.change_dollars = close_quote - open_quote
+            daily_stock_summary.save()
+
+    def _parse_prices_for_symbol(self: Self, row: Series) -> Tuple[
+        float, float, float, float, int, float, float, int, float, int, bool]:
+        try:
+            open_quote: float = float(row[1].replace(",", ""))
+        except ValueError:
+            open_quote: float = float(0)
+        try:
+            high: float = float(row[2].replace(",", ""))
+        except ValueError:
+            high: float = float(0)
+        try:
+            low: float = float(row[3].replace(",", ""))
+        except ValueError:
+            low: float = float(0)
+        try:
+            close_quote: float = float(row[4].replace(",", ""))
+        except ValueError:
+            close_quote: float = float(0)
+        try:
+            volume_traded: int = int(row[6].replace(",", ""))
+        except ValueError:
+            volume_traded: int = 0
+        try:
+            os_bid_volume: int = int(row[7].replace(",", ""))
+        except ValueError:
+            os_bid_volume: int = 0
+        try:
+            os_bid: float = float(row[8].replace(",", ""))
+        except ValueError:
+            os_bid: float = float(0)
+        try:
+            os_offer: float = float(row[9].replace(",", ""))
+        except ValueError:
+            os_offer: float = float(0)
+        try:
+            os_offer_volume: int = int(row[10].replace(",", ""))
+        except ValueError:
+            os_offer_volume: int = 0
+        value_traded: float = float(volume_traded) * close_quote
+        was_traded_today: bool = False
+        if value_traded > float(0):
+            was_traded_today: bool = True
+        return open_quote, close_quote, high, low, volume_traded, value_traded, os_bid, os_bid_volume, os_offer, os_offer_volume, was_traded_today
