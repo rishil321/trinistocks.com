@@ -1,8 +1,16 @@
+import argparse
+import logging
+import sys
 from pathlib import Path
 from typing import List
 
-from scheduled_scripts.scrape_wise.market_reports import MarketReportsScraper, MissingMarketReportMonthAndYear, MarketReportLinks
+from pid.decorator import pidfile
+
+from scheduled_scripts.scrape_wise.market_reports import MarketReportsScraper, MissingMarketReportMonthAndYear, \
+    MarketReportLinks
 from datetime import date
+
+logger = logging.getLogger(__name__)
 
 
 def scrape_and_parse_all_missing_reports() -> bool:
@@ -20,3 +28,29 @@ def scrape_and_parse_all_missing_reports() -> bool:
                                                                                  all_missing_market_reports_full_dates)
     result: bool = scraper.parse_all_missing_market_report_data(downloaded_reports)
     return result
+
+
+def set_up_arguments(args):
+    # first check the arguments given to this script
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-d",
+        "--daily_market_reports",
+        action="store_true",
+        default=False
+    )
+    return parser.parse_args(args)
+
+
+@pidfile()
+def main(args) -> int:
+    cli_arguments: argparse.Namespace = set_up_arguments(args)
+    logger.info("Now starting WISE scraper.")
+    if cli_arguments.daily_market_reports:
+        logger.info("Now scraping daily market reports.")
+        scrape_and_parse_all_missing_reports()
+    return 0
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
