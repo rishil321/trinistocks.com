@@ -42,6 +42,7 @@ class ListedEquities(models.Model):
     financial_year_end = models.CharField(max_length=45, blank=True, null=True)
     website_url = models.CharField(max_length=2083, blank=True, null=True)
     symbol_id:str = models.CharField(max_length=45, blank=True, null=True)
+    wise_equity_name:str = models.CharField(max_length=100,blank=True,null=True)
 
     class Meta:
         managed = False
