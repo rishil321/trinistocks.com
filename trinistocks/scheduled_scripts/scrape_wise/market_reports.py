@@ -120,9 +120,11 @@ class MarketReportsScraper:
                 camelot.read_pdf(str(market_report), pages='all', flavor="stream", edge_tol=500,
                                  table_areas=['0,800,250,700'])[0].df
             self._parse_data_from_market_summary_table(report_date, market_summary_table)
-            daily_trading_report_table: DataFrame = \
-                camelot.read_pdf(str(market_report), pages='all', flavor="stream", edge_tol=500,
-                                 table_areas=['0,680,600,0'])[0].df
+            # reduce from 250 down to 0 in case table gets longer (in table areas)
+            raw_daily_trading_report_table = \
+                camelot.read_pdf(str(market_report), pages='all', flavor="stream", edge_tol=5000,
+                                 table_areas=['0,680,600,250'])[0]
+            daily_trading_report_table: DataFrame = raw_daily_trading_report_table.df
             self._parse_data_from_daily_trading_report_table(report_date, daily_trading_report_table)
         return True
 
@@ -211,39 +213,39 @@ class MarketReportsScraper:
         float, float, float, float, int, float, float, int, float, int, bool]:
         try:
             open_quote: float = float(row[1].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             open_quote: float = float(0)
         try:
             high: float = float(row[2].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             high: float = float(0)
         try:
             low: float = float(row[3].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             low: float = float(0)
         try:
             close_quote: float = float(row[4].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             close_quote: float = float(0)
         try:
             volume_traded: int = int(row[6].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             volume_traded: int = 0
         try:
             os_bid_volume: int = int(row[7].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             os_bid_volume: int = 0
         try:
             os_bid: float = float(row[8].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             os_bid: float = float(0)
         try:
             os_offer: float = float(row[9].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             os_offer: float = float(0)
         try:
             os_offer_volume: int = int(row[10].replace(",", ""))
-        except ValueError:
+        except ValueError as exc:
             os_offer_volume: int = 0
         value_traded: float = float(volume_traded) * close_quote
         was_traded_today: bool = False
