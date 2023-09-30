@@ -244,39 +244,54 @@ class MarketReportsScraper:
         float, float, float, float, int, float, float, int, float, int, bool]:
         try:
             open_quote: float = float(row[1].replace(",", ""))
-        except ValueError as exc:
+        except ValueError:
             open_quote: Optional[float] = None
         try:
             high: float = float(row[2].replace(",", ""))
-        except ValueError as exc:
-            high: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                high:Optional[float] = open_quote
+            else:
+                high: Optional[float] = None
         try:
             low: float = float(row[3].replace(",", ""))
-        except ValueError as exc:
-            low: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                low: Optional[float] = open_quote
+            else:
+                low: Optional[float] = None
         try:
             close_quote: float = float(row[4].replace(",", ""))
-        except ValueError as exc:
-            close_quote: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                close_quote: Optional[float] = open_quote
+            else:
+                close_quote: Optional[float] = None
         try:
             volume_traded: int = int(row[6].replace(",", ""))
-        except ValueError as exc:
+        except ValueError:
             volume_traded: Optional[int] = None
         try:
             os_bid_volume: int = int(row[7].replace(",", ""))
-        except ValueError as exc:
+        except ValueError:
             os_bid_volume: Optional[int] = None
         try:
             os_bid: float = float(row[8].replace(",", ""))
-        except ValueError as exc:
-            os_bid: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                os_bid: Optional[float] = open_quote
+            else:
+                os_bid: Optional[float] = None
         try:
             os_offer: float = float(row[9].replace(",", ""))
-        except ValueError as exc:
-            os_offer: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                os_offer: Optional[float] = open_quote
+            else:
+                os_offer: Optional[float] = None
         try:
             os_offer_volume: int = int(row[10].replace(",", ""))
-        except ValueError as exc:
+        except ValueError:
             os_offer_volume: Optional[int] = None
         value_traded: float = float(volume_traded) * close_quote
         was_traded_today: bool = False
