@@ -8,7 +8,7 @@ from pid.decorator import pidfile
 
 from scheduled_scripts.scrape_wise.market_reports import MarketReportsScraper, MissingMarketReportMonthAndYear, \
     MarketReportLinks
-from datetime import date
+from datetime import date, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,16 @@ def scrape_and_parse_all_missing_reports() -> bool:
     return result
 
 
+def scrape_and_parse_specific_report(date_string: str) -> bool:
+    report_date: date = datetime.strptime(date_string, "%d/%m/%Y").date()
+    wise_url: str = f"https://wiseequities.com/pdffiles/daily/Daily%20Trading%20{report_date.strftime('%B')}%20{report_date.strftime('%d')}%20{report_date.strftime('%Y')}.pdf"
+    market_report_link: MarketReportLinks = MarketReportLinks(date=report_date, url=wise_url)
+    scraper: MarketReportsScraper = MarketReportsScraper()
+    downloaded_report: Path = scraper.download_specific_market_report(market_report_link)
+    result: bool = scraper.parse_specific_market_report_data(downloaded_report)
+    return result
+
+
 def set_up_arguments(args):
     # first check the arguments given to this script
     parser = argparse.ArgumentParser()
@@ -38,6 +48,13 @@ def set_up_arguments(args):
         "--daily_market_reports",
         action="store_true",
         default=False
+    )
+    parser.add_argument(
+        "-s",
+        "--specific_daily_market_report",
+        action="store",
+        help="A specific date to try to scrape a report for, in the format dd/mm/yyyy",
+        default=None
     )
     return parser.parse_args(args)
 
@@ -49,6 +66,9 @@ def main(args) -> int:
     if cli_arguments.daily_market_reports:
         logger.info("Now scraping daily market reports.")
         scrape_and_parse_all_missing_reports()
+    elif cli_arguments.specific_daily_market_report:
+        logger.info(f"Now scraping market report for {cli_arguments.specific_daily_market_report}.")
+
     return 0
 
 

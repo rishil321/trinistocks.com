@@ -5,7 +5,7 @@ setup_django_orm()
 from datetime import date, datetime, timedelta
 from stocks.models import DailyStockSummary, HistoricalIndicesInfo, ListedEquities
 from typing_extensions import Self
-from typing import List, TypedDict, Tuple
+from typing import List, TypedDict, Tuple, Optional
 import requests
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -111,6 +111,18 @@ class MarketReportsScraper:
                 all_downloaded_market_reports.append(Path(self.market_reports_directory).joinpath(filename))
         return all_downloaded_market_reports
 
+    def download_specific_market_report(self: Self, market_report_link: MarketReportLinks) -> Path:
+        os.chdir(self.market_reports_directory)
+        filename: str = "market_report_" + str(market_report_link['date']) + ".pdf"
+        with open(filename, "wb") as file:
+            # get request
+            response = requests.get(market_report_link['url'])
+            # write to file
+            file.write(response.content)
+            logger.info("Downloaded WISE market report for " + str(market_report_link['date']))
+            downloaded_market_report = Path(self.market_reports_directory).joinpath(filename)
+        return downloaded_market_report
+
     def parse_all_missing_market_report_data(self: Self, all_downloaded_market_reports: List[Path]) -> bool:
         for market_report in all_downloaded_market_reports:
             logger.info(f"Now parsing data from {market_report.name}")
@@ -126,6 +138,25 @@ class MarketReportsScraper:
                                  table_areas=['0,680,600,250'])[0]
             daily_trading_report_table: DataFrame = raw_daily_trading_report_table.df
             self._parse_data_from_daily_trading_report_table(report_date, daily_trading_report_table)
+        return True
+
+    def parse_specific_market_report_data(self: Self, downloaded_market_report: Path) -> bool:
+        logger.info(f"Now parsing data from {downloaded_market_report.name}")
+        date_str: str = downloaded_market_report.name.replace("market_report_", "").replace(".pdf", "")
+        report_date: datetime.date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        try:
+            market_summary_table: DataFrame = \
+                camelot.read_pdf(str(downloaded_market_report), pages='all', flavor="stream", edge_tol=5000,line_scale=30,
+                                 table_areas=['0,800,250,700'])[0].df
+            self._parse_data_from_market_summary_table(report_date, market_summary_table)
+        except ValueError:
+            logger.error("Could not read market summary table. Maybe inserted as image?")
+        # reduce from 250 down to 0 in case table gets longer (in table areas)
+        raw_daily_trading_report_table = \
+            camelot.read_pdf(str(downloaded_market_report), pages='all', flavor="stream", edge_tol=5000,
+                             table_areas=['0,680,600,250'])[0]
+        daily_trading_report_table: DataFrame = raw_daily_trading_report_table.df
+        self._parse_data_from_daily_trading_report_table(report_date, daily_trading_report_table)
         return True
 
     def _parse_data_from_market_summary_table(self: Self, report_date: datetime.date, market_report_table: DataFrame):
@@ -214,39 +245,39 @@ class MarketReportsScraper:
         try:
             open_quote: float = float(row[1].replace(",", ""))
         except ValueError as exc:
-            open_quote: float = float(0)
+            open_quote: Optional[float] = None
         try:
             high: float = float(row[2].replace(",", ""))
         except ValueError as exc:
-            high: float = float(0)
+            high: Optional[float] = None
         try:
             low: float = float(row[3].replace(",", ""))
         except ValueError as exc:
-            low: float = float(0)
+            low: Optional[float] = None
         try:
             close_quote: float = float(row[4].replace(",", ""))
         except ValueError as exc:
-            close_quote: float = float(0)
+            close_quote: Optional[float] = None
         try:
             volume_traded: int = int(row[6].replace(",", ""))
         except ValueError as exc:
-            volume_traded: int = 0
+            volume_traded: Optional[int] = None
         try:
             os_bid_volume: int = int(row[7].replace(",", ""))
         except ValueError as exc:
-            os_bid_volume: int = 0
+            os_bid_volume: Optional[int] = None
         try:
             os_bid: float = float(row[8].replace(",", ""))
         except ValueError as exc:
-            os_bid: float = float(0)
+            os_bid: Optional[float] = None
         try:
             os_offer: float = float(row[9].replace(",", ""))
         except ValueError as exc:
-            os_offer: float = float(0)
+            os_offer: Optional[float] = None
         try:
             os_offer_volume: int = int(row[10].replace(",", ""))
         except ValueError as exc:
-            os_offer_volume: int = 0
+            os_offer_volume: Optional[int] = None
         value_traded: float = float(volume_traded) * close_quote
         was_traded_today: bool = False
         if value_traded > float(0):
