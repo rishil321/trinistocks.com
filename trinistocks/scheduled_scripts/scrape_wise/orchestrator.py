@@ -32,7 +32,7 @@ def scrape_and_parse_all_missing_reports() -> bool:
 
 def scrape_and_parse_specific_report(date_string: str) -> bool:
     report_date: date = datetime.strptime(date_string, "%d/%m/%Y").date()
-    wise_url: str = f"https://wiseequities.com/pdffiles/daily/Daily%20Trading%20{report_date.strftime('%B')}%20{report_date.strftime('%d')}%20{report_date.strftime('%Y')}.pdf"
+    wise_url: str = f"https://wiseequities.com/pdffiles/daily/Daily%20Trading%20{report_date.strftime('%B')}%20{report_date.strftime('%e').replace(' ', '')}%20{report_date.strftime('%Y')}.pdf"
     market_report_link: MarketReportLinks = MarketReportLinks(date=report_date, url=wise_url)
     scraper: MarketReportsScraper = MarketReportsScraper()
     downloaded_report: Path = scraper.download_specific_market_report(market_report_link)
