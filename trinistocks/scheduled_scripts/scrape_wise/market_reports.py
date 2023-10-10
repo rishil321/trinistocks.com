@@ -117,6 +117,9 @@ class MarketReportsScraper:
         with open(filename, "wb") as file:
             # get request
             response = requests.get(market_report_link['url'])
+            if not response.ok:
+                raise RuntimeError(
+                    f"Could not download WISE market report. Error code: {response.status_code}. Reason: {response.reason}")
             # write to file
             file.write(response.content)
             logger.info("Downloaded WISE market report for " + str(market_report_link['date']))
@@ -146,7 +149,7 @@ class MarketReportsScraper:
         report_date: datetime.date = datetime.strptime(date_str, "%Y-%m-%d").date()
         try:
             market_summary_table: DataFrame = \
-                camelot.read_pdf(str(downloaded_market_report), pages='all', flavor="stream", edge_tol=5000,line_scale=30,
+                camelot.read_pdf(str(downloaded_market_report), pages='all', flavor="stream", edge_tol=500,
                                  table_areas=['0,800,250,700'])[0].df
             self._parse_data_from_market_summary_table(report_date, market_summary_table)
         except ValueError:
@@ -244,42 +247,59 @@ class MarketReportsScraper:
         float, float, float, float, int, float, float, int, float, int, bool]:
         try:
             open_quote: float = float(row[1].replace(",", ""))
-        except ValueError as exc:
+        except ValueError:
             open_quote: Optional[float] = None
         try:
             high: float = float(row[2].replace(",", ""))
-        except ValueError as exc:
-            high: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                high: Optional[float] = open_quote
+            else:
+                high: Optional[float] = None
         try:
             low: float = float(row[3].replace(",", ""))
-        except ValueError as exc:
-            low: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                low: Optional[float] = open_quote
+            else:
+                low: Optional[float] = None
         try:
             close_quote: float = float(row[4].replace(",", ""))
-        except ValueError as exc:
-            close_quote: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                close_quote: Optional[float] = open_quote
+            else:
+                close_quote: Optional[float] = None
         try:
             volume_traded: int = int(row[6].replace(",", ""))
-        except ValueError as exc:
+        except ValueError:
             volume_traded: Optional[int] = None
         try:
             os_bid_volume: int = int(row[7].replace(",", ""))
-        except ValueError as exc:
+        except ValueError:
             os_bid_volume: Optional[int] = None
         try:
             os_bid: float = float(row[8].replace(",", ""))
-        except ValueError as exc:
-            os_bid: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                os_bid: Optional[float] = open_quote
+            else:
+                os_bid: Optional[float] = None
         try:
             os_offer: float = float(row[9].replace(",", ""))
-        except ValueError as exc:
-            os_offer: Optional[float] = None
+        except ValueError:
+            if open_quote:
+                os_offer: Optional[float] = open_quote
+            else:
+                os_offer: Optional[float] = None
         try:
             os_offer_volume: int = int(row[10].replace(",", ""))
-        except ValueError as exc:
+        except ValueError:
             os_offer_volume: Optional[int] = None
-        value_traded: float = float(volume_traded) * close_quote
+        value_traded:Optional[float] = None
+        if volume_traded and close_quote:
+            value_traded = float(volume_traded) * close_quote
         was_traded_today: bool = False
-        if value_traded > float(0):
+        if value_traded:
             was_traded_today: bool = True
         return open_quote, close_quote, high, low, volume_traded, value_traded, os_bid, os_bid_volume, os_offer, os_offer_volume, was_traded_today
