@@ -1680,12 +1680,12 @@ class PortfolioSummaryView(
                 raise RuntimeError("No symbols in portfolio")
             market_values = list(current_data.values_list("market_value", flat=True))
             # convert the market values to float
-            symbol_market_values:list[Optional[float]] = []
+            symbol_market_values: list[Optional[float]] = []
             for market_value in market_values:
                 if market_value:
                     symbol_market_values.append(float(market_value))
                 else:
-                    symbol_market_values.append(None)
+                    symbol_market_values.append(float(0))
             # then get the sectors and their market values
             sectors_df = pd.DataFrame.from_records(
                 current_data.values_list("symbol_id__sector", "market_value")
@@ -1695,7 +1695,7 @@ class PortfolioSummaryView(
             sectors_df = sectors_df.groupby("sector").sum().reset_index()
             sectors = sectors_df["sector"].to_list()
             market_values = sectors_df["market_value"].to_list()
-            sector_market_values:list[Optional[float]] = []
+            sector_market_values: list[Optional[float]] = []
             for market_value in market_values:
                 if market_value:
                     sector_market_values.append(float(market_value))

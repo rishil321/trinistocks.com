@@ -54,7 +54,7 @@ class HistoricalStockInfoTable(tables.Table):
         if value < 0:
             column.attrs = {'td': {'style': 'color:red',
                                    'data-label': column.verbose_name}}
-            return '-'+'$'+str(abs(value))
+            return '-' + '$' + str(abs(value))
         elif value > 0:
             column.attrs = {'td': {'style': 'color:green',
                                    'data-label': column.verbose_name}}
@@ -125,7 +125,7 @@ class DailyTradingSummaryTable(tables.Table):
         if value < 0:
             column.attrs = {'td': {'style': 'color:red',
                                    'data-label': column.verbose_name}}
-            return '-'+'$'+str(abs(value))
+            return '-' + '$' + str(abs(value))
         elif value > 0:
             column.attrs = {'td': {'style': 'color:green',
                                    'data-label': column.verbose_name}}
@@ -215,7 +215,6 @@ class HistoricalIndicesSummaryTable(tables.Table):
 
 
 class OSTradesHistoryTable(tables.Table):
-
     date = tables.Column(verbose_name="Date")
     volume_traded = tables.Column(verbose_name="Volume Traded")
     os_bid = tables.Column(verbose_name="O/S Bid Price")
@@ -340,7 +339,6 @@ class TechnicalAnalysisSummaryTable(tables.Table):
 
 
 class FundamentalAnalysisSummaryTable(tables.Table):
-
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
         lambda record: render_fundamental_history_symbol_link(value=record)))
     sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
@@ -392,7 +390,7 @@ class FundamentalAnalysisSummaryTable(tables.Table):
 
     def render_cash_per_share(self, value, column):
         column.attrs = {'td': {'data-label': column.verbose_name}}
-        return "{:,.2f}".format(value)+" $/share"
+        return "{:,.2f}".format(value) + " $/share"
 
     class Meta:
         attrs = {'class': 'djangotables'}
@@ -400,7 +398,6 @@ class FundamentalAnalysisSummaryTable(tables.Table):
 
 
 class PortfolioSummaryTable(tables.Table):
-
     symbol_id = tables.Column(verbose_name="Symbol")
     sector = tables.Column(accessor="symbol__sector", verbose_name="Sector")
     shares_remaining = tables.Column(verbose_name='Number of Shares')
@@ -442,7 +439,7 @@ class PortfolioSummaryTable(tables.Table):
         if value < 0:
             column.attrs = {'td': {'style': 'color:red',
                                    'data-label': column.verbose_name}}
-            return '-'+'$'+str(abs(value))
+            return '-' + '$' + str(abs(value))
         elif value > 0:
             column.attrs = {'td': {'style': 'color:green',
                                    'data-label': column.verbose_name}}
@@ -453,10 +450,10 @@ class PortfolioSummaryTable(tables.Table):
     class Meta:
         attrs = {'class': 'djangotables'}
         export_formats = ['csv', 'xlsx']
+        order_by = "-book_cost"
 
 
 class StockNewsTable(tables.Table):
-
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
         lambda record: render_fundamental_history_symbol_link(value=record)), orderable=False)
     date = tables.Column(verbose_name="Date Published", orderable=False)
@@ -490,7 +487,6 @@ class StockNewsTable(tables.Table):
 
 
 class StockNewsHistoryTable(tables.Table):
-
     symbol = tables.Column(accessor="symbol__symbol", verbose_name="Symbol", linkify=(
         lambda record: render_fundamental_history_symbol_link(value=record)), orderable=True)
     date = tables.Column(verbose_name="Date Published", orderable=True)
@@ -521,6 +517,7 @@ class StockNewsHistoryTable(tables.Table):
     class Meta:
         attrs = {'class': 'djangotables'}
         export_formats = ['csv', 'xlsx']
+
 
 # methods
 # render the URLs for the symbol column
